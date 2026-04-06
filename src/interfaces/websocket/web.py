@@ -1,7 +1,6 @@
-from .uvicorn import UvicornServer
+from src.interfaces.uvicorn import UvicornServer
 from .websocket import Ws
 from src.interfaces.base_interface import BaseInterface
-
 
 class Web(BaseInterface):
     def __init__(self, host="0.0.0.0", port=8000):
@@ -15,7 +14,7 @@ class Web(BaseInterface):
         await self.start()
 
     async def start(self):
-        await self.uvicorn.start()
+        await self.uvicorn.start("src.interfaces.websocket.websocket:api")
 
     async def stop(self):
         if self.uvicorn.active:

@@ -4,6 +4,7 @@ from src.db import Db
 from pybase import Application_bones, Menu
 from src.interfaces.interface import Interface
 from src.event_bus import EventBus
+from src.services import CardService, review_card
 
 class Application(Application_bones):
     def __init__(self):
@@ -33,7 +34,13 @@ class Application(Application_bones):
         super().__init__(name, config, menu, modules)
         self.bus = EventBus()
         self.init_module("db")
-        self.init_module("interface", config = self.config, bus = self.bus)
+        
+        card_service = CardService(self.db)
+
+        services = {
+            "card_service": card_service
+        }
+        self.init_module("interface", config = self.config, bus = self.bus, services = services)
 
     # self.bus.subscribe("say_hello", self.say_hello)
 
@@ -57,9 +64,6 @@ if __name__ == "__main__":
     card_repo = CardRepository(db)
     card = card_repo.create(col.id, data={"front": "...", "back": "..."}, tags=["python"])
     card = card_repo.get(card.id)
-    print(col)
-    print(card)
-
     
     app = Application()
     asyncio.run(app.run())

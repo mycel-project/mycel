@@ -7,6 +7,9 @@ from src.models.card import Card, NEW
 
 
 class CardRepository:
+    """
+    Data access
+    """
     def __init__(self, db: Db):
         self.db = db
 
@@ -168,6 +171,42 @@ class CardRepository:
                 (collection_id, order_key, limit),
             )
         return [self._row_to_model(r) for r in rows]
+
+    def get_predecessor_key(
+        self,
+        collection_id: int,
+        order_key: str,
+        exclude_id: int,
+    ) -> Optional[str]:
+        row = self.db.fetch_one(
+            "SELECT order_key FROM cards "
+            "WHERE collection_id = ? AND order_key < ? AND id != ? "
+            "ORDER BY order_key DESC LIMIT 1",
+            (collection_id, order_key, exclude_id),
+        )
+        return row["order_key"] if row else None
+
+    def get_successor_key(
+        self,
+        collection_id: int,
+        order_key: str,
+        exclude_id: int,
+    ) -> Optional[str]:
+        row = self.db.fetch_one(
+            "SELECT order_key FROM cards "
+            "WHERE collection_id = ? AND order_key > ? AND id != ? "
+            "ORDER BY order_key ASC LIMIT 1",
+            (collection_id, order_key, exclude_id),
+        )
+        return row["order_key"] if row else None
+
+    def get_all_order_keys(self, collection_id: int) -> list[tuple[int, str]]:
+        """Returns (id, order_key) sorted by order_key."""
+        rows = self.db.fetch_all(
+            "SELECT id, order_key FROM cards WHERE collection_id = ? ORDER BY order_key",
+            (collection_id,),
+        )
+        return [(row["id"], row["order_key"]) for row in rows]
 
     def update_order_key(self, card_id: int, order_key: str) -> None:
         now = int(time.time() * 1000)

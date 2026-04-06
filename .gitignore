@@ -53,3 +53,4 @@ Thumbs.db
 # Secrets / configs locales
 config.local.*
 secrets.*
+.claude/

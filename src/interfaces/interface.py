@@ -1,11 +1,12 @@
 from .factory import InterfaceFactory
 
 class Interface():
-    def __init__(self, config, bus):
+    def __init__(self, config, bus, services = {}):
         self.interface = None
         self.interface_name = None
         self.config = config
         self.bus = bus
+        self.services = services
         
     async def init_interface(self):
         self.interface_name = self.config.get("interface")
@@ -16,4 +17,4 @@ class Interface():
             print("No interface set in config")
             return
         self.interface = InterfaceFactory.create(self.interface_name)
-        await self.interface.init(self.config, self.bus)
+        await self.interface.init(self.config, self.bus, self.services)
