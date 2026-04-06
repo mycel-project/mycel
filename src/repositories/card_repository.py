@@ -31,6 +31,7 @@ class CardRepository:
             flags=row["flags"],
             data=json.loads(row["data"]),
             tags=json.loads(row["tags"]),
+            order_key=row["order_key"],
         )
 
     def create(
@@ -39,6 +40,7 @@ class CardRepository:
         data: dict,
         tags: list | None = None,
         note_id: int | None = None,
+        order_key: str | None = None,
     ) -> Card:
         now = int(time.time() * 1000)
         card = Card(
@@ -58,20 +60,21 @@ class CardRepository:
             flags=0,
             data=data,
             tags=tags or [],
+            order_key=order_key,
         )
         self.db.execute(
             """INSERT INTO cards
                (id, collection_id, note_id, type, queue, due, interval, ease_factor,
                 stability, difficulty, fsrs_step,
-                reps, lapses, last_review, created_at, updated_at, flags, data, tags)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                reps, lapses, last_review, created_at, updated_at, flags, data, tags, order_key)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (
                 card.id, card.collection_id, card.note_id, card.type, card.queue,
                 card.due, card.interval, card.ease_factor,
                 card.stability, card.difficulty, card.fsrs_step,
                 card.reps, card.lapses, card.last_review,
                 card.created_at, card.updated_at, card.flags,
-                json.dumps(card.data), json.dumps(card.tags),
+                json.dumps(card.data), json.dumps(card.tags), card.order_key,
             ),
         )
         return card
@@ -110,7 +113,65 @@ class CardRepository:
 
     def get_by_collection(self, collection_id: int) -> list[Card]:
         rows = self.db.fetch_all(
-            "SELECT * FROM cards WHERE collection_id = ? ORDER BY created_at",
+            "SELECT * FROM cards WHERE collection_id = ? ORDER BY order_key",
             (collection_id,),
         )
         return [self._row_to_model(r) for r in rows]
+
+    def get_tail_key(self, collection_id: int) -> Optional[str]:
+        row = self.db.fetch_one(
+            "SELECT MAX(order_key) FROM cards WHERE collection_id = ?",
+            (collection_id,),
+        )
+        return row[0] if row and row[0] is not None else None
+
+    def get_neighbor_keys(
+        self,
+        collection_id: int,
+        before_id: int | None,
+        after_id: int | None,
+    ) -> tuple[Optional[str], Optional[str]]:
+        a_key = None
+        b_key = None
+        if before_id is not None:
+            row = self.db.fetch_one(
+                "SELECT order_key FROM cards WHERE id = ? AND collection_id = ?",
+                (before_id, collection_id),
+            )
+            if row is None:
+                raise ValueError(f"Card {before_id} not found in collection {collection_id}")
+            a_key = row["order_key"]
+        if after_id is not None:
+            row = self.db.fetch_one(
+                "SELECT order_key FROM cards WHERE id = ? AND collection_id = ?",
+                (after_id, collection_id),
+            )
+            if row is None:
+                raise ValueError(f"Card {after_id} not found in collection {collection_id}")
+            b_key = row["order_key"]
+        return a_key, b_key
+
+    def get_cards_after(
+        self,
+        collection_id: int,
+        order_key: Optional[str],
+        limit: int,
+    ) -> list[Card]:
+        if order_key is None:
+            rows = self.db.fetch_all(
+                "SELECT * FROM cards WHERE collection_id = ? ORDER BY order_key LIMIT ?",
+                (collection_id, limit),
+            )
+        else:
+            rows = self.db.fetch_all(
+                "SELECT * FROM cards WHERE collection_id = ? AND order_key > ? ORDER BY order_key LIMIT ?",
+                (collection_id, order_key, limit),
+            )
+        return [self._row_to_model(r) for r in rows]
+
+    def update_order_key(self, card_id: int, order_key: str) -> None:
+        now = int(time.time() * 1000)
+        self.db.execute(
+            "UPDATE cards SET order_key = ?, updated_at = ? WHERE id = ?",
+            (order_key, now, card_id),
+        )

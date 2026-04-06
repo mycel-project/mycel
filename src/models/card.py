@@ -30,3 +30,4 @@ class Card:
     stability: Optional[float] = None
     difficulty: Optional[float] = None
     fsrs_step: Optional[int] = None
+    order_key: Optional[str] = None
