@@ -1,0 +1,55 @@
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environnements virtuels
+.env/
+venv/
+ENV/
+env/
+.venv/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Logs
+*.log
+
+# Tests / coverage
+.coverage
+htmlcov/
+.pytest_cache/
+
+# PyCharm / VSCode / IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python environment files
+*.env
+
+# Database files (SQLite)
+*.db
+*.sqlite
+*.sqlite3
+
+# SQLite journaux
+*.db-journal
+*.sqlite-journal
+
+# Fichiers de migration / cache custom
+*.pkl
+*.pickle
+
+# Secrets / configs locales
+config.local.*
+secrets.*
