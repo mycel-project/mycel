@@ -19,7 +19,6 @@ class Application(Application_bones):
             "interface": {
                 "class": Interface,
             },
-            
         }
         menu = {
             "main": {
@@ -33,17 +32,35 @@ class Application(Application_bones):
         }
         super().__init__(name, config, menu, modules)
         self.bus = EventBus()
-        self.bus.subscribe("say_hello", self.say_hello)
         self.init_module("db")
         self.init_module("interface", config = self.config, bus = self.bus)
 
-    async def say_hello(self, data=None):
-        print(data)
+    # self.bus.subscribe("say_hello", self.say_hello)
+
+    # async def say_hello(self, data=None):
+    #     print(data)
 
     async def init_async(self):
         await self.interface.init_interface()
 
 if __name__ == "__main__":
+    from src.repositories.card_repository import CardRepository
+    from src.repositories.collection_repository import CollectionRepository
+    db = Db()
+
+    # Collections
+    col_repo = CollectionRepository(db)
+    col = col_repo.create("Ma collection")
+    col = col_repo.get(col.id)
+
+    # Cartes
+    card_repo = CardRepository(db)
+    card = card_repo.create(col.id, data={"front": "...", "back": "..."}, tags=["python"])
+    card = card_repo.get(card.id)
+    print(col)
+    print(card)
+
+    
     app = Application()
     asyncio.run(app.run())
     
