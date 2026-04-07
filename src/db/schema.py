@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS nodes (
     id              INTEGER PRIMARY KEY,
     collection_id   INTEGER NOT NULL,
     type            INTEGER NOT NULL,
-    content         TEXT,
+    content         TEXT DEFAULT "{}",
     created_at      INTEGER NOT NULL,
     updated_at      INTEGER NOT NULL,
 

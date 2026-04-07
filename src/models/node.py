@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional
 
 
@@ -14,21 +14,14 @@ class Node:
     id: int
     collection_id: int
     type: int
-    queue: int
-    due: int
-    interval: int
-    ease_factor: float
-    reps: int
-    lapses: int
     created_at: int
     updated_at: int
-    flags: int
-    data: dict = field(default_factory=dict)
-    tags: list = field(default_factory=list)
-    note_id: Optional[int] = None
+    due: int
+    state: int
+    content: Optional[dict] = None
     last_review: Optional[int] = None
     stability: Optional[float] = None
     difficulty: Optional[float] = None
-    fsrs_step: Optional[int] = None
-    order_key: Optional[str] = None
+    step: Optional[int] = None
+    priority: Optional[str] = None
     

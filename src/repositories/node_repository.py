@@ -7,9 +7,6 @@ from src.models.node import Node, NEW
 
 
 class NodeRepository:
-    """
-    Data access
-    """
     def __init__(self, db: Db):
         self.db = db
 
@@ -17,67 +14,51 @@ class NodeRepository:
         return Node(
             id=row["id"],
             collection_id=row["collection_id"],
-            note_id=row["note_id"],
             type=row["type"],
-            queue=row["queue"],
-            due=row["due"],
-            interval=row["interval"],
-            ease_factor=row["ease_factor"],
-            stability=row["stability"],
-            difficulty=row["difficulty"],
-            fsrs_step=row["fsrs_step"],
-            reps=row["reps"],
-            lapses=row["lapses"],
-            last_review=row["last_review"],
             created_at=row["created_at"],
             updated_at=row["updated_at"],
-            flags=row["flags"],
-            data=json.loads(row["data"]),
-            tags=json.loads(row["tags"]),
-            order_key=row["order_key"],
-        )
+            due=row["due"],
+            state=row["state"],
+            content = json.loads(row["content"]) if isinstance(row["content"], str) else row["content"],
+            last_review=row["last_review"], 
+            stability=row["stability"],
+            difficulty=row["difficulty"],
+            step=row["step"],
+            priority=row["priority"],
+    )
 
     def create(
         self,
         collection_id: int,
-        data: dict,
-        tags: list | None = None,
-        note_id: int | None = None,
-        order_key: str | None = None,
+        content: dict,
+        priority: Optional[str] = None,
     ) -> Node:
         now = int(time.time() * 1000)
         node = Node(
             id=now,
             collection_id=collection_id,
-            note_id=note_id,
             type=NEW,
-            queue=NEW,
-            due=now,
-            interval=0,
-            ease_factor=2.5,
-            reps=0,
-            lapses=0,
-            last_review=None,
             created_at=now,
             updated_at=now,
-            flags=0,
-            data=data,
-            tags=tags or [],
-            order_key=order_key,
+            due=now,
+            state=0,
+            content=content,
+            priority=priority,
         )
         self.db.execute(
             """INSERT INTO nodes
-               (id, collection_id, note_id, type, queue, due, interval, ease_factor,
-                stability, difficulty, fsrs_step,
-                reps, lapses, last_review, created_at, updated_at, flags, data, tags, order_key)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+               (id, collection_id, type, created_at, updated_at, due, state, content, priority)
+               VALUES (?,?,?,?,?,?,?,?,?)""",
             (
-                node.id, node.collection_id, node.note_id, node.type, node.queue,
-                node.due, node.interval, node.ease_factor,
-                node.stability, node.difficulty, node.fsrs_step,
-                node.reps, node.lapses, node.last_review,
-                node.created_at, node.updated_at, node.flags,
-                json.dumps(node.data), json.dumps(node.tags), node.order_key,
+                node.id,
+                node.collection_id,
+                node.type,
+                node.created_at,
+                node.updated_at,
+                node.due,
+                node.state,
+                json.dumps(node.content),  # ✅ Stocker en JSON
+                node.priority,
             ),
         )
         return node
@@ -88,25 +69,30 @@ class NodeRepository:
 
     def update(self, node: Node) -> None:
         now = int(time.time() * 1000)
-        node.updated_at = now
         self.db.execute(
             """UPDATE nodes SET
-               type=?, queue=?, due=?, interval=?, ease_factor=?,
-               stability=?, difficulty=?, fsrs_step=?,
-               reps=?, lapses=?, last_review=?, updated_at=?, flags=?, data=?, tags=?
+               type=?, due=?, state=?, content=?, 
+               last_review=?, stability=?, difficulty=?, step=?, priority=?, updated_at=?
                WHERE id=?""",
             (
-                node.type, node.queue, node.due, node.interval, node.ease_factor,
-                node.stability, node.difficulty, node.fsrs_step,
-                node.reps, node.lapses, node.last_review, node.updated_at, node.flags,
-                json.dumps(node.data), json.dumps(node.tags), node.id,
+                node.type,
+                node.due,
+                node.state,
+                json.dumps(node.content) if node.content else "{}", 
+                node.last_review,
+                node.stability,
+                node.difficulty,
+                node.step,
+                node.priority,
+                now,
+                node.id,
             ),
         )
 
     def delete(self, id: int) -> None:
         self.db.execute("DELETE FROM nodes WHERE id = ?", (id,))
 
-    def get_due(self, collection_id: int, now_ms: int | None = None) -> list[Node]:
+    def get_due(self, collection_id: int, now_ms: Optional[int] = None) -> list[Node]:
         now_ms = now_ms or int(time.time() * 1000)
         rows = self.db.fetch_all(
             "SELECT * FROM nodes WHERE collection_id = ? AND due <= ? ORDER BY due",
@@ -114,16 +100,107 @@ class NodeRepository:
         )
         return [self._row_to_model(r) for r in rows]
 
-    def get_by_collection(self, collection_id: int) -> list[Node]:
+    def get_by_collection(self, collection_id: int, limit: Optional[int] = None) -> list[Node]:
+        if limit:
+            rows = self.db.fetch_all(
+                "SELECT * FROM nodes WHERE collection_id = ? ORDER BY priority LIMIT ?",
+                (collection_id, limit),
+            )
+        else:
+            rows = self.db.fetch_all(
+                "SELECT * FROM nodes WHERE collection_id = ? ORDER BY priority",
+                (collection_id,),
+            )
+        return [self._row_to_model(r) for r in rows]
+
+    def get_by_type(self, collection_id: int, type: int) -> list[Node]:
         rows = self.db.fetch_all(
-            "SELECT * FROM nodes WHERE collection_id = ? ORDER BY order_key",
-            (collection_id,),
+            "SELECT * FROM nodes WHERE collection_id = ? AND type = ? ORDER BY priority",
+            (collection_id, type),
         )
         return [self._row_to_model(r) for r in rows]
 
-    def get_tail_key(self, collection_id: int) -> Optional[str]:
+    def get_by_state(self, collection_id: int, state: int) -> list[Node]:
+        rows = self.db.fetch_all(
+            "SELECT * FROM nodes WHERE collection_id = ? AND state = ? ORDER BY priority",
+            (collection_id, state),
+        )
+        return [self._row_to_model(r) for r in rows]
+
+    def update_priority(self, node_id: int, priority: str) -> None:
+        now = int(time.time() * 1000)
+        self.db.execute(
+            "UPDATE nodes SET priority = ?, updated_at = ? WHERE id = ?",
+            (priority, now, node_id),
+        )
+
+    def update_state(self, node_id: int, state: int) -> None:
+        now = int(time.time() * 1000)
+        self.db.execute(
+            "UPDATE nodes SET state = ?, updated_at = ? WHERE id = ?",
+            (state, now, node_id),
+        )
+
+    def update_fsrs_params(
+        self,
+        node_id: int,
+        stability: float,
+        difficulty: float,
+        step: int,
+    ) -> None:
+        now = int(time.time() * 1000)
+        self.db.execute(
+            "UPDATE nodes SET stability = ?, difficulty = ?, step = ?, updated_at = ? WHERE id = ?",
+            (stability, difficulty, step, now, node_id),
+        )
+
+    def update_last_review(self, node_id: int) -> None:
+        now = int(time.time() * 1000)
+        self.db.execute(
+            "UPDATE nodes SET last_review = ?, updated_at = ? WHERE id = ?",
+            (now, now, node_id),
+        )
+
+
+    def get_predecessor_priority(
+        self,
+        collection_id: int,
+        priority: str,
+        exclude_id: int,
+    ) -> Optional[str]:
         row = self.db.fetch_one(
-            "SELECT MAX(order_key) FROM nodes WHERE collection_id = ?",
+            "SELECT priority FROM nodes "
+            "WHERE collection_id = ? AND priority < ? AND id != ? "
+            "ORDER BY priority DESC LIMIT 1",
+            (collection_id, priority, exclude_id),
+        )
+        return row["priority"] if row else None
+
+    def get_successor_priority(
+        self,
+        collection_id: int,
+        priority: str,
+        exclude_id: int,
+    ) -> Optional[str]:
+        row = self.db.fetch_one(
+            "SELECT priority FROM nodes "
+            "WHERE collection_id = ? AND priority > ? AND id != ? "
+            "ORDER BY priority ASC LIMIT 1",
+            (collection_id, priority, exclude_id),
+        )
+        return row["priority"] if row else None
+
+    def get_all_priorities(self, collection_id: int) -> list[tuple[int, str]]:
+        rows = self.db.fetch_all(
+            "SELECT id, priority FROM nodes WHERE collection_id = ? ORDER BY priority",
+            (collection_id,),
+        )
+        return [(row["id"], row["priority"]) for row in rows]
+
+    def get_tail_key(self, collection_id: int) -> Optional[str]:
+        """Get the last priority in the collection"""
+        row = self.db.fetch_one(
+            "SELECT MAX(priority) FROM nodes WHERE collection_id = ?",
             (collection_id,),
         )
         return row[0] if row and row[0] is not None else None
@@ -134,83 +211,42 @@ class NodeRepository:
         before_id: int | None,
         after_id: int | None,
     ) -> tuple[Optional[str], Optional[str]]:
+        """Get priorities of nodes before and after for insertion"""
         a_key = None
         b_key = None
         if before_id is not None:
             row = self.db.fetch_one(
-                "SELECT order_key FROM nodes WHERE id = ? AND collection_id = ?",
+                "SELECT priority FROM nodes WHERE id = ? AND collection_id = ?",
                 (before_id, collection_id),
             )
             if row is None:
                 raise ValueError(f"Node {before_id} not found in collection {collection_id}")
-            a_key = row["order_key"]
+            a_key = row["priority"]
         if after_id is not None:
             row = self.db.fetch_one(
-                "SELECT order_key FROM nodes WHERE id = ? AND collection_id = ?",
+                "SELECT priority FROM nodes WHERE id = ? AND collection_id = ?",
                 (after_id, collection_id),
             )
             if row is None:
                 raise ValueError(f"Node {after_id} not found in collection {collection_id}")
-            b_key = row["order_key"]
+            b_key = row["priority"]
         return a_key, b_key
 
     def get_nodes_after(
         self,
         collection_id: int,
-        order_key: Optional[str],
+        priority: Optional[str],
         limit: int,
     ) -> list[Node]:
-        if order_key is None:
+        """Get nodes after a given priority, ordered by priority"""
+        if priority is None:
             rows = self.db.fetch_all(
-                "SELECT * FROM nodes WHERE collection_id = ? ORDER BY order_key LIMIT ?",
+                "SELECT * FROM nodes WHERE collection_id = ? ORDER BY priority LIMIT ?",
                 (collection_id, limit),
             )
         else:
             rows = self.db.fetch_all(
-                "SELECT * FROM nodes WHERE collection_id = ? AND order_key > ? ORDER BY order_key LIMIT ?",
-                (collection_id, order_key, limit),
+                "SELECT * FROM nodes WHERE collection_id = ? AND priority > ? ORDER BY priority LIMIT ?",
+                (collection_id, priority, limit),
             )
         return [self._row_to_model(r) for r in rows]
-
-    def get_predecessor_key(
-        self,
-        collection_id: int,
-        order_key: str,
-        exclude_id: int,
-    ) -> Optional[str]:
-        row = self.db.fetch_one(
-            "SELECT order_key FROM nodes "
-            "WHERE collection_id = ? AND order_key < ? AND id != ? "
-            "ORDER BY order_key DESC LIMIT 1",
-            (collection_id, order_key, exclude_id),
-        )
-        return row["order_key"] if row else None
-
-    def get_successor_key(
-        self,
-        collection_id: int,
-        order_key: str,
-        exclude_id: int,
-    ) -> Optional[str]:
-        row = self.db.fetch_one(
-            "SELECT order_key FROM nodes "
-            "WHERE collection_id = ? AND order_key > ? AND id != ? "
-            "ORDER BY order_key ASC LIMIT 1",
-            (collection_id, order_key, exclude_id),
-        )
-        return row["order_key"] if row else None
-
-    def get_all_order_keys(self, collection_id: int) -> list[tuple[int, str]]:
-        """Returns (id, order_key) sorted by order_key."""
-        rows = self.db.fetch_all(
-            "SELECT id, order_key FROM nodes WHERE collection_id = ? ORDER BY order_key",
-            (collection_id,),
-        )
-        return [(row["id"], row["order_key"]) for row in rows]
-
-    def update_order_key(self, node_id: int, order_key: str) -> None:
-        now = int(time.time() * 1000)
-        self.db.execute(
-            "UPDATE nodes SET order_key = ?, updated_at = ? WHERE id = ?",
-            (order_key, now, node_id),
-        )

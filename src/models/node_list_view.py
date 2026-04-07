@@ -7,6 +7,5 @@ class NodeListView:
     id: int
     collection_id: int
     type: int
-    data: dict
+    content: dict | None
     position: int
-

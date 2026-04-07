@@ -44,11 +44,10 @@ class Rest(BaseInterface):
             return {"nodes": nodes}
 
         class NodeCreate(BaseModel):
-            front: str
-            back: str
+            content: str
         @self.app.post("/collections/{col_id}/nodes")
         async def create_node(col_id: int, data: NodeCreate):
-            self.node_service.create_node(col_id, data.model_dump())
+            self.node_service.create_node(col_id, data.content)
 
         class ReprioritiseNode(BaseModel):
             new_position_node_id: int

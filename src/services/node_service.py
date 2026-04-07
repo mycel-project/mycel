@@ -14,6 +14,7 @@ class NodeService:
     def __init__(self, db: Db):
         self._repo = NodeRepository(db)
 
+        
     def _resolve_position(
         self,
         collection_id: int,
@@ -25,92 +26,109 @@ class NodeService:
         a_key, b_key = self._repo.get_neighbor_keys(collection_id, before_id, after_id)
         return insert_between(a_key, b_key)
 
+
     def create_node(
         self,
         collection_id: int,
-        data: dict,
-        tags: list | None = None,
-        note_id: int | None = None,
-        before_id: int | None = None,
-        after_id: int | None = None,
+        content: dict,  # ✅ Accepte un dict
+        priority: Optional[str] = None,
     ) -> Node:
-        order_key = self._resolve_position(collection_id, before_id, after_id)
+        if priority is None:
+            priority = self._resolve_position(collection_id, None, None)
         return self._repo.create(
             collection_id=collection_id,
-            data=data,
-            tags=tags,
-            note_id=note_id,
-            order_key=order_key,
+            content=content,
+            priority=priority,
         )
 
     def reprioritise_node(
         self,
         node_id: int,
-        new_position_node_id: int | None = None,
+        new_position_node_id: int,
     ) -> None:
-        if new_position_node_id is None:
-            raise ValueError("new_position_node_id is required")
         node = self._repo.get(node_id)
         if node is None:
             raise ValueError(f"Node {node_id} not found")
+        
         new_position_node = self._repo.get(new_position_node_id)
         if new_position_node is None:
             raise ValueError(f"Node {new_position_node_id} not found")
-        node_key: str = node.order_key or ""
-        target_key: str = new_position_node.order_key or ""
-        if not node_key or not target_key:
-            raise ValueError("Nodes must have order_key set before reprioritising")
+        
+        # ✅ Utiliser priority au lieu de order_key
+        node_priority = node.priority or ""
+        target_priority = new_position_node.priority or ""
+        
+        if not node_priority or not target_priority:
+            raise ValueError("Nodes must have priority set before reprioritising")
 
-        moving_forward = node_key < target_key
+        moving_forward = node_priority < target_priority
 
         if moving_forward:
-            # Node moves to a higher index: after removing it, the target node
-            # shifts one position earlier, so we insert AFTER the target.
-            successor_key = self._repo.get_successor_key(
+            successor_priority = self._repo.get_successor_priority(
                 node.collection_id,
-                target_key,
+                target_priority,
                 exclude_id=node_id,
             )
-            order_key = insert_between(target_key, successor_key)
+            priority = insert_between(target_priority, successor_priority)
         else:
-            # Node moves to a lower index: target position is unaffected by the
-            # removal, so we insert BEFORE the target.
-            predecessor_key = self._repo.get_predecessor_key(
+            predecessor_priority = self._repo.get_predecessor_priority(
                 node.collection_id,
-                target_key,
+                target_priority,
                 exclude_id=node_id,
             )
-            order_key = insert_between(predecessor_key, target_key)
+            priority = insert_between(predecessor_priority, target_priority)
 
-        self._repo.update_order_key(node_id, order_key)
+        self._repo.update_priority(node_id, priority)
 
     def reindex(self, collection_id: int) -> None:
-        """Redistribute all order_keys evenly to avoid key bloat."""
-        entries = self._repo.get_all_order_keys(collection_id)
+        """Redistribute all priorities evenly to avoid key bloat."""
+        entries = self._repo.get_all_priorities(collection_id)
         if not entries:
             return
         new_keys = spread_keys(len(entries))
         for (node_id, _), new_key in zip(entries, new_keys):
-            self._repo.update_order_key(node_id, new_key)
+            self._repo.update_priority(node_id, new_key)
 
     def delete_node(self, node_id: int) -> None:
+        """Delete a node"""
         self._repo.delete(node_id)
 
     def get_nodes(
         self,
         collection_id: int,
-        limit: int,
-        after_key: Optional[str] = None,
+        limit: int = 10,
     ) -> list[NodeListView]:
-        nodes = self._repo.get_nodes_after(collection_id, after_key, limit)
-        print([node.order_key for node in nodes])
+        """Get nodes from a collection with pagination"""
+        nodes = self._repo.get_by_collection(collection_id, limit)
         return [
             NodeListView(
-                id=c.id,
-                collection_id=c.collection_id,
-                type=c.type,
-                data=c.data,
+                id=n.id,
+                collection_id=n.collection_id,
+                type=n.type,
+                content=n.content,
                 position=i
             )
-            for i, c in enumerate(nodes)
+            for i, n in enumerate(nodes)
         ]
+
+    def get_node(self, node_id: int) -> Optional[Node]:
+        """Get a single node by ID"""
+        return self._repo.get(node_id)
+
+    def get_due_nodes(self, collection_id: int) -> list[Node]:
+        """Get nodes that are due for review"""
+        return self._repo.get_due(collection_id)
+
+    def update_fsrs_parameters(
+        self,
+        node_id: int,
+        stability: float,
+        difficulty: float,
+        step: int,
+    ) -> None:
+        """Update FSRS learning parameters"""
+        self._repo.update_fsrs_params(node_id, stability, difficulty, step)
+
+    def mark_reviewed(self, node_id: int) -> None:
+        """Mark a node as reviewed"""
+        self._repo.update_last_review(node_id)
