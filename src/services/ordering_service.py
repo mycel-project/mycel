@@ -10,7 +10,7 @@ def insert_between(a_key: Optional[str], b_key: Optional[str]) -> str:
 def spread_keys(n: int) -> list[str]:
     """
     Generate n evenly-spaced keys starting from scratch, only when needed
-    Might be heavy with a lot of cards
+    Might be heavy with a lot of nodes
     """
     if n == 0:
         return []

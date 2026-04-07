@@ -10,7 +10,7 @@ RELEARNING = 3
 
 
 @dataclass
-class Card:
+class Node:
     id: int
     collection_id: int
     type: int

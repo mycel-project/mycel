@@ -6,9 +6,9 @@ from typing import Optional
 import fsrs
 
 from src.db import Db
-from src.models.card import Card
+from src.models.node import Node
 from src.models.review import Review
-from src.repositories.card_repository import CardRepository
+from src.repositories.node_repository import NodeRepository
 from src.repositories.review_repository import ReviewRepository
 
 # Re-export rating constants for convenience
@@ -20,26 +20,26 @@ EASY  = fsrs.Rating.Easy
 _scheduler = fsrs.Scheduler()
 
 
-def _to_fsrs_card(card: Card) -> fsrs.Card:
-    state = fsrs.State(card.type) if card.type in (1, 2, 3) else fsrs.State.Learning
-    due_dt = datetime.fromtimestamp(card.due / 1000, tz=timezone.utc)
+def _to_fsrs_card(node: Node) -> fsrs.Card:
+    state = fsrs.State(node.type) if node.type in (1, 2, 3) else fsrs.State.Learning
+    due_dt = datetime.fromtimestamp(node.due / 1000, tz=timezone.utc)
     last_dt = (
-        datetime.fromtimestamp(card.last_review / 1000, tz=timezone.utc)
-        if card.last_review else None
+        datetime.fromtimestamp(node.last_review / 1000, tz=timezone.utc)
+        if node.last_review else None
     )
     return fsrs.Card(
-        card_id=card.id,
+        card_id=node.id,
         state=state,
-        step=card.fsrs_step,
-        stability=card.stability,
-        difficulty=card.difficulty,
+        step=node.fsrs_step,
+        stability=node.stability,
+        difficulty=node.difficulty,
         due=due_dt,
         last_review=last_dt,
     )
 
 
-def _apply_fsrs_result(card: Card, fsrs_card: fsrs.Card, rating: fsrs.Rating) -> Card:
-    c = dataclasses.replace(card)
+def _apply_fsrs_result(node: Node, fsrs_card: fsrs.Card, rating: fsrs.Rating) -> Node:
+    c = dataclasses.replace(node)
     c.type = fsrs_card.state.value
     c.queue = fsrs_card.state.value
     c.stability = fsrs_card.stability
@@ -59,33 +59,33 @@ def _apply_fsrs_result(card: Card, fsrs_card: fsrs.Card, rating: fsrs.Rating) ->
     return c
 
 
-def review_card(db: Db, card_id: int, rating: fsrs.Rating) -> Card:
-    cards = CardRepository(db)
+def review_node(db: Db, node_id: int, rating: fsrs.Rating) -> Node:
+    nodes = NodeRepository(db)
     reviews = ReviewRepository(db)
 
-    card = cards.get(card_id)
-    if not card:
-        raise ValueError(f"Card {card_id} not found")
+    node = nodes.get(node_id)
+    if not node:
+        raise ValueError(f"Node {node_id} not found")
 
-    state_before = fsrs.Card.to_dict(_to_fsrs_card(card))
+    state_before = fsrs.Card.to_dict(_to_fsrs_card(node))
 
-    fsrs_card = _to_fsrs_card(card)
+    fsrs_card = _to_fsrs_card(node)
     updated_fsrs, _ = _scheduler.review_card(
         fsrs_card,
         rating,
         review_datetime=datetime.now(tz=timezone.utc),
     )
 
-    updated = _apply_fsrs_result(card, updated_fsrs, rating)
+    updated = _apply_fsrs_result(node, updated_fsrs, rating)
     state_after = fsrs.Card.to_dict(_to_fsrs_card(updated))
 
-    cards.update(updated)
+    nodes.update(updated)
 
     reviews.create(Review(
-        card_id=card_id,
+        node_id=node_id,
         review_time=int(time.time() * 1000),
         rating=rating.value,
-        review_type=card.type,
+        review_type=node.type,
         interval=updated.interval,
         ease=updated.difficulty or 0.0,
         state_before=state_before,
@@ -95,5 +95,5 @@ def review_card(db: Db, card_id: int, rating: fsrs.Rating) -> Card:
     return updated
 
 
-def get_due_cards(db: Db, collection_id: int, now_ms: Optional[int] = None) -> list[Card]:
-    return CardRepository(db).get_due(collection_id, now_ms)
+def get_due_nodes(db: Db, collection_id: int, now_ms: Optional[int] = None) -> list[Node]:
+    return NodeRepository(db).get_due(collection_id, now_ms)

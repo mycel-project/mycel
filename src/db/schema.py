@@ -10,36 +10,31 @@ CREATE TABLE IF NOT EXISTS collections (
     fsrsconf    TEXT DEFAULT "{}"
 );
 
-CREATE TABLE IF NOT EXISTS cards (
+CREATE TABLE IF NOT EXISTS nodes (
     id              INTEGER PRIMARY KEY,
     collection_id   INTEGER NOT NULL,
-    note_id         INTEGER,
-    type            INTEGER NOT NULL DEFAULT 0,
-    queue           INTEGER NOT NULL DEFAULT 0,
-    due             INTEGER NOT NULL DEFAULT 0,
-    interval        INTEGER NOT NULL DEFAULT 0,
-    ease_factor     REAL    NOT NULL DEFAULT 2.5,
-    stability       REAL,
-    difficulty      REAL,
-    fsrs_step       INTEGER,
-    reps            INTEGER NOT NULL DEFAULT 0,
-    lapses          INTEGER NOT NULL DEFAULT 0,
-    last_review     INTEGER,
+    type            INTEGER NOT NULL,
+    content         TEXT,
     created_at      INTEGER NOT NULL,
     updated_at      INTEGER NOT NULL,
-    flags           INTEGER NOT NULL DEFAULT 0,
-    data            TEXT    NOT NULL DEFAULT '{}',
-    tags            TEXT    NOT NULL DEFAULT '[]',
-    order_key       TEXT,
+
+    due             INTEGER NOT NULL DEFAULT 0,
+    last_review     INTEGER,
+    stability       REAL,
+    difficulty      REAL,
+    state           INTEGER NOT NULL DEFAULT 0,
+    step            INTEGER,
+
+    priority        TEXT,
     FOREIGN KEY(collection_id) REFERENCES collections(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_cards_due          ON cards(due);
-CREATE INDEX IF NOT EXISTS idx_cards_collection   ON cards(collection_id);
+CREATE INDEX IF NOT EXISTS idx_nodes_due          ON nodes(due);
+CREATE INDEX IF NOT EXISTS idx_nodes_collection   ON nodes(collection_id);
 
 CREATE TABLE IF NOT EXISTS reviews (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
-    card_id         INTEGER NOT NULL,
+    node_id         INTEGER NOT NULL,
     review_time     INTEGER NOT NULL,
     rating          INTEGER NOT NULL,
     review_type     INTEGER NOT NULL DEFAULT 0,
@@ -47,10 +42,10 @@ CREATE TABLE IF NOT EXISTS reviews (
     ease            REAL    NOT NULL DEFAULT 2.5,
     state_before    TEXT    NOT NULL DEFAULT '{}',
     state_after     TEXT    NOT NULL DEFAULT '{}',
-    FOREIGN KEY(card_id) REFERENCES cards(id) ON DELETE CASCADE
+    FOREIGN KEY(node_id) REFERENCES nodes(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_reviews_card ON reviews(card_id);
+CREATE INDEX IF NOT EXISTS idx_reviews_node ON reviews(node_id);
 """
 
 

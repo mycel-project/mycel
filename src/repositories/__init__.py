@@ -1,5 +1,5 @@
 from .collection_repository import CollectionRepository
-from .card_repository import CardRepository
+from .node_repository import NodeRepository
 from .review_repository import ReviewRepository
 
-__all__ = ["CollectionRepository", "CardRepository", "ReviewRepository"]
+__all__ = ["CollectionRepository", "NodeRepository", "ReviewRepository"]

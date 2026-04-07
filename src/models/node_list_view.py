@@ -3,7 +3,7 @@ from typing import Optional
 
 
 @dataclass
-class CardListView:
+class NodeListView:
     id: int
     collection_id: int
     type: int

@@ -3,18 +3,18 @@ import time
 from typing import Optional
 
 from src.db import Db
-from src.models.card import Card, NEW
+from src.models.node import Node, NEW
 
 
-class CardRepository:
+class NodeRepository:
     """
     Data access
     """
     def __init__(self, db: Db):
         self.db = db
 
-    def _row_to_model(self, row) -> Card:
-        return Card(
+    def _row_to_model(self, row) -> Node:
+        return Node(
             id=row["id"],
             collection_id=row["collection_id"],
             note_id=row["note_id"],
@@ -44,9 +44,9 @@ class CardRepository:
         tags: list | None = None,
         note_id: int | None = None,
         order_key: str | None = None,
-    ) -> Card:
+    ) -> Node:
         now = int(time.time() * 1000)
-        card = Card(
+        node = Node(
             id=now,
             collection_id=collection_id,
             note_id=note_id,
@@ -66,64 +66,64 @@ class CardRepository:
             order_key=order_key,
         )
         self.db.execute(
-            """INSERT INTO cards
+            """INSERT INTO nodes
                (id, collection_id, note_id, type, queue, due, interval, ease_factor,
                 stability, difficulty, fsrs_step,
                 reps, lapses, last_review, created_at, updated_at, flags, data, tags, order_key)
                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (
-                card.id, card.collection_id, card.note_id, card.type, card.queue,
-                card.due, card.interval, card.ease_factor,
-                card.stability, card.difficulty, card.fsrs_step,
-                card.reps, card.lapses, card.last_review,
-                card.created_at, card.updated_at, card.flags,
-                json.dumps(card.data), json.dumps(card.tags), card.order_key,
+                node.id, node.collection_id, node.note_id, node.type, node.queue,
+                node.due, node.interval, node.ease_factor,
+                node.stability, node.difficulty, node.fsrs_step,
+                node.reps, node.lapses, node.last_review,
+                node.created_at, node.updated_at, node.flags,
+                json.dumps(node.data), json.dumps(node.tags), node.order_key,
             ),
         )
-        return card
+        return node
 
-    def get(self, id: int) -> Optional[Card]:
-        row = self.db.fetch_one("SELECT * FROM cards WHERE id = ?", (id,))
+    def get(self, id: int) -> Optional[Node]:
+        row = self.db.fetch_one("SELECT * FROM nodes WHERE id = ?", (id,))
         return self._row_to_model(row) if row else None
 
-    def update(self, card: Card) -> None:
+    def update(self, node: Node) -> None:
         now = int(time.time() * 1000)
-        card.updated_at = now
+        node.updated_at = now
         self.db.execute(
-            """UPDATE cards SET
+            """UPDATE nodes SET
                type=?, queue=?, due=?, interval=?, ease_factor=?,
                stability=?, difficulty=?, fsrs_step=?,
                reps=?, lapses=?, last_review=?, updated_at=?, flags=?, data=?, tags=?
                WHERE id=?""",
             (
-                card.type, card.queue, card.due, card.interval, card.ease_factor,
-                card.stability, card.difficulty, card.fsrs_step,
-                card.reps, card.lapses, card.last_review, card.updated_at, card.flags,
-                json.dumps(card.data), json.dumps(card.tags), card.id,
+                node.type, node.queue, node.due, node.interval, node.ease_factor,
+                node.stability, node.difficulty, node.fsrs_step,
+                node.reps, node.lapses, node.last_review, node.updated_at, node.flags,
+                json.dumps(node.data), json.dumps(node.tags), node.id,
             ),
         )
 
     def delete(self, id: int) -> None:
-        self.db.execute("DELETE FROM cards WHERE id = ?", (id,))
+        self.db.execute("DELETE FROM nodes WHERE id = ?", (id,))
 
-    def get_due(self, collection_id: int, now_ms: int | None = None) -> list[Card]:
+    def get_due(self, collection_id: int, now_ms: int | None = None) -> list[Node]:
         now_ms = now_ms or int(time.time() * 1000)
         rows = self.db.fetch_all(
-            "SELECT * FROM cards WHERE collection_id = ? AND due <= ? ORDER BY due",
+            "SELECT * FROM nodes WHERE collection_id = ? AND due <= ? ORDER BY due",
             (collection_id, now_ms),
         )
         return [self._row_to_model(r) for r in rows]
 
-    def get_by_collection(self, collection_id: int) -> list[Card]:
+    def get_by_collection(self, collection_id: int) -> list[Node]:
         rows = self.db.fetch_all(
-            "SELECT * FROM cards WHERE collection_id = ? ORDER BY order_key",
+            "SELECT * FROM nodes WHERE collection_id = ? ORDER BY order_key",
             (collection_id,),
         )
         return [self._row_to_model(r) for r in rows]
 
     def get_tail_key(self, collection_id: int) -> Optional[str]:
         row = self.db.fetch_one(
-            "SELECT MAX(order_key) FROM cards WHERE collection_id = ?",
+            "SELECT MAX(order_key) FROM nodes WHERE collection_id = ?",
             (collection_id,),
         )
         return row[0] if row and row[0] is not None else None
@@ -138,36 +138,36 @@ class CardRepository:
         b_key = None
         if before_id is not None:
             row = self.db.fetch_one(
-                "SELECT order_key FROM cards WHERE id = ? AND collection_id = ?",
+                "SELECT order_key FROM nodes WHERE id = ? AND collection_id = ?",
                 (before_id, collection_id),
             )
             if row is None:
-                raise ValueError(f"Card {before_id} not found in collection {collection_id}")
+                raise ValueError(f"Node {before_id} not found in collection {collection_id}")
             a_key = row["order_key"]
         if after_id is not None:
             row = self.db.fetch_one(
-                "SELECT order_key FROM cards WHERE id = ? AND collection_id = ?",
+                "SELECT order_key FROM nodes WHERE id = ? AND collection_id = ?",
                 (after_id, collection_id),
             )
             if row is None:
-                raise ValueError(f"Card {after_id} not found in collection {collection_id}")
+                raise ValueError(f"Node {after_id} not found in collection {collection_id}")
             b_key = row["order_key"]
         return a_key, b_key
 
-    def get_cards_after(
+    def get_nodes_after(
         self,
         collection_id: int,
         order_key: Optional[str],
         limit: int,
-    ) -> list[Card]:
+    ) -> list[Node]:
         if order_key is None:
             rows = self.db.fetch_all(
-                "SELECT * FROM cards WHERE collection_id = ? ORDER BY order_key LIMIT ?",
+                "SELECT * FROM nodes WHERE collection_id = ? ORDER BY order_key LIMIT ?",
                 (collection_id, limit),
             )
         else:
             rows = self.db.fetch_all(
-                "SELECT * FROM cards WHERE collection_id = ? AND order_key > ? ORDER BY order_key LIMIT ?",
+                "SELECT * FROM nodes WHERE collection_id = ? AND order_key > ? ORDER BY order_key LIMIT ?",
                 (collection_id, order_key, limit),
             )
         return [self._row_to_model(r) for r in rows]
@@ -179,7 +179,7 @@ class CardRepository:
         exclude_id: int,
     ) -> Optional[str]:
         row = self.db.fetch_one(
-            "SELECT order_key FROM cards "
+            "SELECT order_key FROM nodes "
             "WHERE collection_id = ? AND order_key < ? AND id != ? "
             "ORDER BY order_key DESC LIMIT 1",
             (collection_id, order_key, exclude_id),
@@ -193,7 +193,7 @@ class CardRepository:
         exclude_id: int,
     ) -> Optional[str]:
         row = self.db.fetch_one(
-            "SELECT order_key FROM cards "
+            "SELECT order_key FROM nodes "
             "WHERE collection_id = ? AND order_key > ? AND id != ? "
             "ORDER BY order_key ASC LIMIT 1",
             (collection_id, order_key, exclude_id),
@@ -203,14 +203,14 @@ class CardRepository:
     def get_all_order_keys(self, collection_id: int) -> list[tuple[int, str]]:
         """Returns (id, order_key) sorted by order_key."""
         rows = self.db.fetch_all(
-            "SELECT id, order_key FROM cards WHERE collection_id = ? ORDER BY order_key",
+            "SELECT id, order_key FROM nodes WHERE collection_id = ? ORDER BY order_key",
             (collection_id,),
         )
         return [(row["id"], row["order_key"]) for row in rows]
 
-    def update_order_key(self, card_id: int, order_key: str) -> None:
+    def update_order_key(self, node_id: int, order_key: str) -> None:
         now = int(time.time() * 1000)
         self.db.execute(
-            "UPDATE cards SET order_key = ?, updated_at = ? WHERE id = ?",
-            (order_key, now, card_id),
+            "UPDATE nodes SET order_key = ?, updated_at = ? WHERE id = ?",
+            (order_key, now, node_id),
         )

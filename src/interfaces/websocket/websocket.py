@@ -100,7 +100,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
         print("Client disconnected")
     finally:
-        connections.discard(websocket)
+        connections.disnode(websocket)
 
 class Ws:
     def __init__(self, bus):

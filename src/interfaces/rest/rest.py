@@ -21,7 +21,7 @@ class Rest(BaseInterface):
     async def init(self, config, bus, services):
         self.config = config
         self.bus = bus
-        self.card_service = services["card_service"]
+        self.node_service = services["node_service"]
         self.collection_service = services["collection_service"]
         self.uvicorn = UvicornServer()
         await self.start()
@@ -38,25 +38,25 @@ class Rest(BaseInterface):
         async def root():
             return {"message": "Hello World"}
 
-        @self.app.get("/collections/{col_id}/cards")
-        async def get_cards(col_id: int):
-            cards = self.card_service.get_cards(col_id, 10)
-            return {"cards": cards}
+        @self.app.get("/collections/{col_id}/nodes")
+        async def get_nodes(col_id: int):
+            nodes = self.node_service.get_nodes(col_id, 10)
+            return {"nodes": nodes}
 
-        class CardCreate(BaseModel):
+        class NodeCreate(BaseModel):
             front: str
             back: str
-        @self.app.post("/collections/{col_id}/cards")
-        async def create_card(col_id: int, data: CardCreate):
-            self.card_service.create_card(col_id, data.model_dump())
+        @self.app.post("/collections/{col_id}/nodes")
+        async def create_node(col_id: int, data: NodeCreate):
+            self.node_service.create_node(col_id, data.model_dump())
 
-        class ReprioritiseCard(BaseModel):
-            new_position_card_id: int
-        @self.app.post("/collections/{col_id}/cards/{card_id}/reprioritise")
-        async def reprioritise_card(col_id: int, card_id: int, data: ReprioritiseCard):
-            self.card_service.reprioritise_card(
-                card_id,
-                data.new_position_card_id
+        class ReprioritiseNode(BaseModel):
+            new_position_node_id: int
+        @self.app.post("/collections/{col_id}/nodes/{node_id}/reprioritise")
+        async def reprioritise_node(col_id: int, node_id: int, data: ReprioritiseNode):
+            self.node_service.reprioritise_node(
+                node_id,
+                data.new_position_node_id
             )
             return {"status": "ok"}
 
@@ -86,7 +86,7 @@ class Rest(BaseInterface):
             
         @self.app.post("/collections/{col_id}/reindex")
         async def reindex(col_id: int):
-            self.card_service.reindex(col_id)
+            self.node_service.reindex(col_id)
             return {"status": "ok"}
 
         class CollectionConfigsUpdate(BaseModel):

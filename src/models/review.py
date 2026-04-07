@@ -4,7 +4,7 @@ from typing import Optional
 
 @dataclass
 class Review:
-    card_id: int
+    node_id: int
     review_time: int
     rating: int
     review_type: int
