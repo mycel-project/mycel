@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional
+from .node_content import NodeContent
 
 
 # type values
@@ -18,7 +19,7 @@ class Node:
     updated_at: int
     due: int
     state: int
-    content: Optional[dict] = None
+    content: NodeContent
     last_review: Optional[int] = None
     stability: Optional[float] = None
     difficulty: Optional[float] = None

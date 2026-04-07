@@ -4,7 +4,7 @@ from typing import Optional
 
 from src.db import Db
 from src.models.node import Node, NEW
-
+from src.models.node_content import NodeContent
 
 class NodeRepository:
     def __init__(self, db: Db):
@@ -19,7 +19,7 @@ class NodeRepository:
             updated_at=row["updated_at"],
             due=row["due"],
             state=row["state"],
-            content = json.loads(row["content"]) if isinstance(row["content"], str) else row["content"],
+            content=NodeContent.from_db(row["content"]),
             last_review=row["last_review"], 
             stability=row["stability"],
             difficulty=row["difficulty"],
@@ -30,7 +30,7 @@ class NodeRepository:
     def create(
         self,
         collection_id: int,
-        content: dict,
+        content: NodeContent,
         priority: Optional[str] = None,
     ) -> Node:
         now = int(time.time() * 1000)
@@ -42,7 +42,7 @@ class NodeRepository:
             updated_at=now,
             due=now,
             state=0,
-            content=content,
+            content=content, 
             priority=priority,
         )
         self.db.execute(
@@ -57,7 +57,7 @@ class NodeRepository:
                 node.updated_at,
                 node.due,
                 node.state,
-                json.dumps(node.content),  # ✅ Stocker en JSON
+                node.content.to_db(),  
                 node.priority,
             ),
         )
@@ -78,7 +78,7 @@ class NodeRepository:
                 node.type,
                 node.due,
                 node.state,
-                json.dumps(node.content) if node.content else "{}", 
+                node.content.to_db(), 
                 node.last_review,
                 node.stability,
                 node.difficulty,

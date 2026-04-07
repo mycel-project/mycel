@@ -1,3 +1,5 @@
+from typing import Optional, Union
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -44,7 +46,7 @@ class Rest(BaseInterface):
             return {"nodes": nodes}
 
         class NodeCreate(BaseModel):
-            content: str
+            content: Union[str, dict]
         @self.app.post("/collections/{col_id}/nodes")
         async def create_node(col_id: int, data: NodeCreate):
             self.node_service.create_node(col_id, data.content)
@@ -58,6 +60,15 @@ class Rest(BaseInterface):
                 data.new_position_node_id
             )
             return {"status": "ok"}
+
+        class NodeUpdate(BaseModel):
+            content: Optional[Union[str, dict]] = None
+            type: Optional[int] = None
+        @self.app.patch("/collections/{col_id}/nodes/{node_id}")
+        async def update_node(col_id: int, node_id: int, data: NodeUpdate):
+            self.node_service.update(node_id, data.dict(exclude_unset=True))
+            return {"status": "ok"}
+
 
         @self.app.get("/collections")
         async def get_collections():

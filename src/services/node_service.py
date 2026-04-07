@@ -1,10 +1,12 @@
-from typing import Optional
+from typing import Optional, Union
 
 from src.db import Db
 from src.models.node import Node
 from src.repositories.node_repository import NodeRepository
 from src.services.ordering_service import insert_between, spread_keys
 from src.models.node_list_view import NodeListView
+from src.models.node_update import NodeUpdate
+from src.models.node_content import NodeContent
 
 
 class NodeService:
@@ -30,11 +32,12 @@ class NodeService:
     def create_node(
         self,
         collection_id: int,
-        content: dict,  # ✅ Accepte un dict
+        content: Union[str, dict], 
         priority: Optional[str] = None,
     ) -> Node:
         if priority is None:
             priority = self._resolve_position(collection_id, None, None)
+        content = NodeContent.from_input(content)
         return self._repo.create(
             collection_id=collection_id,
             content=content,
@@ -54,7 +57,6 @@ class NodeService:
         if new_position_node is None:
             raise ValueError(f"Node {new_position_node_id} not found")
         
-        # ✅ Utiliser priority au lieu de order_key
         node_priority = node.priority or ""
         target_priority = new_position_node.priority or ""
         
@@ -132,3 +134,20 @@ class NodeService:
     def mark_reviewed(self, node_id: int) -> None:
         """Mark a node as reviewed"""
         self._repo.update_last_review(node_id)
+
+    def update(self, node_id: int, updates: dict) -> None:
+        node = self._repo.get(node_id)
+        if node is None:
+            raise ValueError(f"Node {node_id} not found")
+
+        validated = NodeUpdate(**updates)
+
+        update_data = validated.dict(exclude_unset=True)
+
+        if "content" in update_data:
+            update_data["content"] = NodeContent.from_input(update_data["content"])
+
+        for key, value in update_data.items():
+            setattr(node, key, value)
+
+        self._repo.update(node)
