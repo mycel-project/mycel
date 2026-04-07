@@ -5,7 +5,9 @@ CREATE TABLE IF NOT EXISTS collections (
     id          INTEGER PRIMARY KEY,
     name        TEXT NOT NULL,
     created_at  INTEGER NOT NULL,
-    updated_at  INTEGER NOT NULL
+    updated_at  INTEGER NOT NULL,
+    conf        TEXT DEFAULT "{}",
+    fsrsconf    TEXT DEFAULT "{}"
 );
 
 CREATE TABLE IF NOT EXISTS cards (

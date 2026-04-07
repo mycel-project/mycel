@@ -22,6 +22,7 @@ class Rest(BaseInterface):
         self.config = config
         self.bus = bus
         self.card_service = services["card_service"]
+        self.collection_service = services["collection_service"]
         self.uvicorn = UvicornServer()
         await self.start()
         
@@ -37,31 +38,62 @@ class Rest(BaseInterface):
         async def root():
             return {"message": "Hello World"}
 
-        @self.app.get("/cards")
-        async def get_cards(collection_id: int):
-            cards = self.card_service.get_cards(collection_id, 10)
+        @self.app.get("/collections/{col_id}/cards")
+        async def get_cards(col_id: int):
+            cards = self.card_service.get_cards(col_id, 10)
             return {"cards": cards}
 
         class CardCreate(BaseModel):
             front: str
             back: str
-        @self.app.post("/cards/create")
-        async def create_card(data: CardCreate):
-            collection_id = 1775496678952
-            self.card_service.create_card(collection_id, data.model_dump())
+        @self.app.post("/collections/{col_id}/cards")
+        async def create_card(col_id: int, data: CardCreate):
+            self.card_service.create_card(col_id, data.model_dump())
 
         class ReprioritiseCard(BaseModel):
             new_position_card_id: int
-        @self.app.post("/cards/{card_id}/reprioritise")
-        async def reprioritise_card(card_id: int, data: ReprioritiseCard):
+        @self.app.post("/collections/{col_id}/cards/{card_id}/reprioritise")
+        async def reprioritise_card(col_id: int, card_id: int, data: ReprioritiseCard):
             self.card_service.reprioritise_card(
                 card_id,
                 data.new_position_card_id
             )
             return {"status": "ok"}
 
-        @self.app.post("/collections/{collection_id}/reindex")
-        async def reindex(collection_id):
-            collection_id = 1775496678952
-            self.card_service.reindex(collection_id)
+        @self.app.get("/collections")
+        async def get_collections():
+            collections = self.collection_service.get_collections()
+            return {"collections": collections}
+
+        @self.app.get("/collections/{colId}")
+        async def get_collection_details(colId: int):
+            data = self.collection_service.get_collection_detailed(colId)
+            return {"details": data}
+
+        class CollectionCreate(BaseModel):
+            name: str
+        @self.app.post("/collections")
+        async def create_collection(data: CollectionCreate):
+            self.collection_service.create_collection(data.name)
             return {"status": "ok"}
+
+        class CollectionRename(BaseModel):
+            newName: str
+        @self.app.post("/collections/{colId}/rename")
+        async def rename_collection(colId: int, data: CollectionRename):
+            self.collection_service.rename_collection(colId, data.newName)
+            return {"status": "ok"}
+            
+        @self.app.post("/collections/{col_id}/reindex")
+        async def reindex(col_id: int):
+            self.card_service.reindex(col_id)
+            return {"status": "ok"}
+
+        class CollectionConfigsUpdate(BaseModel):
+            configModel: str
+            updates: dict
+        @self.app.patch("/collections/{col_id}")
+        async def update_collections_configs(col_id: int,  data: CollectionConfigsUpdate):
+            self.collection_service.update_configs(col_id, data.configModel, data.updates)
+            return {"status": "ok"}
+

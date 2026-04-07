@@ -4,7 +4,7 @@ from src.db import Db
 from pybase import Application_bones, Menu
 from src.interfaces.interface import Interface
 from src.event_bus import EventBus
-from src.services import CardService, review_card
+from src.services import CardService, review_card, CollectionService
 
 class Application(Application_bones):
     def __init__(self):
@@ -36,9 +36,11 @@ class Application(Application_bones):
         self.init_module("db")
         
         card_service = CardService(self.db)
+        collection_service = CollectionService(self.db)
 
         services = {
-            "card_service": card_service
+            "card_service": card_service,
+            "collection_service": collection_service
         }
         self.init_module("interface", config = self.config, bus = self.bus, services = services)
 
@@ -51,20 +53,20 @@ class Application(Application_bones):
         await self.interface.init_interface()
 
 if __name__ == "__main__":
-    from src.repositories.card_repository import CardRepository
-    from src.repositories.collection_repository import CollectionRepository
-    db = Db()
-
-    # Collections
-    col_repo = CollectionRepository(db)
-    col = col_repo.create("Ma collection")
-    col = col_repo.get(col.id)
-
-    # Cartes
-    card_repo = CardRepository(db)
-    card = card_repo.create(col.id, data={"front": "...", "back": "..."}, tags=["python"])
-    card = card_repo.get(card.id)
-    
     app = Application()
     asyncio.run(app.run())
+    
+    # from src.repositories.card_repository import CardRepository
+    # from src.repositories.collection_repository import CollectionRepository
+    # db = Db()
+
+    # # Collections
+    # col_repo = CollectionRepository(db)
+    # col = col_repo.create("Ma collection")
+    # col = col_repo.get(col.id)
+
+    # # Cartes
+    # card_repo = CardRepository(db)
+    # card = card_repo.create(col.id, data={"front": "...", "back": "..."}, tags=["python"])
+    # card = card_repo.get(card.id)
     
