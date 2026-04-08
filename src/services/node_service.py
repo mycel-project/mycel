@@ -1,11 +1,13 @@
 from typing import Optional, Union
+import json
 
 from src.db import Db
 from src.models.node import Node
 from src.repositories.node_repository import NodeRepository
 from src.services.ordering_service import insert_between, spread_keys
-from src.models.node_list_view import NodeListView
-from src.models.node_update import NodeUpdate
+from src.schemas.node_view import NodeView
+from src.schemas.node_metrics import NodeMetrics
+from src.schemas.node_update import NodeUpdate
 from src.models.node_content import NodeContent
 
 
@@ -99,37 +101,44 @@ class NodeService:
         self,
         collection_id: int,
         limit: int = 10,
-    ) -> list[NodeListView]:
-        """Get nodes from a collection with pagination"""
+    ) -> list[NodeView]:
         nodes = self._repo.get_by_collection(collection_id, limit)
         return [
-            NodeListView(
+            NodeView(
                 id=n.id,
                 collection_id=n.collection_id,
                 type=n.type,
-                content=n.content,
-                position=i
+                content=n.content.model_dump(),
+                position=i,
+                due=n.due
             )
             for i, n in enumerate(nodes)
         ]
 
     def get_node(self, node_id: int) -> Optional[Node]:
-        """Get a single node by ID"""
         return self._repo.get(node_id)
 
+    def get_node_metrics(self, node_id: int) -> Optional[NodeMetrics]:
+        n = self._repo.get(node_id)
+        if not n:
+            return
+        return NodeMetrics(
+            id=n.id,
+            last_review=n.last_review,
+            stability=n.stability,
+            difficulty=n.difficulty,
+            state=n.state,
+            step=n.step
+        )
+
+    def get_node_extanded(self, node_id: int) -> dict:
+        node_view = self.get_node(node_id)
+        node_metrics = self.get_node_metrics(node_id)
+        return {"view": node_view, "metrics": node_metrics}
+            
     def get_due_nodes(self, collection_id: int) -> list[Node]:
         """Get nodes that are due for review"""
         return self._repo.get_due(collection_id)
-
-    def update_fsrs_parameters(
-        self,
-        node_id: int,
-        stability: float,
-        difficulty: float,
-        step: int,
-    ) -> None:
-        """Update FSRS learning parameters"""
-        self._repo.update_fsrs_params(node_id, stability, difficulty, step)
 
     def mark_reviewed(self, node_id: int) -> None:
         """Mark a node as reviewed"""
@@ -140,9 +149,16 @@ class NodeService:
         if node is None:
             raise ValueError(f"Node {node_id} not found")
 
-        validated = NodeUpdate(**updates)
+        metrics = updates.pop("metrics", None)
 
+        validated = NodeUpdate(**updates)
         update_data = validated.dict(exclude_unset=True)
+
+        if metrics:
+            if isinstance(metrics, str):
+                metrics = json.loads(metrics)
+            validated_metrics = NodeUpdate(**metrics)
+            update_data.update(validated_metrics.dict(exclude_unset=True))
 
         if "content" in update_data:
             update_data["content"] = NodeContent.from_input(update_data["content"])

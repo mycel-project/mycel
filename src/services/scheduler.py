@@ -19,7 +19,6 @@ EASY  = fsrs.Rating.Easy
 
 _scheduler = fsrs.Scheduler()
 
-
 def _to_fsrs_card(node: Node) -> fsrs.Card:
     state = fsrs.State(node.type) if node.type in (1, 2, 3) else fsrs.State.Learning
     due_dt = datetime.fromtimestamp(node.due / 1000, tz=timezone.utc)

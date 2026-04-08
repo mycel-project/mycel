@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS nodes (
     content         TEXT DEFAULT "{}",
     created_at      INTEGER NOT NULL,
     updated_at      INTEGER NOT NULL,
+    due             INTEGER NOT NULL DEFAULT 0,
 
     last_review     INTEGER,
     stability       REAL,
@@ -24,7 +25,6 @@ CREATE TABLE IF NOT EXISTS nodes (
     state           INTEGER NOT NULL DEFAULT 0,
     step            INTEGER,
 
-    due             INTEGER NOT NULL DEFAULT 0,
     priority        TEXT,
     FOREIGN KEY(collection_id) REFERENCES collections(id) ON DELETE CASCADE
 );

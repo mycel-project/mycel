@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 from src.interfaces.base_interface import BaseInterface
 from src.interfaces.uvicorn import UvicornServer
+from src.schemas import node_metrics
 
 class Rest(BaseInterface):
     def __init__(self):
@@ -45,6 +46,10 @@ class Rest(BaseInterface):
             nodes = self.node_service.get_nodes(col_id, 10)
             return {"nodes": nodes}
 
+        @self.app.get("/collections/{col_id}/nodes/{node_id}")
+        async def get_node_metrics(col_id: int, node_id: int):
+            return self.node_service.get_node_metrics(node_id)
+
         class NodeCreate(BaseModel):
             content: Union[str, dict]
         @self.app.post("/collections/{col_id}/nodes")
@@ -63,12 +68,12 @@ class Rest(BaseInterface):
 
         class NodeUpdate(BaseModel):
             content: Optional[Union[str, dict]] = None
+            metrics: Optional[Union[str, dict]] = None
             type: Optional[int] = None
         @self.app.patch("/collections/{col_id}/nodes/{node_id}")
         async def update_node(col_id: int, node_id: int, data: NodeUpdate):
             self.node_service.update(node_id, data.dict(exclude_unset=True))
             return {"status": "ok"}
-
 
         @self.app.get("/collections")
         async def get_collections():

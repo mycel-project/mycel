@@ -4,7 +4,7 @@ from dataclasses import  asdict
 from src.db import Db
 from src.models.collection import Collection
 from src.repositories.collection_repository import CollectionRepository
-from src.models.collection_list_view import CollectionListView
+from src.schemas.collection_list_view import CollectionListView
 from src.models.collection_conf import CollectionConf
 from src.models.collection_conf_update import CollectionConfUpdate
 from src.models.fsrs_conf import FsrsConf
