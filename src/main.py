@@ -4,7 +4,7 @@ from src.db import Db
 from pybase import Application_bones, Menu
 from src.interfaces.interface import Interface
 from src.event_bus import EventBus
-from src.services import NodeService, review_node, CollectionService
+from src.services import NodeService, FsrsService, CollectionService, ReviewService
 
 class Application(Application_bones):
     def __init__(self):
@@ -37,10 +37,13 @@ class Application(Application_bones):
         
         node_service = NodeService(self.db)
         collection_service = CollectionService(self.db)
+        fsrs_service = FsrsService(collection_service, node_service)
+        review_service = ReviewService(self.db, fsrs_service, node_service)
 
         services = {
             "node_service": node_service,
-            "collection_service": collection_service
+            "collection_service": collection_service,
+            "review_service": review_service
         }
         self.init_module("interface", config = self.config, bus = self.bus, services = services)
 

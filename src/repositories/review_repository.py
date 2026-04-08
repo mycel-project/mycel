@@ -1,7 +1,9 @@
-import json
+import time
+from typing import Optional
 
 from src.db import Db
 from src.models.review import Review
+
 
 
 class ReviewRepository:
@@ -12,32 +14,50 @@ class ReviewRepository:
         return Review(
             id=row["id"],
             node_id=row["node_id"],
-            review_time=row["review_time"],
+            time=row["time"],
+            duration=row["duration"],
             rating=row["rating"],
-            review_type=row["review_type"],
-            interval=row["interval"],
-            ease=row["ease"],
-            state_before=json.loads(row["state_before"]),
-            state_after=json.loads(row["state_after"]),
         )
 
-    def create(self, review: Review) -> Review:
-        row_id = self.db.execute_returning(
+    def create(
+        self,
+        node_id: int,
+        rating: int,
+        duration: int | None = None,
+        now: int | None = None
+    ) -> Review:
+        if not now:
+            now = int(time.time() * 1000)
+        review = Review(
+            id=now,
+            node_id=node_id,
+            time=now,
+            duration=duration,
+            rating=rating,
+        )
+        self.db.execute(
             """INSERT INTO reviews
-               (node_id, review_time, rating, review_type, interval, ease, state_before, state_after)
-               VALUES (?,?,?,?,?,?,?,?)""",
+               (id, node_id, time, duration, rating)
+               VALUES (?,?,?,?,?)""",
             (
-                review.node_id, review.review_time, review.rating, review.review_type,
-                review.interval, review.ease,
-                json.dumps(review.state_before), json.dumps(review.state_after),
+                review.id,
+                review.node_id,
+                review.time,
+                review.duration,
+                review.rating,
             ),
         )
-        review.id = row_id
         return review
 
     def get_by_node(self, node_id: int) -> list[Review]:
         rows = self.db.fetch_all(
-            "SELECT * FROM reviews WHERE node_id = ? ORDER BY review_time",
+            "SELECT * FROM reviews WHERE node_id = ? ORDER BY time",
             (node_id,),
         )
         return [self._row_to_model(r) for r in rows]
+
+    def delete(self, review_id: int) -> None:
+        self.db.execute(
+            "DELETE FROM reviews WHERE id = ?",
+            (review_id,),
+        )

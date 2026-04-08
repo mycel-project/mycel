@@ -54,3 +54,5 @@ Thumbs.db
 config.local.*
 secrets.*
 .claude/
+
+.toml

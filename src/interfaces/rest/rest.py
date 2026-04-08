@@ -26,6 +26,7 @@ class Rest(BaseInterface):
         self.bus = bus
         self.node_service = services["node_service"]
         self.collection_service = services["collection_service"]
+        self.review_service = services["review_service"]
         self.uvicorn = UvicornServer()
         await self.start()
         
@@ -112,3 +113,10 @@ class Rest(BaseInterface):
             self.collection_service.update_configs(col_id, data.configModel, data.updates)
             return {"status": "ok"}
 
+        class NodeReview(BaseModel):
+            rating: int
+            duration: int
+        @self.app.post("/collections/{col_id}/nodes/{node_id}/reviews")
+        async def review_node(col_id: int, node_id: int, data: NodeReview):
+            self.review_service.review(node_id, data.rating, data.duration)
+            return {"status": "ok"}

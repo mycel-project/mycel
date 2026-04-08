@@ -65,6 +65,9 @@ class CollectionService:
             fsrsconf=collection.fsrsconf
         )
 
+    def get_fsrs_conf(self):
+        return None
+
     def get_collections(self) -> list[CollectionListView]:
         collections = self._repo.list()
         return [
@@ -87,7 +90,6 @@ class CollectionService:
 
     def get_collection_detailed(self, col_id: int) -> Optional[Collection]:
         collection = self._repo.get(col_id)
-        print(collection)
         return collection
 
     def update_configs(self, col_id: int, config_model: str, updates: dict) -> None:

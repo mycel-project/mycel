@@ -17,7 +17,6 @@ class NodeService:
     """
     def __init__(self, db: Db):
         self._repo = NodeRepository(db)
-
         
     def _resolve_position(
         self,
@@ -135,14 +134,6 @@ class NodeService:
         node_view = self.get_node(node_id)
         node_metrics = self.get_node_metrics(node_id)
         return {"view": node_view, "metrics": node_metrics}
-            
-    def get_due_nodes(self, collection_id: int) -> list[Node]:
-        """Get nodes that are due for review"""
-        return self._repo.get_due(collection_id)
-
-    def mark_reviewed(self, node_id: int) -> None:
-        """Mark a node as reviewed"""
-        self._repo.update_last_review(node_id)
 
     def update(self, node_id: int, updates: dict) -> None:
         node = self._repo.get(node_id)
@@ -167,3 +158,6 @@ class NodeService:
             setattr(node, key, value)
 
         self._repo.update(node)
+
+    def get_due_nodes(self, collection_id: int) -> list[Node]:
+        return self._repo.get_due(collection_id)

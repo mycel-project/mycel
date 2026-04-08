@@ -37,11 +37,9 @@ class NodeRepository:
         node = Node(
             id=now,
             collection_id=collection_id,
-            type=NEW,
             created_at=now,
             updated_at=now,
             due=now,
-            state=0,
             content=content, 
             priority=priority,
         )
@@ -62,7 +60,7 @@ class NodeRepository:
             ),
         )
         return node
-
+    
     def get(self, id: int) -> Optional[Node]:
         row = self.db.fetch_one("SELECT * FROM nodes WHERE id = ?", (id,))
         return self._row_to_model(row) if row else None
@@ -91,14 +89,6 @@ class NodeRepository:
 
     def delete(self, id: int) -> None:
         self.db.execute("DELETE FROM nodes WHERE id = ?", (id,))
-
-    def get_due(self, collection_id: int, now_ms: Optional[int] = None) -> list[Node]:
-        now_ms = now_ms or int(time.time() * 1000)
-        rows = self.db.fetch_all(
-            "SELECT * FROM nodes WHERE collection_id = ? AND due <= ? ORDER BY due",
-            (collection_id, now_ms),
-        )
-        return [self._row_to_model(r) for r in rows]
 
     def get_by_collection(self, collection_id: int, limit: Optional[int] = None) -> list[Node]:
         if limit:
@@ -160,7 +150,6 @@ class NodeRepository:
             "UPDATE nodes SET last_review = ?, updated_at = ? WHERE id = ?",
             (now, now, node_id),
         )
-
 
     def get_predecessor_priority(
         self,
@@ -250,3 +239,13 @@ class NodeRepository:
                 (collection_id, priority, limit),
             )
         return [self._row_to_model(r) for r in rows]
+    
+    def get_due(self, collection_id: int, now_ms: Optional[int] = None) -> list[Node]:
+        now_ms = now_ms or int(time.time() * 1000)
+        rows = self.db.fetch_all(
+            "SELECT * FROM nodes WHERE collection_id = ? AND due <= ? ORDER BY due",
+            (collection_id, now_ms),
+        )
+        return [self._row_to_model(r) for r in rows]
+
+    

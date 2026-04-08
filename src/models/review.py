@@ -1,15 +1,10 @@
-from dataclasses import dataclass, field
+from pydantic import BaseModel
 from typing import Optional
 
 
-@dataclass
-class Review:
+class Review(BaseModel):
+    id: int
     node_id: int
-    review_time: int
+    time: int
+    duration: Optional[int] = None
     rating: int
-    review_type: int
-    interval: int
-    ease: float
-    state_before: dict = field(default_factory=dict)
-    state_after: dict = field(default_factory=dict)
-    id: Optional[int] = None
