@@ -53,9 +53,10 @@ class Rest(BaseInterface):
 
         class NodeCreate(BaseModel):
             content: Union[str, dict]
+            parentId: Optional[int] = None
         @self.app.post("/collections/{col_id}/nodes")
         async def create_node(col_id: int, data: NodeCreate):
-            self.node_service.create_node(col_id, data.content)
+            self.node_service.create_node(col_id, data.content, data.parentId)
 
         class ReprioritiseNode(BaseModel):
             new_position_node_id: int
@@ -73,7 +74,7 @@ class Rest(BaseInterface):
             type: Optional[int] = None
         @self.app.patch("/collections/{col_id}/nodes/{node_id}")
         async def update_node(col_id: int, node_id: int, data: NodeUpdate):
-            self.node_service.update(node_id, data.dict(exclude_unset=True))
+            self.node_service.update(node_id, data.model_dump(exclude_unset=True))
             return {"status": "ok"}
 
         @self.app.get("/collections")

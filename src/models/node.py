@@ -16,6 +16,7 @@ class Node(BaseModel):
     due: int
     state: int = 1
     content: NodeContent
+    parent_id: Optional[int] = None
     last_review: Optional[int] = None  
     stability: Optional[float] = None
     difficulty: Optional[float] = None

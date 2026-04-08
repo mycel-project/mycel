@@ -29,19 +29,20 @@ class NodeService:
         a_key, b_key = self._repo.get_neighbor_keys(collection_id, before_id, after_id)
         return insert_between(a_key, b_key)
 
-
     def create_node(
         self,
         collection_id: int,
-        content: Union[str, dict], 
+        content: Union[str, dict],
+        parent_id: Optional[int] = None,
         priority: Optional[str] = None,
     ) -> Node:
         if priority is None:
             priority = self._resolve_position(collection_id, None, None)
-        content = NodeContent.from_input(content)
+        node_content = NodeContent.from_input(content)
         return self._repo.create(
             collection_id=collection_id,
-            content=content,
+            content=node_content,
+            parent_id=parent_id,
             priority=priority,
         )
 
@@ -109,6 +110,7 @@ class NodeService:
                 type=n.type,
                 content=n.content.model_dump(),
                 position=i,
+                parent_id=n.parent_id,
                 due=n.due
             )
             for i, n in enumerate(nodes)
@@ -143,13 +145,13 @@ class NodeService:
         metrics = updates.pop("metrics", None)
 
         validated = NodeUpdate(**updates)
-        update_data = validated.dict(exclude_unset=True)
+        update_data = validated.model_dump(exclude_unset=True)
 
         if metrics:
             if isinstance(metrics, str):
                 metrics = json.loads(metrics)
             validated_metrics = NodeUpdate(**metrics)
-            update_data.update(validated_metrics.dict(exclude_unset=True))
+            update_data.update(validated_metrics.model_dump(exclude_unset=True))
 
         if "content" in update_data:
             update_data["content"] = NodeContent.from_input(update_data["content"])

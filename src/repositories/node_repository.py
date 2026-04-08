@@ -14,6 +14,7 @@ class NodeRepository:
         return Node(
             id=row["id"],
             collection_id=row["collection_id"],
+            parent_id=row["parent_id"],
             type=row["type"],
             created_at=row["created_at"],
             updated_at=row["updated_at"],
@@ -31,12 +32,14 @@ class NodeRepository:
         self,
         collection_id: int,
         content: NodeContent,
+        parent_id: Optional[int] = None,
         priority: Optional[str] = None,
     ) -> Node:
         now = int(time.time() * 1000)
         node = Node(
             id=now,
             collection_id=collection_id,
+            parent_id=parent_id,
             created_at=now,
             updated_at=now,
             due=now,
@@ -45,11 +48,12 @@ class NodeRepository:
         )
         self.db.execute(
             """INSERT INTO nodes
-               (id, collection_id, type, created_at, updated_at, due, state, content, priority)
-               VALUES (?,?,?,?,?,?,?,?,?)""",
+               (id, collection_id, parent_id, type, created_at, updated_at, due, state, content, priority)
+               VALUES (?,?,?,?,?,?,?,?,?,?)""",
             (
                 node.id,
                 node.collection_id,
+                node.parent_id,
                 node.type,
                 node.created_at,
                 node.updated_at,
@@ -69,10 +73,11 @@ class NodeRepository:
         now = int(time.time() * 1000)
         self.db.execute(
             """UPDATE nodes SET
-               type=?, due=?, state=?, content=?, 
+               parent_id=?, type=?, due=?, state=?, content=?, 
                last_review=?, stability=?, difficulty=?, step=?, priority=?, updated_at=?
                WHERE id=?""",
             (
+                node.parent_id,
                 node.type,
                 node.due,
                 node.state,

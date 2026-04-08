@@ -1,9 +1,10 @@
-from pydantic import BaseModel, validator
 from typing import Optional
 import json
 
+from pydantic import BaseModel, field_validator
 
 class NodeUpdate(BaseModel):
+    parent_id: Optional[int] = None
     content: Optional[dict] = None
     type: Optional[int] = None
     due: Optional[int] = None
@@ -14,19 +15,19 @@ class NodeUpdate(BaseModel):
     difficulty: Optional[float] = None
     step: Optional[int] = None
 
-    @validator("type", "state", "step")
+    @field_validator("type", "state", "step")
     def validate_int_values(cls, v):
         if v is not None and v < 0:
             raise ValueError("Must be positive")
         return v
 
-    @validator("stability", "difficulty")
+    @field_validator("stability", "difficulty")
     def validate_float_values(cls, v):
         if v is not None and v < 0:
             raise ValueError("Must be positive")
         return v
 
-    @validator("content", pre=True)
+    @field_validator("content", mode="before") 
     def parse_content(cls, v):
         if v is None:
             return None
@@ -34,7 +35,7 @@ class NodeUpdate(BaseModel):
             return v
         if isinstance(v, str):
             try:
-                return json.loads(v)  
+                return json.loads(v)
             except json.JSONDecodeError:
                 return {"value": v}
         return v

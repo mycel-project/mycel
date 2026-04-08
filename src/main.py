@@ -4,11 +4,12 @@ from src.db import Db
 from pybase import Application_bones, Menu
 from src.interfaces.interface import Interface
 from src.event_bus import EventBus
-from src.services import NodeService, FsrsService, CollectionService, ReviewService
+from src.parsers.parser_registry import ParserRegistry
+from src.services import NodeService, FsrsService, CollectionService, ReviewService, ParsingService, RessourceService
 
 class Application(Application_bones):
     def __init__(self):
-        name = "plm"
+        name = "Mycel"
         config = "config.json"
         modules = {
             "menu": {
