@@ -6,9 +6,8 @@ from src.models.collection import Collection
 from src.repositories.collection_repository import CollectionRepository
 from src.schemas.collection_list_view import CollectionListView
 from src.models.collection_conf import CollectionConf
-from src.models.collection_conf_update import CollectionConfUpdate
 from src.models.fsrs_conf import FsrsConf
-from src.models.fsrs_conf_update import FsrsConfUpdate
+from src.schemas import FsrsConfUpdate, CollectionConfUpdate
 
 
 class CollectionService:
@@ -47,26 +46,26 @@ class CollectionService:
         )
 
     def create_default_fsrs_conf(self) -> FsrsConf:
-        return FsrsConf(
-            params="light"
-        )
+        return FsrsConf()
     
     def update_fsrs_conf(self, collection_id: int, update: FsrsConfUpdate):
         collection = self._repo.get(collection_id)
         if not collection:
             raise ValueError("Collection not found")
 
-        for key, value in asdict(update).items():
-            if value is not None:
-                setattr(collection.fsrsconf, key, value)
+        for key, value in update.model_dump(exclude_none=True).items():
+            setattr(collection.fsrsconf, key, value)
 
         self._repo.update(
             id=collection_id,
             fsrsconf=collection.fsrsconf
         )
 
-    def get_fsrs_conf(self):
-        return None
+    def get_fsrs_conf(self, collection_id: int) -> FsrsConf:
+        collection = self._repo.get(collection_id)
+        if not collection:
+            raise ValueError("Collection not found")
+        return collection.fsrsconf
 
     def get_collections(self) -> list[CollectionListView]:
         collections = self._repo.list()

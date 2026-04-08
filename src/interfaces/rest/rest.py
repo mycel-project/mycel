@@ -118,5 +118,5 @@ class Rest(BaseInterface):
             duration: int
         @self.app.post("/collections/{col_id}/nodes/{node_id}/reviews")
         async def review_node(col_id: int, node_id: int, data: NodeReview):
-            self.review_service.review(node_id, data.rating, data.duration)
+            self.review_service.review(col_id, node_id, data.rating, data.duration)
             return {"status": "ok"}

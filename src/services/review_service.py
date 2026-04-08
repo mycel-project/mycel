@@ -16,11 +16,12 @@ class ReviewService:
 
     def review(
             self,
+            col_id: int,
             node_id: int,
             rating: int,
             duration: int,
     ) -> None:
-        card, review_log = self._fsrs_service.review_node(node_id, rating, duration)
+        card, review_log = self._fsrs_service.review_node(col_id, node_id, rating, duration)
 
         now = int(review_log.review_datetime.timestamp() * 1000)
         self._repo.create(
