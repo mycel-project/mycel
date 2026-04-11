@@ -21,6 +21,10 @@ class UvicornServer:
     async def start(self, app):
         if not self.active:
             self.task = asyncio.create_task(self._serve(app))
+            try:
+                await self.task
+            except asyncio.CancelledError:
+                pass
 
     async def stop(self):
         if self.server is not None and self.active:

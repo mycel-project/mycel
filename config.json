@@ -1,4 +1,4 @@
 {
-    "interface": "rest",
+    "interface": "cli",
     "network_user_agent": "https://github.com/paul-in"
 }
