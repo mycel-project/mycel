@@ -9,14 +9,18 @@ from src.schemas.node_view import NodeView
 from src.schemas.node_metrics import NodeMetrics
 from src.schemas.node_update import NodeUpdate
 from src.models.node_content import NodeContent
-
+from src.services.parsing_service import ParsingService
+from src.services.ressource_service import RessourceService
+from src.utils.parsing import is_valid_url
 
 class NodeService:
     """
     Node service logic (higher level than node_repository)
     """
-    def __init__(self, db: Db):
+    def __init__(self, db: Db, parsing_service: ParsingService, ressource_service: RessourceService):
         self._repo = NodeRepository(db)
+        self._parsing_service = parsing_service
+        self._ressource_service = ressource_service
         
     def _resolve_position(
         self,
@@ -44,6 +48,24 @@ class NodeService:
             content=node_content,
             parent_id=parent_id,
             priority=priority,
+        )
+
+    def create_node_from_url(
+        self,
+        collection_id: int,
+        url: str
+    ) -> Node:
+        # /!\ BETTER URL SECURITY IMPLEMENTATION REQUIRED
+        valid_url = is_valid_url(url)
+        if not valid_url:
+            raise ValueError("Invalid URL")
+        url_content = self._ressource_service.fetch_from_url(url)
+        self._parsing_service.parse_content(url_content)
+        node_content = NodeContent.from_input(url_content)
+        
+        return self._repo.create(
+            collection_id=collection_id,
+            content=node_content,
         )
 
     def reprioritise_node(

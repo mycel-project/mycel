@@ -58,6 +58,13 @@ class Rest(BaseInterface):
         async def create_node(col_id: int, data: NodeCreate):
             self.node_service.create_node(col_id, data.content, data.parentId)
 
+        class NodeCreateFromUrl(BaseModel):
+            url: str
+        @self.app.post("/collections/{col_id}/nodes/from-url")
+        async def create_node_from_url(col_id: int, data: NodeCreateFromUrl):
+            self.node_service.create_node_from_url(col_id, data.url)
+            return {"status": "ok"}
+
         class ReprioritiseNode(BaseModel):
             new_position_node_id: int
         @self.app.post("/collections/{col_id}/nodes/{node_id}/reprioritise")

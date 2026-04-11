@@ -1,3 +1,4 @@
 {
-    "interface": "rest"
+    "interface": "rest",
+    "network_user_agent": "https://github.com/paul-in"
 }

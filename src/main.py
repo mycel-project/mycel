@@ -21,6 +21,9 @@ class Application(Application_bones):
             "interface": {
                 "class": Interface,
             },
+            "parser_registry": {
+                "class": ParserRegistry
+            }
         }
         menu = {
             "main": {
@@ -32,11 +35,17 @@ class Application(Application_bones):
                 "parent": None
             }
         }
+        self.db: Db
+        self.parser_registry: ParserRegistry
+        
         super().__init__(name, config, menu, modules)
         self.bus = EventBus()
         self.init_module("db")
-        
-        node_service = NodeService(self.db)
+        self.init_module("parser_registry")
+
+        ressource_service = RessourceService(self.config["network_user_agent"])
+        parsing_service = ParsingService(self.parser_registry)
+        node_service = NodeService(self.db, parsing_service, ressource_service)
         collection_service = CollectionService(self.db)
         fsrs_service = FsrsService(collection_service, node_service)
         review_service = ReviewService(self.db, fsrs_service, node_service)
@@ -46,6 +55,7 @@ class Application(Application_bones):
             "collection_service": collection_service,
             "review_service": review_service
         }
+        
         self.init_module("interface", config = self.config, bus = self.bus, services = services)
 
     # self.bus.subscribe("say_hello", self.say_hello)
