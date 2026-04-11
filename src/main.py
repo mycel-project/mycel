@@ -26,7 +26,8 @@ class Application():
         services = {
             "node_service": node_service,
             "collection_service": collection_service,
-            "review_service": review_service
+            "review_service": review_service,
+            "ressource_service": ressource_service
         }
 
         self.interface = Interface(config = self.config, bus = self.bus, services = services)
