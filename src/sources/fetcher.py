@@ -1,5 +1,8 @@
 from abc import ABC, abstractmethod
 
+from src.types.fetch_result import FetchResult
+
+
 class Fetcher(ABC):
     def __init__(self, user_agent = None):
         self.user_agent = user_agent
@@ -9,5 +12,5 @@ class Fetcher(ABC):
         pass
         
     @abstractmethod
-    def fetch(self, source: str) -> dict:
+    def fetch(self, source: str) -> FetchResult:
         pass

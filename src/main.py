@@ -5,7 +5,7 @@ from src.db import Db
 from src.interfaces.interface import Interface
 from src.event_bus import EventBus
 from src.sources.registry import SourceRegistry
-from src.services import NodeService, FsrsService, CollectionService, ReviewService, ParsingService, RessourceService
+from src.services import NodeService, FsrsService, CollectionService, ReviewService, RessourceService
 
 class Application():
     def __init__(self):
@@ -18,7 +18,7 @@ class Application():
         source_registry = SourceRegistry(self.config["network_user_agent"])
 
         ressource_service = RessourceService(source_registry)
-        node_service = NodeService(self.db, parsing_service, ressource_service)
+        node_service = NodeService(self.db, ressource_service)
         collection_service = CollectionService(self.db)
         fsrs_service = FsrsService(collection_service, node_service)
         review_service = ReviewService(self.db, fsrs_service, node_service)

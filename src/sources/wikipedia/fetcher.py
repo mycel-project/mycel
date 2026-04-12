@@ -3,13 +3,14 @@ from urllib.parse import urlparse, unquote
 import requests
 
 from ..fetcher import Fetcher
+from src.types.fetch_result import FetchResult
 
 
 class WikipediaFetcher(Fetcher):
     def can_fetch(self, source: str) -> bool:
         return "wikipedia.org" in source
 
-    def fetch(self, source: str) -> dict:
+    def fetch(self, source: str) -> FetchResult:
         netloc, path = self.parse_url(source)
         endpoint = '/with_html'
         base_url = f'https://{netloc}/w/rest.php/v1/page/'
@@ -22,7 +23,7 @@ class WikipediaFetcher(Fetcher):
         data = response.json()
         html = data["html"]
         title = data["title"]
-        return {"html": html, "title": title}
+        return {"html": html, "url": url, "title": title}
 
     def parse_url(self, url: str) -> tuple[str, str]:
         try:

@@ -9,13 +9,10 @@ class RessourceService:
 
     def get_ressource_from_url(self, url: str) -> dict:
         fetcher = self._source_registry.get_fetcher(url)
-        fetcher.fetch(url)
-        parser = self._source_registry.get_parser(url)
+        fetched = fetcher.fetch(url)
+        html = fetched["html"]
+        title = fetched["title"]
+        parser = self._source_registry.get_parser(html)
+        parsed = parser.parse(html)
+        return {"title": title, "markdown": parsed["md"], "source": url}
 
-        
-
-        if fetcher:
-            return fetcher(url)
-        
-        return self.default_fetch(url)
-    

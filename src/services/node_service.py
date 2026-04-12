@@ -9,9 +9,7 @@ from src.schemas.node_view import NodeView
 from src.schemas.node_metrics import NodeMetrics
 from src.schemas.node_update import NodeUpdate
 from src.models.node_content import NodeContent
-from src.services.parsing_service import ParsingService
 from src.services.ressource_service import RessourceService
-from src.utils.parsing import is_valid_url
 
 class NodeService:
     """

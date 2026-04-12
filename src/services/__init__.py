@@ -4,7 +4,6 @@ from .collection_service import CollectionService
 from .ordering_service import insert_between
 from .review_service import ReviewService
 from .fsrs_service import FsrsService
-from .parsing_service import ParsingService
 from .ressource_service import RessourceService
 
-__all__ = ["review_node", "get_due_nodes", "NodeService", "insert_between", "CollectionService", "ReviewService", "FsrsService", "ParsingService", "RessourceService"]
+__all__ = ["review_node", "get_due_nodes", "NodeService", "insert_between", "CollectionService", "ReviewService", "FsrsService", "RessourceService"]

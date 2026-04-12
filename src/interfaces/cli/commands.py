@@ -6,8 +6,17 @@ def create_cli_group(node_service, collection_service, review_service, ressource
     def cli():
         pass
         
-    @cli.command()
-    def wiki():
-        ressource_service.fetch_from_wikipedia("https://fr.wikipedia.org/wiki/Berger_allemand")
-        
+    @cli.command(
+    help="""
+    Fetch a web resource from a URL.
+
+    Example:
+      mycel get https://en.wikipedia.org/wiki/Python
+    """
+    )
+    @click.argument("url")
+    def get(url):
+        ressource = ressource_service.get_ressource_from_url(url)
+#        click.echo(ressource)
+
     return cli
