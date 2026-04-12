@@ -4,6 +4,7 @@ from .data import Data
 from .literal import Literal
 from .node import Node
 from .position import Position
+from .properties import Properties
 
-__all__ = ["Point", "Parent", "Data", "Literal", "Node", "Position"]
+__all__ = ["Point", "Parent", "Data", "Literal", "Node", "Position", "Properties"]
 
