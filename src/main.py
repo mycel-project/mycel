@@ -4,7 +4,7 @@ import json
 from src.db import Db
 from src.interfaces.interface import Interface
 from src.event_bus import EventBus
-from src.parsers.parser_registry import ParserRegistry
+from src.sources.registry import SourceRegistry
 from src.services import NodeService, FsrsService, CollectionService, ReviewService, ParsingService, RessourceService
 
 class Application():
@@ -14,10 +14,10 @@ class Application():
 
         self.bus = EventBus()
         self.db = Db()
-        self.parser_registry = ParserRegistry()
 
-        ressource_service = RessourceService(self.config["network_user_agent"])
-        parsing_service = ParsingService(self.parser_registry)
+        source_registry = SourceRegistry(self.config["network_user_agent"])
+
+        ressource_service = RessourceService(source_registry)
         node_service = NodeService(self.db, parsing_service, ressource_service)
         collection_service = CollectionService(self.db)
         fsrs_service = FsrsService(collection_service, node_service)

@@ -5,9 +5,9 @@ def create_cli_group(node_service, collection_service, review_service, ressource
     @click.group()
     def cli():
         pass
-    
+        
     @cli.command()
-    def hello():
-        print("hello")
-                
+    def wiki():
+        ressource_service.fetch_from_wikipedia("https://fr.wikipedia.org/wiki/Berger_allemand")
+        
     return cli

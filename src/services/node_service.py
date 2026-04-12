@@ -17,9 +17,8 @@ class NodeService:
     """
     Node service logic (higher level than node_repository)
     """
-    def __init__(self, db: Db, parsing_service: ParsingService, ressource_service: RessourceService):
+    def __init__(self, db: Db, ressource_service: RessourceService):
         self._repo = NodeRepository(db)
-        self._parsing_service = parsing_service
         self._ressource_service = ressource_service
         
     def _resolve_position(
@@ -59,9 +58,7 @@ class NodeService:
         valid_url = is_valid_url(url)
         if not valid_url:
             raise ValueError("Invalid URL")
-        url_content = self._ressource_service.fetch_from_url(url)
-        self._parsing_service.parse_content(url_content)
-        node_content = NodeContent.from_input(url_content)
+        node_content = self._ressource_service.fetch_from_url(url)
         
         return self._repo.create(
             collection_id=collection_id,
