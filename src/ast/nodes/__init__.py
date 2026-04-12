@@ -6,4 +6,8 @@ from .element import Element
 from .root import Root
 from .text import Text
 
+Element.model_rebuild()
+Root.model_rebuild()
+Parent.model_rebuild()
+
 __all__ = ["Literal", "Parent", "Comment", "Doctype", "Element", "Root", "Text"]

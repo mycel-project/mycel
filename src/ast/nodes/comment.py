@@ -1,5 +1,5 @@
 from typing import Literal as TypingLiteral
-from . import Literal
+from .literal import Literal
 
 class Comment(Literal):
     type: TypingLiteral["comment"] = "comment" # type: ignore

@@ -1,5 +1,5 @@
 from typing import Literal as TypingLiteral
-from . import Parent
+from .parent import Parent
 
 class Root(Parent):
     type: TypingLiteral["root"] = "root" # type: ignore
