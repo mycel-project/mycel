@@ -17,6 +17,8 @@ def create_cli_group(node_service, collection_service, review_service, ressource
     @click.argument("url")
     def get(url):
         ressource = ressource_service.get_ressource_from_url(url)
-#        click.echo(ressource)
+        with open("html.html", "w") as f:
+            f.write(ressource["html"])
+#        click.echo(ressource["html"])
 
     return cli
