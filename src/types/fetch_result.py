@@ -1,7 +1,8 @@
-from typing import TypedDict
+from dataclasses import dataclass
 
 
-class FetchResult(TypedDict):
+@dataclass
+class FetchResult:
     html: str
     url: str
     title: str | None

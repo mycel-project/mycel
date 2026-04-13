@@ -1,4 +1,4 @@
 from .fetcher import DefaultHtmlFetcher
-from .parser import DefaultHtmlParser
+from .cleaner import DefaultHtmlCleaner
 
-__all__ = ["DefaultHtmlFetcher", "DefaultHtmlParser"]
+__all__ = ["DefaultHtmlFetcher", "DefaultHtmlCleaner"]

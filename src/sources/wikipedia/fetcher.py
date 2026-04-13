@@ -23,7 +23,12 @@ class WikipediaFetcher(Fetcher):
         data = response.json()
         html = data["html"]
         title = data["title"]
-        return {"html": html, "url": url, "title": title}
+        
+        return FetchResult(
+            html=html,
+            url=url,
+            title=title
+        )
 
     def parse_url(self, url: str) -> tuple[str, str]:
         try:

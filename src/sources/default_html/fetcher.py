@@ -31,8 +31,8 @@ class DefaultHtmlFetcher(Fetcher):
             parsed = urlparse(source)
             title = parsed.netloc
 
-        return {
-            "html": html,
-            "url": source,
-            "title": title
-        }
+        return FetchResult(
+            html=html,
+            url=source,
+            title=title
+        )

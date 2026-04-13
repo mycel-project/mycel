@@ -1,4 +1,4 @@
 from .fetcher import WikipediaFetcher
-from .parser import WikipediaParser
+from .cleaner import WikipediaCleaner
 
-__all__ = ["WikipediaFetcher", "WikipediaParser"]
+__all__ = ["WikipediaFetcher", "WikipediaCleaner"]

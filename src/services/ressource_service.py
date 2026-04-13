@@ -1,18 +1,14 @@
-from typing import Optional
-from urllib.parse import urlparse
+from src.sources.registry import SourceRegistry
 
 
 class RessourceService:
-    def __init__(self, source_registry):
+    def __init__(self, source_registry: SourceRegistry):
         self._source_registry = source_registry
     
 
     def get_ressource_from_url(self, url: str) -> dict:
-        fetcher = self._source_registry.get_fetcher(url)
-        fetched = fetcher.fetch(url)
-        html = fetched["html"]
-        title = fetched["title"]
-        parser = self._source_registry.get_parser(html)
-        parsed = parser.parse(html)
-        return {"title": title, "markdown": parsed["md"], "source": url, "html": html}
-
+        fetched = self._source_registry.fetch(url)
+        html = fetched.html
+        title = fetched.title
+        cleaned = self._source_registry.clean(html)
+        return {"title": title, "markdown": cleaned.clean_html, "source": url, "html": html}
