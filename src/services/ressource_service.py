@@ -14,5 +14,5 @@ class RessourceService:
         title = fetched["title"]
         parser = self._source_registry.get_parser(html)
         parsed = parser.parse(html)
-        return {"title": title, "markdown": parsed["md"], "source": url}
+        return {"title": title, "markdown": parsed["md"], "source": url, "html": html}
 

@@ -27,3 +27,22 @@ class Db:
         with get_connection(self.db_path) as con:
             cur = con.execute(query, params)
             return cur.lastrowid or 0
+
+    def list_table(self, table):
+        with get_connection(self.db_path) as con:
+            con.execute(f"SELECT * FROM {table}")
+            rows = con.fetch_all()
+            for row in rows:
+                print(row)
+
+    def reinit(self):
+        answer = self.app.menu.get_basic_menu("/!\\ Really reinit db and images?")
+        if answer == "y":
+            if os.path.exists("data.db"):
+                os.remove("data.db")
+            for f in glob.glob("images/*"):
+                os.remove(f)
+            if not os.path.exists("images"):
+                os.makedirs("images")
+        else:
+            return
