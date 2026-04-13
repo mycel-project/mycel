@@ -56,3 +56,4 @@ secrets.*
 .claude/
 
 .toml
+/draft/

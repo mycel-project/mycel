@@ -18,5 +18,5 @@ class WikipediaCleaner(Cleaner):
             content = markdown["content"] or "" 
 
         return CleanResult(
-            clean_html=content
+            cleaned_html=content
         )

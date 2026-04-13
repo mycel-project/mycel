@@ -95,6 +95,6 @@ class SourceRegistry:
 
         for cleaner in cleaners:
             result = cleaner.clean(current_content)
-            current_content = result.clean_html
+            current_content = result.cleaned_html
 
         return result

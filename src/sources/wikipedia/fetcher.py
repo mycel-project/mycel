@@ -23,7 +23,7 @@ class WikipediaFetcher(Fetcher):
         data = response.json()
         html = data["html"]
         title = data["title"]
-        
+
         return FetchResult(
             html=html,
             url=url,

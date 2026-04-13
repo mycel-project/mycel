@@ -11,4 +11,4 @@ class RessourceService:
         html = fetched.html
         title = fetched.title
         cleaned = self._source_registry.clean(html)
-        return {"title": title, "markdown": cleaned.clean_html, "source": url, "html": html}
+        return {"title": title, "markdown": cleaned.cleaned_html, "source": url, "html": html}

@@ -4,4 +4,4 @@ class TestWikipedia:
     def test_cleaner(self):
         cleaner = WikipediaCleaner()
         result = cleaner.clean("salut")
-        print(result.clean_html)
+        print(result.cleaned_html)
