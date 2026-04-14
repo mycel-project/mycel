@@ -3,7 +3,7 @@ import time
 from typing import Optional
 
 from src.db import Db
-from src.models.node import Node, NEW
+from src.models.node import Node
 from src.models.node_content import NodeContent
 
 class NodeRepository:

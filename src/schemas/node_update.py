@@ -1,7 +1,7 @@
 from typing import Optional
 import json
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, ConfigDict
 
 class NodeUpdate(BaseModel):
     parent_id: Optional[int] = None
@@ -14,6 +14,8 @@ class NodeUpdate(BaseModel):
     stability: Optional[float] = None
     difficulty: Optional[float] = None
     step: Optional[int] = None
+
+    model_config = ConfigDict(exclude_none=True)
 
     @field_validator("type", "state", "step")
     def validate_int_values(cls, v):
@@ -40,5 +42,3 @@ class NodeUpdate(BaseModel):
                 return {"value": v}
         return v
 
-    class Config:
-        exclude_none = True
