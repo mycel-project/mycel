@@ -6,12 +6,12 @@ from src.interfaces.interface import Interface
 from src.event_bus import EventBus
 from src.sources.registry import SourceRegistry
 from src.services import NodeService, FsrsService, CollectionService, ReviewService, RessourceService
+import logging
 
 class Application():
     def __init__(self):
         self.config_file = "config.json"
         self.config = self.load_config()
-
         self.bus = EventBus()
         self.db = Db()
 
@@ -37,6 +37,7 @@ class Application():
     # async def say_hello(self, data=None):
     #     print(data)
 
+
     async def init_async(self):
         await self.interface.init_interface()
 
@@ -48,8 +49,15 @@ class Application():
     def save_config(self):
         with open(self.config_file, "w") as f:
             json.dump(self.config, f, indent=4)
-        
+
+def setup_logging():
+    logging.basicConfig(
+        level=logging.DEBUG,  
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+    )
+
 if __name__ == "__main__":
+    setup_logging()
     app = Application()
     asyncio.run(app.init_async())
     

@@ -8,6 +8,8 @@ from .fetcher import Fetcher
 from .cleaner import Cleaner
 from .sources_config import SOURCES_ORDER
 
+import logging
+logger = logging.getLogger(__name__)
 
 class SourceRegistry:
     def __init__(self, user_agent):
@@ -92,9 +94,12 @@ class SourceRegistry:
     def clean(self, content: str) -> CleanResult:
         cleaners = self.get_cleaners(content)
         current_content = content
+        result = CleanResult(cleaned_html=content)
 
         for cleaner in cleaners:
             result = cleaner.clean(current_content)
             current_content = result.cleaned_html
+            
+        logger.debug("Running cleaner...")
 
         return result
