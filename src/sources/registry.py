@@ -97,9 +97,8 @@ class SourceRegistry:
         result = CleanResult(cleaned_html=content)
 
         for cleaner in cleaners:
+            logger.debug(f"Running cleaner {cleaner.__class__.__name__}")
             result = cleaner.clean(current_content)
             current_content = result.cleaned_html
-            
-        logger.debug("Running cleaner...")
 
         return result
