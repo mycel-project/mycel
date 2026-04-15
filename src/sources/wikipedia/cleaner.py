@@ -9,6 +9,9 @@ logger = logging.getLogger(__name__)
 
 
 class WikipediaCleaner(Cleaner):
+    def __init__(self):
+        self.domain = "wikipedia"
+    
     def can_clean(self, content: str) -> bool:
         return "mw-parser-output" in content
     

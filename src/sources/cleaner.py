@@ -4,6 +4,9 @@ from src.types.clean_result import CleanResult
 
 
 class Cleaner(ABC):
+    def __init__(self):
+        self.domain = None
+        
     @abstractmethod
     def can_clean(self, content: str) -> bool:
         pass
@@ -13,8 +16,7 @@ class Cleaner(ABC):
         pass
 
     def _is_reserved(self, tag):
-        return tag.has_attr("mycel-cleaner-name")
+        return tag.has_attr("mycel-domain")
 
     def _reserve(self, tag):
-        tag["mycel-cleaner-name"] = self.__class__.__name__
-        
+        tag["mycel-domain"] = self.domain        

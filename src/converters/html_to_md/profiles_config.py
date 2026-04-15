@@ -1,4 +1,4 @@
-RULES_ORDER = [
+PROFILES_ORDER = [
     "wikipedia",
     "generic",  
 ]

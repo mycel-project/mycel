@@ -1,5 +1,4 @@
 import importlib
-from typing import List
 
 from src.types.fetch_result import FetchResult
 from src.types.clean_result import CleanResult
@@ -13,8 +12,8 @@ logger = logging.getLogger(__name__)
 
 class SourceRegistry:
     def __init__(self, user_agent):
-        self._fetchers: List[Fetcher] = []
-        self._cleaners: List[Cleaner] = []
+        self._fetchers: list[Fetcher] = []
+        self._cleaners: list[Cleaner] = []
         
         self._default_fetcher: Fetcher | None = None
         self._default_cleaner: Cleaner | None = None
@@ -79,7 +78,7 @@ class SourceRegistry:
         fetcher = self.get_fetcher(source)
         return fetcher.fetch(source)
 
-    def get_cleaners(self, content: str) -> List[Cleaner]:
+    def get_cleaners(self, content: str) -> list[Cleaner]:
         applicable_cleaners = []
 
         for cleaner in self._cleaners:
