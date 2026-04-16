@@ -10,6 +10,7 @@ from src.schemas.node_metrics import NodeMetrics
 from src.schemas.node_update import NodeUpdate
 from src.models.node_content import NodeContent
 from src.services.ressource_service import RessourceService
+from src.utils.url import is_valid_url
 
 class NodeService:
     """
@@ -52,15 +53,14 @@ class NodeService:
         collection_id: int,
         url: str
     ) -> Node:
-        # /!\ BETTER URL SECURITY IMPLEMENTATION REQUIRED
         valid_url = is_valid_url(url)
         if not valid_url:
             raise ValueError("Invalid URL")
-        node_content = self._ressource_service.fetch_from_url(url)
+        node_content = self._ressource_service.get_ressource_from_url(url)
         
         return self._repo.create(
             collection_id=collection_id,
-            content=node_content,
+            content=NodeContent.from_input(node_content.content),
         )
 
     def reprioritise_node(

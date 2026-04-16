@@ -1,4 +1,4 @@
 {
-    "interface": "cli",
+    "interface": "rest",
     "network_user_agent": "Mycel/0.1"
 }
