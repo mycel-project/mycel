@@ -19,4 +19,4 @@ class Cleaner(ABC):
         return tag.has_attr("mycel-domain")
 
     def _reserve(self, tag):
-        tag["mycel-domain"] = self.domain        
+        tag["mycel-domain"] = self.domain

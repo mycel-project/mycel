@@ -30,6 +30,7 @@ class DefaultHtmlCleaner(Cleaner):
                     tag.attrs = {}
                 if self._is_reserved(tag):
                     reserved_counts[tag_name] += 1
+                    continue
                 cleaned_element_tags.append(tag_name)
                 cleaned_counts[tag_name] += 1
                 tag.decompose()

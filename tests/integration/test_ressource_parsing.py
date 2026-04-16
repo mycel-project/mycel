@@ -2,8 +2,8 @@ from src.converters.html_to_md.registry import HtmlToMdRegistry
 from src.sources.registry import SourceRegistry
 
 
-def test_ressource_parsing():
-    with open("tests/fixtures/supermemo_from_mediawikiapi.html", "r") as f:
+def test_html_to_md_clean_and_convert():
+    with open("tests/fixtures/dog_from_mediawikiapi.html", "r") as f:
         data = f.read() # simulate fetch from web
     user_agent = "Mozilla/5.0"
     source_registry = SourceRegistry(user_agent)

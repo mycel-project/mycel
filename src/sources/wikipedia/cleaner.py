@@ -14,7 +14,6 @@ class WikipediaCleaner(Cleaner):
     
     def can_clean(self, content: str) -> bool:
         return "mw-parser-output" in content
-    
 
     def clean(self, content: str) -> CleanResult:
         soup = BeautifulSoup(content, 'lxml')

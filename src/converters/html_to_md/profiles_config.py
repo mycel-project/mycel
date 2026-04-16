@@ -1,4 +1,4 @@
-PROFILES_ORDER = [
+PROFILES = [
     "wikipedia",
     "generic",  
 ]

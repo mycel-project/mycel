@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 
-from src.types.html_content import HtmlContent
 from src.types.md_content import MdContent
 
 
@@ -13,6 +12,6 @@ class Profile(ABC):
     domain: str
     
     @abstractmethod
-    def convert(self, html: HtmlContent) -> MdContent:
+    def convert(self, html: str) -> MdContent:
         pass
 
