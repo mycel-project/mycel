@@ -1,6 +1,9 @@
 import asyncio
 import json
 
+import html_to_markdown
+
+from src.converters.html_to_md.registry import HtmlToMdRegistry
 from src.db import Db
 from src.interfaces.interface import Interface
 from src.event_bus import EventBus
@@ -16,8 +19,9 @@ class Application():
         self.db = Db()
 
         source_registry = SourceRegistry(self.config["network_user_agent"])
+        html_to_markdown_registry = HtmlToMdRegistry()
 
-        ressource_service = RessourceService(source_registry)
+        ressource_service = RessourceService(source_registry, html_to_markdown_registry)
         node_service = NodeService(self.db, ressource_service)
         collection_service = CollectionService(self.db)
         fsrs_service = FsrsService(collection_service, node_service)
@@ -52,7 +56,7 @@ class Application():
 
 def setup_logging():
     logging.basicConfig(
-        level=logging.DEBUG,  
+        level=logging.WARNING,  
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
     )
 
