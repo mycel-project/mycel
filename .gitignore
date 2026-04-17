@@ -57,3 +57,4 @@ secrets.*
 
 .toml
 /draft/
+file::memory:?cache=shared

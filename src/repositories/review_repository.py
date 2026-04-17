@@ -56,6 +56,17 @@ class ReviewRepository:
         )
         return [self._row_to_model(r) for r in rows]
 
+    def get_by_period(self, start: int, end: int) -> list[Review]:
+        rows = self.db.fetch_all(
+            """
+            SELECT * FROM reviews
+            WHERE time >= ? AND time < ?
+            ORDER BY time
+            """,
+            (start, end),
+        )
+        return [self._row_to_model(r) for r in rows]
+
     def delete(self, review_id: int) -> None:
         self.db.execute(
             "DELETE FROM reviews WHERE id = ?",

@@ -21,3 +21,12 @@ def overdue_ms(due: Optional[int], now: int) -> Optional[int]:
     if due is None:
         return None
     return max(0, now - due)
+
+def start_of_day_ms(ms: int) -> int:
+    dt = ms_to_datetime(ms)
+    start = dt.replace(hour=0, minute=0, second=0, microsecond=0)
+    return datetime_to_ms(start)
+
+def end_of_day_ms(ms: int) -> int:
+    start = start_of_day_ms(ms)
+    return start + MS_PER_DAY

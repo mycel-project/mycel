@@ -1,10 +1,12 @@
+from typing import Optional
+from src.core.review_context import ReviewContext
 from src.db import Db
 from src.models.review import Review
 from src.repositories.review_repository import ReviewRepository
 from src.core.scheduling_engine import SchedulingEngine
 from src.services.fsrs_service import FsrsService
 from .node_service import NodeService
-from src.utils.time import datetime_to_ms
+from src.utils.time import datetime_to_ms, end_of_day_ms, now_ms, start_of_day_ms
 
 class ReviewService:
     # No caching at the moment
@@ -39,6 +41,28 @@ class ReviewService:
             "last_review": now
         })
 
-    def get_next_review(self, col_id: int) -> int:
+    def get_reviews_for_today(self) -> list[Review]:
+        now = now_ms()
+        today_start = start_of_day_ms(now)
+        today_end = end_of_day_ms(now)
+        return self._repo.get_by_period(today_start, today_end)
+
+    def get_next_review(self, col_id: int) -> Optional[int]:
         nodes = self._node_service.get_nodes_scheduling_context(col_id)
-        return self._scheduling_engine.get_next_card(nodes)
+        today_reviews = self.get_reviews_for_today()
+        today_reviews_context = []
+
+        for r in today_reviews:
+            node = self._node_service.get_node(r.node_id)
+
+            if not node or node.type:
+                continue
+
+            today_reviews_context.append(
+                ReviewContext(
+                    id=r.id,
+                    node_type=node.type,
+                )
+            )
+                                
+        return self._scheduling_engine.get_next_card(nodes, today_reviews_context)
