@@ -7,6 +7,7 @@ from src.converters.html_to_md.registry import HtmlToMdRegistry
 from src.db import Db
 from src.interfaces.interface import Interface
 from src.event_bus import EventBus
+from src.core.scheduling_engine import SchedulingEngine
 from src.sources.registry import SourceRegistry
 from src.services import NodeService, FsrsService, CollectionService, ReviewService, RessourceService
 import logging
@@ -25,7 +26,8 @@ class Application():
         node_service = NodeService(self.db, ressource_service)
         collection_service = CollectionService(self.db)
         fsrs_service = FsrsService(collection_service, node_service)
-        review_service = ReviewService(self.db, fsrs_service, node_service)
+        scheduling_engine = SchedulingEngine()
+        review_service = ReviewService(self.db, scheduling_engine, fsrs_service, node_service)
 
         services = {
             "node_service": node_service,

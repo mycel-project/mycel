@@ -1,18 +1,18 @@
-from typing import Optional
-from dataclasses import  asdict
-
 from src.db import Db
 from src.models.review import Review
 from src.repositories.review_repository import ReviewRepository
+from src.core.scheduling_engine import SchedulingEngine
 from src.services.fsrs_service import FsrsService
 from .node_service import NodeService
 from src.utils.time import datetime_to_ms
 
 class ReviewService:
-    def __init__(self, db: Db, fsrs_service: FsrsService, node_service: NodeService):
+    # No caching at the moment
+    def __init__(self, db: Db, scheduling_engine: SchedulingEngine, fsrs_service: FsrsService, node_service: NodeService):
         self._repo = ReviewRepository(db)
         self._fsrs_service = fsrs_service
         self._node_service = node_service
+        self._scheduling_engine = scheduling_engine
 
     def review(
             self,
@@ -38,7 +38,7 @@ class ReviewService:
             "due": datetime_to_ms(card.due),
             "last_review": now
         })
-        
-    def get_reviews(self, node_id: int) -> list[Review]:
-        reviews = self._repo.get_by_node(node_id)
-        return reviews
+
+    def get_next_review(self, col_id: int) -> int:
+        nodes = self._node_service.get_nodes_scheduling_context(col_id)
+        return self._scheduling_engine.get_next_card(nodes)

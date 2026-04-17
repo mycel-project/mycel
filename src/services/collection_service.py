@@ -11,6 +11,14 @@ from src.schemas import FsrsConfUpdate, CollectionConfUpdate
 
 
 class CollectionService:
+    """
+    Application service for collection management.
+
+    Provides a higher-level API over CollectionRepository:
+    - creation of collections
+    - retrieval of collections
+    - business rules related to collections lifecycle
+    """
     def __init__(self, db: Db):
         self._repo = CollectionRepository(db)
 

@@ -12,6 +12,6 @@ class NodeView(BaseModel):
     content: Optional[dict] = None
     position: int
     due: int
-    data: Optional[NodeData]
+    data: Optional[dict] = None
 
     model_config = ConfigDict(from_attributes=True)

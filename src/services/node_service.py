@@ -1,6 +1,7 @@
 from typing import Optional, Union
 import json
 
+from src.core.node_scheduling_context import NodeSchedulingContext
 from src.db import Db
 from src.models.node import Node
 from src.models.node_data import NodeData
@@ -11,6 +12,7 @@ from src.schemas.node_metrics import NodeMetrics
 from src.schemas.node_update import NodeUpdate
 from src.models.node_content import NodeContent
 from src.services.ressource_service import RessourceService
+from src.utils.time import overdue_ms, now_ms
 from src.utils.url import is_valid_url
 
 class NodeService:
@@ -59,11 +61,12 @@ class NodeService:
         valid_url = is_valid_url(url)
         if not valid_url:
             raise ValueError("Invalid URL")
-        node_content = self._ressource_service.get_ressource_from_url(url)
+        ressource = self._ressource_service.get_ressource_from_url(url)
         
         return self._repo.create(
             collection_id=collection_id,
-            content=NodeContent.from_input(node_content.content),
+            content=NodeContent.from_input(ressource.content),
+            data=NodeData(title=ressource.title, src=ressource.source),
         )
 
     def reprioritise_node(
@@ -116,6 +119,27 @@ class NodeService:
     def delete_node(self, node_id: int) -> None:
         """Delete a node"""
         self._repo.delete(node_id)
+
+    def get_nodes_scheduling_context(self, collection_id: int) -> list[NodeSchedulingContext]:
+        nodes = self.get_raw_nodes(collection_id)
+        now = now_ms()
+        return [
+            NodeSchedulingContext(
+                id=n.id,
+                type=n.type,
+                priority=n.priority, 
+                parent_id=n.parent_id,
+                due=n.due,
+                last_review=n.last_review,
+                stability=n.stability,
+                difficulty=n.difficulty,
+                overdue=overdue_ms(n.due, now)
+            )
+            for n in nodes
+        ]
+
+    def get_raw_nodes(self, collection_id: int) -> list[Node]:
+        return self._repo.get_by_collection(collection_id)
 
     def get_nodes(
         self,
