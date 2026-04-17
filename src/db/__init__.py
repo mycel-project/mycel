@@ -6,8 +6,8 @@ from .schema import init_schema
 
 
 class Db:
-    def __init__(self):
-        self.db_path = Path(__file__).resolve().parent.parent.parent / "db.db"
+    def __init__(self, db_path: Path):
+        self.db_path = db_path
         with get_connection(self.db_path) as con:
             init_schema(con)
 
@@ -22,8 +22,3 @@ class Db:
     def fetch_all(self, query: str, params: tuple = ()) -> list[Any]:
         with get_connection(self.db_path) as con:
             return con.execute(query, params).fetchall()
-
-    def execute_returning(self, query: str, params: tuple = ()) -> int:
-        with get_connection(self.db_path) as con:
-            cur = con.execute(query, params)
-            return cur.lastrowid or 0

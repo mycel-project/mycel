@@ -3,6 +3,7 @@ import json
 
 from src.db import Db
 from src.models.node import Node
+from src.models.node_data import NodeData
 from src.repositories.node_repository import NodeRepository
 from src.services.ordering_service import insert_between, spread_keys
 from src.schemas.node_view import NodeView
@@ -35,6 +36,7 @@ class NodeService:
         self,
         collection_id: int,
         content: Union[str, dict],
+        data: Optional[NodeData] = None,
         parent_id: Optional[int] = None,
         priority: Optional[str] = None,
     ) -> Node:
@@ -46,7 +48,8 @@ class NodeService:
             content=node_content,
             parent_id=parent_id,
             priority=priority,
-        )
+            data=data,
+        ) 
 
     def create_node_from_url(
         self,
@@ -128,7 +131,8 @@ class NodeService:
                 content=n.content.model_dump(),
                 position=i,
                 parent_id=n.parent_id,
-                due=n.due
+                due=n.due,
+                data=n.data.model_dump()
             )
             for i, n in enumerate(nodes)
         ]

@@ -1,6 +1,8 @@
 from pydantic import BaseModel, ConfigDict
 from typing import Optional
 
+from src.models.node_data import NodeData
+
 
 class NodeView(BaseModel):
     id: int
@@ -10,5 +12,6 @@ class NodeView(BaseModel):
     content: Optional[dict] = None
     position: int
     due: int
+    data: Optional[NodeData]
 
     model_config = ConfigDict(from_attributes=True)

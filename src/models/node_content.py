@@ -1,10 +1,9 @@
 from pydantic import BaseModel, Field
-from typing import Dict, Any
 import json
 
 
 class NodeContent(BaseModel):
-    fields: Dict[str, str] = Field(default_factory=dict)
+    fields: dict[str, str] = Field(default_factory=dict)
 
     @classmethod
     def from_input(cls, data):

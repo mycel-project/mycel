@@ -1,7 +1,7 @@
 import asyncio
 import json
 
-import html_to_markdown
+from pathlib import Path
 
 from src.converters.html_to_md.registry import HtmlToMdRegistry
 from src.db import Db
@@ -16,7 +16,7 @@ class Application():
         self.config_file = "config.json"
         self.config = self.load_config()
         self.bus = EventBus()
-        self.db = Db()
+        self.db = Db(Path(self.config["db_path"]))
 
         source_registry = SourceRegistry(self.config["network_user_agent"])
         html_to_markdown_registry = HtmlToMdRegistry()

@@ -5,6 +5,7 @@ from typing import Optional
 from src.db import Db
 from src.models.node import Node
 from src.models.node_content import NodeContent
+from src.models.node_data import NodeData
 
 class NodeRepository:
     def __init__(self, db: Db):
@@ -18,6 +19,7 @@ class NodeRepository:
             type=row["type"],
             created_at=row["created_at"],
             updated_at=row["updated_at"],
+            data=NodeData.from_db(row["data"]),
             due=row["due"],
             state=row["state"],
             content=NodeContent.from_db(row["content"]),
@@ -32,6 +34,7 @@ class NodeRepository:
         self,
         collection_id: int,
         content: NodeContent,
+        data: Optional[NodeData],
         parent_id: Optional[int] = None,
         priority: Optional[str] = None,
     ) -> Node:
@@ -42,14 +45,15 @@ class NodeRepository:
             parent_id=parent_id,
             created_at=now,
             updated_at=now,
+            data=data or NodeData(),
             due=now,
             content=content, 
             priority=priority,
         )
         self.db.execute(
             """INSERT INTO nodes
-               (id, collection_id, parent_id, type, created_at, updated_at, due, state, content, priority)
-               VALUES (?,?,?,?,?,?,?,?,?,?)""",
+               (id, collection_id, parent_id, type, created_at, updated_at, data, due, state, content, priority)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
             (
                 node.id,
                 node.collection_id,
@@ -57,6 +61,7 @@ class NodeRepository:
                 node.type,
                 node.created_at,
                 node.updated_at,
+                node.data.to_db(),
                 node.due,
                 node.state,
                 node.content.to_db(),  
@@ -74,7 +79,7 @@ class NodeRepository:
         self.db.execute(
             """UPDATE nodes SET
                parent_id=?, type=?, due=?, state=?, content=?, 
-               last_review=?, stability=?, difficulty=?, step=?, priority=?, updated_at=?
+               last_review=?, stability=?, difficulty=?, step=?, priority=?, updated_at=?, data=?
                WHERE id=?""",
             (
                 node.parent_id,
@@ -88,6 +93,7 @@ class NodeRepository:
                 node.step,
                 node.priority,
                 now,
+                node.data.to_db(),
                 node.id,
             ),
         )

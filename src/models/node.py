@@ -1,5 +1,7 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from typing import Optional
+
+from src.models.node_data import NodeData
 from .node_content import NodeContent
 
 NEW        = 0
@@ -13,6 +15,7 @@ class Node(BaseModel):
     type: int = NEW 
     created_at: int
     updated_at: int
+    data: NodeData
     due: int
     state: int = 1
     content: NodeContent
