@@ -1,12 +1,17 @@
-from typing import Optional, Union
+from typing import Optional, Union, Any
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
+from src.event_bus import EventBus
 from src.interfaces.base_interface import BaseInterface
 from src.interfaces.uvicorn import UvicornServer
 from src.schemas import node_metrics
+from src.schemas.node_update import NodeUpdate
+from src.services.collection_service import CollectionService
+from src.services.node_service import NodeService
+from src.services.review_service import ReviewService
 
 class Rest(BaseInterface):
     def __init__(self):
@@ -23,10 +28,10 @@ class Rest(BaseInterface):
 
     async def init(self, config, bus, services):
         self.config = config
-        self.bus = bus
-        self.node_service = services["node_service"]
-        self.collection_service = services["collection_service"]
-        self.review_service = services["review_service"]
+        self.bus: EventBus = bus
+        self.node_service: NodeService = services["node_service"]
+        self.collection_service: CollectionService = services["collection_service"]
+        self.review_service: ReviewService = services["review_service"]
         self.uvicorn = UvicornServer()
         await self.start()
         
@@ -56,7 +61,7 @@ class Rest(BaseInterface):
             parentId: Optional[int] = None
         @self.app.post("/collections/{col_id}/nodes")
         async def create_node(col_id: int, data: NodeCreate):
-            self.node_service.create_node(col_id, data.content, data.parentId)
+            self.node_service.create_node(col_id, data.content, parent_id=data.parentId)
 
         class NodeCreateFromUrl(BaseModel):
             url: str
@@ -75,13 +80,11 @@ class Rest(BaseInterface):
             )
             return {"status": "ok"}
 
-        class NodeUpdate(BaseModel):
-            content: Optional[Union[str, dict]] = None
-            metrics: Optional[Union[str, dict]] = None
-            type: Optional[int] = None
+        class NodeUpdateRequest(BaseModel):
+            updates: dict[str, Any] = Field(default_factory=dict)
         @self.app.patch("/collections/{col_id}/nodes/{node_id}")
-        async def update_node(col_id: int, node_id: int, data: NodeUpdate):
-            self.node_service.update(node_id, data.model_dump(exclude_unset=True))
+        async def update_node(col_id: int, node_id: int, data: NodeUpdateRequest):
+            self.node_service.update(node_id, NodeUpdate(**data.updates))
             return {"status": "ok"}
 
         @self.app.get("/collections")

@@ -3,9 +3,13 @@ import json
 
 from pydantic import BaseModel, field_validator, ConfigDict
 
+from src.models.node_content import NodeContent
+from src.models.node_data import NodeData
+
 class NodeUpdate(BaseModel):
     parent_id: Optional[int] = None
-    content: Optional[dict] = None
+    content: Optional[NodeContent] = None
+    data: Optional[NodeData] = None
     type: Optional[int] = None
     due: Optional[int] = None
     priority: Optional[str] = None    
@@ -14,8 +18,6 @@ class NodeUpdate(BaseModel):
     stability: Optional[float] = None
     difficulty: Optional[float] = None
     step: Optional[int] = None
-
-    model_config = ConfigDict(exclude_none=True)
 
     @field_validator("type", "state", "step")
     def validate_int_values(cls, v):
@@ -33,12 +35,5 @@ class NodeUpdate(BaseModel):
     def parse_content(cls, v):
         if v is None:
             return None
-        if isinstance(v, dict):
-            return v
-        if isinstance(v, str):
-            try:
-                return json.loads(v)
-            except json.JSONDecodeError:
-                return {"value": v}
-        return v
+        return NodeContent.from_input(v)
 

@@ -182,27 +182,15 @@ class NodeService:
         node_metrics = self.get_node_metrics(node_id)
         return {"view": node_view, "metrics": node_metrics}
 
-    def update(self, node_id: int, updates: dict) -> None:
+    def update(self, node_id: int, updates: NodeUpdate) -> None:
         node = self._repo.get(node_id)
+
         if node is None:
             raise ValueError(f"Node {node_id} not found")
-
-        metrics = updates.pop("metrics", None)
-
-        validated = NodeUpdate(**updates)
-        update_data = validated.model_dump(exclude_unset=True)
-
-        if metrics:
-            if isinstance(metrics, str):
-                metrics = json.loads(metrics)
-            validated_metrics = NodeUpdate(**metrics)
-            update_data.update(validated_metrics.model_dump(exclude_unset=True))
-
-        if "content" in update_data:
-            update_data["content"] = NodeContent.from_input(update_data["content"])
-
-        for key, value in update_data.items():
-            setattr(node, key, value)
+        
+        for field, value in updates:
+            if value is not None:
+                setattr(node, field, value)
 
         self._repo.update(node)
 

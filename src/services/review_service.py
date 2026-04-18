@@ -4,6 +4,7 @@ from src.db import Db
 from src.models.review import Review
 from src.repositories.review_repository import ReviewRepository
 from src.core.scheduling_engine import SchedulingEngine
+from src.schemas.node_update import NodeUpdate
 from src.services.fsrs_service import FsrsService
 from .node_service import NodeService
 from src.utils.time import datetime_to_ms, end_of_day_ms, now_ms, start_of_day_ms
@@ -32,14 +33,14 @@ class ReviewService:
             duration=duration,
             now=now
         )
-        self._node_service.update(node_id, {
-            "stability": card.stability,
-            "difficulty": card.difficulty,
-            "state": int(card.state.value), 
-            "step": card.step,
-            "due": datetime_to_ms(card.due),
-            "last_review": now
-        })
+        self._node_service.update(node_id, NodeUpdate(
+            stability=card.stability,
+            difficulty=card.difficulty,
+            state=int(card.state.value), 
+            step=card.step,
+            due=datetime_to_ms(card.due),
+            last_review=now
+        ))
 
     def get_reviews_for_today(self) -> list[Review]:
         now = now_ms()
