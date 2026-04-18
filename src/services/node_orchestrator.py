@@ -32,6 +32,10 @@ class NodeOrchestrator:
         if type == NodeType.FRAGMENT:
             self._fragment_service.create_fragment(col_id, text, source_node_id)
         elif type == NodeType.SPORE:
-            self._spore_service.create_spore(col_id, text, source_node_id)
+            source_content = next(iter(source_node.content.fields.values())) # need simplification
+            spore = self._spore_service.create_spore(col_id, source_content, source_node_id)
+            clozed_spore = self._spore_service.cloze_region(spore.id, text, str(field), start_index, end_index)
+            self._spore_service.remove_extract_formatting(clozed_spore.id, str(field))
+
             
         self._fragment_service.emphasize_region(source_node_id, type, text, str(field), start_index, end_index)

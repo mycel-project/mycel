@@ -30,7 +30,7 @@ class FragmentService:
     def emphasize_region(self, node_id: int, node_region_type: int, text: str, field: str, start: int, end: int):
         node = self._node_service.get_node(node_id)
         if not node:
-            raise ValueError(...)
+            raise ValueError(f"No node found for id {node_id}")
 
         handler = self._emphasis_handlers.get(NodeType(node_region_type))
         if not handler:

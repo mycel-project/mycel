@@ -1,5 +1,6 @@
 import re
 from typing import Optional
+import re
 
 from src.models.node import Node
 from src.models.node_content import NodeContent
@@ -33,6 +34,31 @@ class NodeFormatService:
         )
 
         return node
+    
+
+    def cloze_region(
+        self,
+        node: Node,
+        field: str,
+        start: int,
+        end: int,
+        expected_text: Optional[str] = None,
+        cloze_index: Optional[int] = 1,
+    ) -> Node:
+        cloze_index = 1 # just support one at the moment
+        segment = self.get_content_portions(
+            node.content,
+            field,
+            start,
+            end,
+            expected_text
+        )
+        cleaned_target = segment.target.replace("{{", "((").replace("}}", "))")
+        node.content.fields[field] = (
+            segment.before + "{{c" + str(cloze_index) + "::" + cleaned_target + "}}" + segment.after
+        )
+        return node
+    
 
     def blockquote_region(
         self,
@@ -60,6 +86,7 @@ class NodeFormatService:
         node.content.fields[field] = before + quoted + after
 
         return node
+    
 
     def get_content_portions(
         self,
@@ -92,6 +119,7 @@ class NodeFormatService:
             selected,
             text[end:]
         )
+    
 
     def blockquote_line(self, line: str) -> str:
         stripped = line.lstrip()
@@ -100,3 +128,49 @@ class NodeFormatService:
             return stripped
 
         return "> " + stripped
+    
+
+    def unquote_line(self, line: str, allowed_prefix_pattern: Optional[str] = None) -> str:
+        working_line = line
+
+        if allowed_prefix_pattern:
+            match = re.match(allowed_prefix_pattern, line)
+            if match:
+                working_line = line[match.end():]
+
+        stripped = working_line.lstrip()
+
+        has_removed = False
+        while stripped.startswith(">"):
+            stripped = stripped[1:].lstrip()
+            has_removed = True
+
+        if has_removed:
+            prefix = line[:len(line) - len(working_line)]
+            return prefix + stripped
+
+        return line
+
+
+    def remove_blockquote_formatting(
+        self,
+        text: str,
+        allowed_prefix_pattern: Optional[str] = None
+    ) -> str:
+        """
+        If an allowed_prefix_pattern is provided, the function will ignore this prefix
+        when detecting and removing blockquote markers. This allows handling cases where
+        a blockquote appears after a specific leading pattern (e.g. cloze syntax like "{{c1::").
+        """
+        lines = text.split("\n")
+
+        cleaned_lines = [
+            self.unquote_line(line, allowed_prefix_pattern)
+            for line in lines
+        ]
+
+        return "\n".join(cleaned_lines)
+
+    
+    def remove_inline_code_formatting(self, text: str) -> str:
+        return text.replace("`", "")
