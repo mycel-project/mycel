@@ -7,11 +7,12 @@ from pydantic import BaseModel, Field
 from src.event_bus import EventBus
 from src.interfaces.base_interface import BaseInterface
 from src.interfaces.uvicorn import UvicornServer
-from src.schemas import node_metrics
 from src.schemas.node_update import NodeUpdate
 from src.services.collection_service import CollectionService
+from src.services.node_orchestrator import NodeOrchestrator
 from src.services.node_service import NodeService
 from src.services.review_service import ReviewService
+from src.types.node_type import NodeType
 
 class Rest(BaseInterface):
     def __init__(self):
@@ -26,12 +27,14 @@ class Rest(BaseInterface):
 
         self._register_routes()
 
-    async def init(self, config, bus, services):
+    async def init(self, config, bus, services, orchestrators):
+        # Would be better if interfaces only had access to orchestrators?
         self.config = config
         self.bus: EventBus = bus
         self.node_service: NodeService = services["node_service"]
         self.collection_service: CollectionService = services["collection_service"]
         self.review_service: ReviewService = services["review_service"]
+        self.node_orchestrator: NodeOrchestrator = orchestrators["node_orchestrator"]
         self.uvicorn = UvicornServer()
         await self.start()
         
@@ -58,10 +61,19 @@ class Rest(BaseInterface):
 
         class NodeCreate(BaseModel):
             content: Union[str, dict]
-            parentId: Optional[int] = None
         @self.app.post("/collections/{col_id}/nodes")
         async def create_node(col_id: int, data: NodeCreate):
-            self.node_service.create_node(col_id, data.content, parent_id=data.parentId)
+            self.node_service.create_node(col_id, data.content)
+            
+        class NodeExtract(BaseModel):
+            text: str
+            field: int
+            start_index: int
+            end_index: int
+            type: NodeType
+        @self.app.post("/collections/{col_id}/nodes/{node_id}/extracts")
+        async def create_node_extract(col_id: int, node_id: int, data: NodeExtract):
+            self.node_orchestrator.create_extract(col_id, data.type, node_id, data.text, data.field, data.start_index, data.end_index)
 
         class NodeCreateFromUrl(BaseModel):
             url: str

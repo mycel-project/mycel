@@ -5,7 +5,7 @@ class BaseInterface(ABC):
     Classe abstraire servant de base pour structurer les interfaces
     """
     @abstractmethod
-    async def init(self, config: dict, bus, services):
+    async def init(self, config: dict, bus, services, orchestrators):
         pass
 
     @abstractmethod

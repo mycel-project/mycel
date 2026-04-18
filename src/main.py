@@ -10,7 +10,7 @@ from src.event_bus import EventBus
 from src.core.scheduling_engine import SchedulingEngine
 from src.services.node_format_service import NodeFormatService
 from src.sources.registry import SourceRegistry
-from src.services import NodeService, FsrsService, CollectionService, ReviewService, RessourceService
+from src.services import NodeService, FsrsService, CollectionService, ReviewService, RessourceService, NodeOrchestrator, FragmentService, SporeService
 import logging
 
 class Application():
@@ -25,20 +25,29 @@ class Application():
 
         ressource_service = RessourceService(source_registry, html_to_markdown_registry)
         node_format_service = NodeFormatService()
-        node_service = NodeService(self.db, ressource_service, node_format_service)
+        node_service = NodeService(self.db, ressource_service)
+        fragment_service = FragmentService(node_service, node_format_service)
+        spore_service = SporeService(node_service, node_format_service)
+
         collection_service = CollectionService(self.db)
         fsrs_service = FsrsService(collection_service, node_service)
         scheduling_engine = SchedulingEngine()
         review_service = ReviewService(self.db, scheduling_engine, fsrs_service, node_service)
 
+        node_orchestrator = NodeOrchestrator(node_service, fragment_service, spore_service)
+
         services = {
             "node_service": node_service,
             "collection_service": collection_service,
             "review_service": review_service,
-            "ressource_service": ressource_service
+            "ressource_service": ressource_service,
         }
 
-        self.interface = Interface(config = self.config, bus = self.bus, services = services)
+        orchestrators = {
+            "node_orchestrator": node_orchestrator,
+        }
+
+        self.interface = Interface(config = self.config, bus = self.bus, services = services, orchestrators = orchestrators)
         
     # self.bus.subscribe("say_hello", self.say_hello)
 

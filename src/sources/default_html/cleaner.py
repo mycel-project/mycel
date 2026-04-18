@@ -44,6 +44,16 @@ class DefaultHtmlCleaner(Cleaner):
             tag.name = "p"
 
         logger.debug(f"Changing {blockquote_count} <blockquote> tag(s) to <p>")
+
+        backtick_count = 0
+
+        for text_node in soup.find_all(string=True):
+            if "`" in text_node:
+                count = text_node.count("`")
+                text_node.replace_with(text_node.replace("`", "'"))
+                backtick_count += count
+
+        logger.debug(f"Replaced {backtick_count} backtick(s) '`' with apostrophe '")
         
         cleaned_html = str(soup.prettify())
 

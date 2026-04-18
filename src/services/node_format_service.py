@@ -1,59 +1,102 @@
 import re
+from typing import Optional
 
 from src.models.node import Node
-from typing import Union
-
+from src.models.node_content import NodeContent
+from src.types.text_segment import TextSegment
+from src.utils.debug import preview_extract
 from src.utils.format import ensure_double_newline_left, ensure_double_newline_right
 
 
 class NodeFormatService:
-    def emphasize_region(self, node: Node, content: Union[str, dict]) -> Node:
-        """
-        No blockquote nesting supported at the moment
-        """
-        if isinstance(content, dict):
+
+    def inline_region(
+        self,
+        node: Node,
+        field: str,
+        start: int,
+        end: int,
+        expected_text: Optional[str] = None
+    ) -> Node:
+        segment = self.get_content_portions(
+            node.content,
+            field,
+            start,
+            end,
+            expected_text
+        )
+
+        cleaned_target = segment.target.replace("`", "")
+
+        node.content.fields[field] = (
+            segment.before + "`" + cleaned_target + "`" + segment.after
+        )
+
+        return node
+
+    def blockquote_region(
+        self,
+        node: Node,
+        field: str,
+        start: int,
+        end: int,
+        expected_text: Optional[str] = None
+    ) -> Node:
+        segment = self.get_content_portions(
+            node.content,
+            field,
+            start,
+            end,
+            expected_text
+        )
+
+        quoted = "\n".join(
+            self.blockquote_line(line) for line in segment.target.split("\n")
+        )
+
+        before = ensure_double_newline_left(segment.before.rstrip())
+        after = ensure_double_newline_right(segment.after.lstrip())
+
+        node.content.fields[field] = before + quoted + after
+
+        return node
+
+    def get_content_portions(
+        self,
+        node_content: NodeContent,
+        field: str,
+        start: int,
+        end: int,
+        expected_text: Optional[str] = None
+    ) -> TextSegment:
+
+        if field not in node_content.fields:
+            raise ValueError(f"Field '{field}' not found in node content")
+
+        text = node_content.fields[field]
+
+        if start < 0 or end > len(text) or start >= end:
+            raise ValueError("Invalid selection range")
+
+        selected = text[start:end]
+
+        if expected_text is not None and selected != expected_text:
             raise ValueError(
-                "Fragment creation from multiple node fields is not supported. "
-                "Please fragment one field at a time."
+                "Selection mismatch (outdated state or tampered data). "
+                f"Expected: '{preview_extract(expected_text)}' | "
+                f"Received: '{preview_extract(selected)}' | "
             )
 
-        content = content.strip()
-
-        target_fields = [
-            (k, v) for k, v in node.content.fields.items()
-            if content in v
-        ]
-
-        if len(target_fields) == 0:
-            raise ValueError("No field found.")
-        if len(target_fields) > 1:
-            raise ValueError("Content has been found in multiple fields.")
-
-        key, field = target_fields[0]
-
-        match = re.search(re.escape(content), field)
-        if not match:
-            raise ValueError("Content not found in field (unexpected).")
-
-        start, end = match.span()
-
-        before = field[:start]
-        middle = field[start:end]
-        after = field[end:]
-
-        quoted = "\n".join(self.blockquote_line(line) for line in middle.split("\n"))
-
-        before = ensure_double_newline_left(before.rstrip())
-        after = ensure_double_newline_right(after.lstrip())
-
-        new_field = before + quoted + after
-
-        node.content.fields[key] = new_field
-        return node
+        return TextSegment(
+            text[:start],
+            selected,
+            text[end:]
+        )
 
     def blockquote_line(self, line: str) -> str:
         stripped = line.lstrip()
 
         if stripped.startswith(">"):
             return stripped
+
         return "> " + stripped

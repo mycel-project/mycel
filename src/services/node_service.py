@@ -1,5 +1,4 @@
 from typing import Optional, Union
-import json
 
 from src.core.node_scheduling_context import NodeSchedulingContext
 from src.db import Db
@@ -13,6 +12,7 @@ from src.schemas.node_metrics import NodeMetrics
 from src.schemas.node_update import NodeUpdate
 from src.models.node_content import NodeContent
 from src.services.ressource_service import RessourceService
+from src.types.node_type import NodeType
 from src.utils.time import overdue_ms, now_ms
 from src.utils.url import is_valid_url
 
@@ -20,10 +20,9 @@ class NodeService:
     """
     Node service logic (higher level than node_repository)
     """
-    def __init__(self, db: Db, ressource_service: RessourceService, node_format_service: NodeFormatService):
+    def __init__(self, db: Db, ressource_service: RessourceService):
         self._repo = NodeRepository(db)
         self._ressource_service = ressource_service
-        self._node_format_service = node_format_service
         
     def _resolve_position(
         self,
@@ -43,11 +42,10 @@ class NodeService:
         data: Optional[NodeData] = None,
         parent_id: Optional[int] = None,
         priority: Optional[str] = None,
+        type: Optional[int] = NodeType.FRAGMENT,
     ) -> Node:
         if priority is None:
             priority = self._resolve_position(collection_id, None, None)
-        if parent_id:
-            self.emphasize_node_region(parent_id, content)
         node_content = NodeContent.from_input(content)
         return self._repo.create(
             collection_id=collection_id,
@@ -55,21 +53,13 @@ class NodeService:
             parent_id=parent_id,
             priority=priority,
             data=data,
+            type=type,
         )
-
-    def emphasize_node_region(self, node_id: int, content_to_emphasize: Union[str, dict]) -> None:
-        node = self.get_node(node_id)
-        if not node:
-            raise ValueError(f"Node with id {node_id} does not exist")
-        node = self._node_format_service.emphasize_region(node, content_to_emphasize)
-        self.update(node_id, NodeUpdate(
-            content = node.content
-        ))
 
     def create_node_from_url(
         self,
         collection_id: int,
-        url: str
+        url: str,
     ) -> Node:
         valid_url = is_valid_url(url)
         if not valid_url:
@@ -80,6 +70,7 @@ class NodeService:
             collection_id=collection_id,
             content=NodeContent.from_input(ressource.content),
             data=NodeData(title=ressource.title, src=ressource.source),
+            type=NodeType.FRAGMENT
         )
 
     def reprioritise_node(

@@ -37,6 +37,7 @@ class NodeRepository:
         data: Optional[NodeData],
         parent_id: Optional[int] = None,
         priority: Optional[str] = None,
+        type: Optional[int] = None,
     ) -> Node:
         now = int(time.time() * 1000)
         node = Node(
@@ -49,6 +50,7 @@ class NodeRepository:
             due=now,
             content=content, 
             priority=priority,
+            type=type
         )
         self.db.execute(
             """INSERT INTO nodes
