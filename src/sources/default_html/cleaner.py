@@ -34,8 +34,16 @@ class DefaultHtmlCleaner(Cleaner):
                 cleaned_element_tags.append(tag_name)
                 cleaned_counts[tag_name] += 1
                 tag.decompose()
-
+                            
         logger.debug(f"Tag removal summary: {dict(cleaned_counts)}. Reserved tags : {dict(reserved_counts)}")
+
+        # Removing blockquotes to avoid collision with Mycel fragment syntax (see discussion on syntax for more infos)
+        blockquote_count = 0
+        for tag in soup.find_all("blockquote"):
+            blockquote_count += 1
+            tag.name = "p"
+
+        logger.debug(f"Changing {blockquote_count} <blockquote> tag(s) to <p>")
         
         cleaned_html = str(soup.prettify())
 
