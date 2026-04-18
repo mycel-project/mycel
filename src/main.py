@@ -8,6 +8,7 @@ from src.db import Db
 from src.interfaces.interface import Interface
 from src.event_bus import EventBus
 from src.core.scheduling_engine import SchedulingEngine
+from src.services.node_format_service import NodeFormatService
 from src.sources.registry import SourceRegistry
 from src.services import NodeService, FsrsService, CollectionService, ReviewService, RessourceService
 import logging
@@ -23,7 +24,8 @@ class Application():
         html_to_markdown_registry = HtmlToMdRegistry()
 
         ressource_service = RessourceService(source_registry, html_to_markdown_registry)
-        node_service = NodeService(self.db, ressource_service)
+        node_format_service = NodeFormatService()
+        node_service = NodeService(self.db, ressource_service, node_format_service)
         collection_service = CollectionService(self.db)
         fsrs_service = FsrsService(collection_service, node_service)
         scheduling_engine = SchedulingEngine()

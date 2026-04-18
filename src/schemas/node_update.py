@@ -33,7 +33,5 @@ class NodeUpdate(BaseModel):
 
     @field_validator("content", mode="before") 
     def parse_content(cls, v):
-        if v is None:
-            return None
         return NodeContent.from_input(v)
 

@@ -49,7 +49,7 @@ class Rest(BaseInterface):
 
         @self.app.get("/collections/{col_id}/nodes")
         async def get_nodes(col_id: int):
-            nodes = self.node_service.get_nodes(col_id, 10)
+            nodes = self.node_service.get_nodes(col_id, 100)
             return {"nodes": nodes}
 
         @self.app.get("/collections/{col_id}/nodes/{node_id}")

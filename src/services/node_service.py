@@ -6,6 +6,7 @@ from src.db import Db
 from src.models.node import Node
 from src.models.node_data import NodeData
 from src.repositories.node_repository import NodeRepository
+from src.services.node_format_service import NodeFormatService
 from src.services.ordering_service import insert_between, spread_keys
 from src.schemas.node_view import NodeView
 from src.schemas.node_metrics import NodeMetrics
@@ -19,9 +20,10 @@ class NodeService:
     """
     Node service logic (higher level than node_repository)
     """
-    def __init__(self, db: Db, ressource_service: RessourceService):
+    def __init__(self, db: Db, ressource_service: RessourceService, node_format_service: NodeFormatService):
         self._repo = NodeRepository(db)
         self._ressource_service = ressource_service
+        self._node_format_service = node_format_service
         
     def _resolve_position(
         self,
@@ -44,6 +46,8 @@ class NodeService:
     ) -> Node:
         if priority is None:
             priority = self._resolve_position(collection_id, None, None)
+        if parent_id:
+            self.emphasize_node_region(parent_id, content)
         node_content = NodeContent.from_input(content)
         return self._repo.create(
             collection_id=collection_id,
@@ -51,7 +55,16 @@ class NodeService:
             parent_id=parent_id,
             priority=priority,
             data=data,
-        ) 
+        )
+
+    def emphasize_node_region(self, node_id: int, content_to_emphasize: Union[str, dict]) -> None:
+        node = self.get_node(node_id)
+        if not node:
+            raise ValueError(f"Node with id {node_id} does not exist")
+        node = self._node_format_service.emphasize_region(node, content_to_emphasize)
+        self.update(node_id, NodeUpdate(
+            content = node.content
+        ))
 
     def create_node_from_url(
         self,
@@ -103,6 +116,7 @@ class NodeService:
                 target_priority,
                 exclude_id=node_id,
             )
+            
             priority = insert_between(predecessor_priority, target_priority)
 
         self._repo.update_priority(node_id, priority)
@@ -144,7 +158,7 @@ class NodeService:
     def get_nodes(
         self,
         collection_id: int,
-        limit: int = 10,
+        limit: int = 100,
     ) -> list[NodeView]:
         nodes = self._repo.get_by_collection(collection_id, limit)
         return [

@@ -10,6 +10,9 @@ class NodeContent(BaseModel):
         if data is None:
             return cls()
 
+        if isinstance(data, NodeContent):
+            return data
+
         if isinstance(data, str):
             return cls(fields={"0": data})
 
