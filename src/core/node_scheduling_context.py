@@ -1,5 +1,7 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional
+
+from src.models.type_data import TypeData
 
 
 class NodeSchedulingContext(BaseModel):
@@ -9,8 +11,7 @@ class NodeSchedulingContext(BaseModel):
     id: int
     type: Optional[int] = None
     last_review: Optional[int] = None
-    stability: Optional[float] = None
-    difficulty: Optional[float] = None
+    type_data: Optional[TypeData] = None
     due: Optional[int] = None
     parent_id: Optional[int] = None
     priority: Optional[str] = None

@@ -1,5 +1,7 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional
+
+from src.models.type_data import TypeData
 
 
 class NodeMetrics(BaseModel):
@@ -8,10 +10,6 @@ class NodeMetrics(BaseModel):
     """
     id: int
     last_review: Optional[int] = None
-    stability: Optional[float] = None
-    difficulty: Optional[float] = None
-    state: int
-    step: Optional[int] = None
-
+    type_data: Optional[TypeData] = None
     model_config = ConfigDict(from_attributes=True)
 

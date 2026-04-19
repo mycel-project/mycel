@@ -20,14 +20,9 @@ CREATE TABLE IF NOT EXISTS nodes (
     updated_at      INTEGER NOT NULL,
     data            TEXT DEFAULT "{}",
 
-
-    state           INTEGER NOT NULL DEFAULT 0,
-    step            INTEGER,
-    stability       REAL,
-    difficulty      REAL,
+    type_data       TEXT DEFAULT "{}",
     due             INTEGER NOT NULL DEFAULT 0,
     last_review     INTEGER,
-
 
     priority        TEXT,
     FOREIGN KEY(collection_id) REFERENCES collections(id) ON DELETE CASCADE

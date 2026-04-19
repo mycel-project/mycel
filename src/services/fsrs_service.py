@@ -2,7 +2,9 @@ import fsrs
 import hashlib
 import json
 
+from src.models.type_data.spore_data import SporeData
 from src.services.node_service import NodeService
+from src.types.node_type import NodeType
 from .collection_service import CollectionService
 from src.utils.time import ms_to_datetime, now_datetime
 
@@ -39,13 +41,14 @@ class FsrsService:
         node = self._node_service.get_node(node_id)
         if not node:
             raise ValueError(f"Node {node_id} not found")
-
+        if not isinstance(node.type_data, SporeData):
+            raise ValueError("Node is not a Spore")
         return fsrs.Card(
             card_id=node.id,
-            state=fsrs.State(node.state),
-            step=node.step,
-            stability=node.stability,
-            difficulty=node.difficulty,
+            state=fsrs.State(node.type_data.state),
+            step=node.type_data.step,
+            stability=node.type_data.stability,
+            difficulty=node.type_data.difficulty,
             due=ms_to_datetime(node.due),
             last_review=ms_to_datetime(node.last_review) if node.last_review else None,
         )

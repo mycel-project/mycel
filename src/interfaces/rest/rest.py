@@ -1,18 +1,23 @@
 from typing import Optional, Union, Any
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 
 from src.event_bus import EventBus
 from src.interfaces.base_interface import BaseInterface
 from src.interfaces.uvicorn import UvicornServer
 from src.schemas.node_update import NodeUpdate
 from src.services.collection_service import CollectionService
+from src.services.fragment_service import FragmentService
 from src.services.node_orchestrator import NodeOrchestrator
 from src.services.node_service import NodeService
 from src.services.review_service import ReviewService
+from src.services.spore_service import SporeService
 from src.types.node_type import NodeType
+
 
 class Rest(BaseInterface):
     def __init__(self):
@@ -44,11 +49,28 @@ class Rest(BaseInterface):
     async def stop(self):
         if self.uvicorn.active:
             await self.uvicorn.stop()
-        
+
     def _register_routes(self):
+        @self.app.exception_handler(RequestValidationError)
+        async def validation_exception_handler(request: Request, exc: RequestValidationError):
+            print("VALIDATION ERROR:", exc.errors())
+            return JSONResponse(
+                status_code=422,
+                content={"detail": exc.errors()},
+            )
+        
         @self.app.get("/")
         async def root():
             return {"message": "Hello World"}
+
+        @self.app.get("/node-types")
+        async def get_node_types():
+            return {
+                "types": [
+                    {"label": t.name, "value": t.value}
+                    for t in NodeType
+                ]
+            }
 
         @self.app.get("/collections/{col_id}/nodes")
         async def get_nodes(col_id: int):
@@ -61,9 +83,10 @@ class Rest(BaseInterface):
 
         class NodeCreate(BaseModel):
             content: Union[str, dict]
+            type: int
         @self.app.post("/collections/{col_id}/nodes")
         async def create_node(col_id: int, data: NodeCreate):
-            self.node_service.create_node(col_id, data.content)
+            self.node_orchestrator.create_node_dispatch(col_id, data.type, data.content)
             
         class NodeExtract(BaseModel):
             text: str

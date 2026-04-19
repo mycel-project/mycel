@@ -3,9 +3,11 @@ import time
 from typing import Optional
 
 from src.db import Db
-from src.models.node import Node
+from src.models.node import TYPE_DATA_MAP, Node
 from src.models.node_content import NodeContent
 from src.models.node_data import NodeData
+from src.models.type_data import TypeData
+from src.types.node_type import NodeType
 
 class NodeRepository:
     def __init__(self, db: Db):
@@ -21,12 +23,9 @@ class NodeRepository:
             updated_at=row["updated_at"],
             data=NodeData.from_db(row["data"]),
             due=row["due"],
-            state=row["state"],
             content=NodeContent.from_db(row["content"]),
             last_review=row["last_review"], 
-            stability=row["stability"],
-            difficulty=row["difficulty"],
-            step=row["step"],
+            type_data=row["type_data"],
             priority=row["priority"],
     )
 
@@ -35,9 +34,11 @@ class NodeRepository:
         collection_id: int,
         content: NodeContent,
         data: Optional[NodeData],
+        type: NodeType,
+        type_data: Optional[TypeData] = None,
+        
         parent_id: Optional[int] = None,
         priority: Optional[str] = None,
-        type: Optional[int] = None,
     ) -> Node:
         now = int(time.time() * 1000)
         node = Node(
@@ -47,6 +48,7 @@ class NodeRepository:
             created_at=now,
             updated_at=now,
             data=data or NodeData(),
+            type_data=type_data or TYPE_DATA_MAP[type](),
             due=now,
             content=content, 
             priority=priority,
@@ -54,7 +56,7 @@ class NodeRepository:
         )
         self.db.execute(
             """INSERT INTO nodes
-               (id, collection_id, parent_id, type, created_at, updated_at, data, due, state, content, priority)
+               (id, collection_id, parent_id, type, created_at, updated_at, data, type_data, due, content, priority)
                VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
             (
                 node.id,
@@ -64,8 +66,8 @@ class NodeRepository:
                 node.created_at,
                 node.updated_at,
                 node.data.to_db(),
+                node.type_data.model_dump_json(),
                 node.due,
-                node.state,
                 node.content.to_db(),  
                 node.priority,
             ),
@@ -80,19 +82,16 @@ class NodeRepository:
         now = int(time.time() * 1000)
         self.db.execute(
             """UPDATE nodes SET
-               parent_id=?, type=?, due=?, state=?, content=?, 
-               last_review=?, stability=?, difficulty=?, step=?, priority=?, updated_at=?, data=?
+               parent_id=?, type=?, due=?, content=?, 
+               last_review=?, type_data=?, priority=?, updated_at=?, data=?
                WHERE id=?""",
             (
                 node.parent_id,
                 node.type,
                 node.due,
-                node.state,
                 node.content.to_db(), 
                 node.last_review,
-                node.stability,
-                node.difficulty,
-                node.step,
+                node.type_data.model_dump_json(),
                 node.priority,
                 now,
                 node.data.to_db(),
@@ -142,19 +141,6 @@ class NodeRepository:
         self.db.execute(
             "UPDATE nodes SET state = ?, updated_at = ? WHERE id = ?",
             (state, now, node_id),
-        )
-
-    def update_fsrs_params(
-        self,
-        node_id: int,
-        stability: float,
-        difficulty: float,
-        step: int,
-    ) -> None:
-        now = int(time.time() * 1000)
-        self.db.execute(
-            "UPDATE nodes SET stability = ?, difficulty = ?, step = ?, updated_at = ? WHERE id = ?",
-            (stability, difficulty, step, now, node_id),
         )
 
     def update_last_review(self, node_id: int) -> None:

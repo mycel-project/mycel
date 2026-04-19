@@ -12,7 +12,7 @@ class SporeService:
         self._node_service = node_service
         self._node_format_service = node_format_service
 
-    def create_spore(self, col_id: int, content: Union[str, dict], parent_id: Optional[int]) -> Node:
+    def create_spore(self, col_id: int, content: Union[str, dict], parent_id: Optional[int] = None) -> Node:
         return self._node_service.create_node(
             collection_id=col_id,
             content=content,

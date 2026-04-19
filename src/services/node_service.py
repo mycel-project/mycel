@@ -4,6 +4,7 @@ from src.core.node_scheduling_context import NodeSchedulingContext
 from src.db import Db
 from src.models.node import Node
 from src.models.node_data import NodeData
+from src.models.type_data import TypeData
 from src.repositories.node_repository import NodeRepository
 from src.services.node_format_service import NodeFormatService
 from src.services.ordering_service import insert_between, spread_keys
@@ -38,11 +39,12 @@ class NodeService:
     def create_node(
         self,
         collection_id: int,
+        type: NodeType,
         content: Union[str, dict],
         data: Optional[NodeData] = None,
+        type_data: Optional[TypeData] = None,
         parent_id: Optional[int] = None,
         priority: Optional[str] = None,
-        type: Optional[int] = NodeType.FRAGMENT,
     ) -> Node:
         if priority is None:
             priority = self._resolve_position(collection_id, None, None)
@@ -50,6 +52,7 @@ class NodeService:
         return self._repo.create(
             collection_id=collection_id,
             content=node_content,
+            type_data=type_data,
             parent_id=parent_id,
             priority=priority,
             data=data,
@@ -136,8 +139,7 @@ class NodeService:
                 parent_id=n.parent_id,
                 due=n.due,
                 last_review=n.last_review,
-                stability=n.stability,
-                difficulty=n.difficulty,
+                type_data=n.type_data,
                 overdue=overdue_ms(n.due, now)
             )
             for n in nodes
@@ -176,10 +178,7 @@ class NodeService:
         return NodeMetrics(
             id=n.id,
             last_review=n.last_review,
-            stability=n.stability,
-            difficulty=n.difficulty,
-            state=n.state,
-            step=n.step
+            type_data=n.type_data
         )
 
     def get_node_extanded(self, node_id: int) -> dict:

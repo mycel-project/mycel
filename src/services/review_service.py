@@ -2,6 +2,7 @@ from typing import Optional
 from src.core.review_context import ReviewContext
 from src.db import Db
 from src.models.review import Review
+from src.models.type_data.spore_data import SporeData
 from src.repositories.review_repository import ReviewRepository
 from src.core.scheduling_engine import SchedulingEngine
 from src.schemas.node_update import NodeUpdate
@@ -33,11 +34,14 @@ class ReviewService:
             duration=duration,
             now=now
         )
-        self._node_service.update(node_id, NodeUpdate(
+        type_data = SporeData(
             stability=card.stability,
             difficulty=card.difficulty,
-            state=int(card.state.value), 
+            state=int(card.state.value),
             step=card.step,
+        )
+        self._node_service.update(node_id, NodeUpdate(
+            type_data = type_data,
             due=datetime_to_ms(card.due),
             last_review=now
         ))

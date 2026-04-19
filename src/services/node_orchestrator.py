@@ -12,6 +12,13 @@ class NodeOrchestrator:
         self._fragment_service = fragment_service
         self._spore_service = spore_service
 
+    def create_node_dispatch(self, col_id: int, type: int, content: str | dict):
+        if type == NodeType.FRAGMENT:
+            self._fragment_service.create_fragment(col_id, content)
+        elif type == NodeType.SPORE:
+            self._spore_service.create_spore(col_id, content)
+        else:
+            raise ValueError(f"Node type with index {type} does not exist, can't create node.")
 
     def create_extract(self, col_id: int, type: int, source_node_id: int, text: str, field: int, start_index: int, end_index: int):
         source_node = self._node_service.get_node(source_node_id)

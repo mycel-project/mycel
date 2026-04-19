@@ -41,6 +41,8 @@ class Application():
             "collection_service": collection_service,
             "review_service": review_service,
             "ressource_service": ressource_service,
+            "fragment_service": fragment_service,
+            "spore_service": spore_service,
         }
 
         orchestrators = {

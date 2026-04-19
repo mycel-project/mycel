@@ -18,7 +18,7 @@ class FragmentService:
         }
 
         
-    def create_fragment(self, col_id: int, content: Union[str, dict], parent_id: Optional[int]):
+    def create_fragment(self, col_id: int, content: Union[str, dict], parent_id: Optional[int] = None):
         self._node_service.create_node(
             collection_id=col_id,
             content=content,
