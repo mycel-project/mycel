@@ -2,13 +2,17 @@ from src.db import Db
 from pathlib import Path
 import pytest
 
+import random
+import time
+
 from src.models.node_content import NodeContent
 from src.repositories.node_repository import NodeRepository
 from src.services.collection_service import CollectionService
+from src.types.node_type import NodeType
 
 @pytest.fixture
 def db():
-    return Db(Path("file::memory:?cache=shared"))
+    return Db(Path("db.db"))
 
 @pytest.fixture
 def col(db):
@@ -20,22 +24,23 @@ def col(db):
 
 @pytest.fixture
 def nodes(db, col):
-    import time
-    import random
-
     repo = NodeRepository(db)
 
     now = int(time.time() * 1000)
     day = 86_400_000
-    hour = 3_600_000
 
     created = []
 
-    def create_node(i, **kwargs):
+    def create_fragment(i, **kwargs):
         node = repo.create(
+            type=NodeType.FRAGMENT,
             collection_id=col.id,
             content=NodeContent.from_input({
-                "text": f"learning concept {i}"
+                "0": (
+                    "Machine learning is a subfield of artificial intelligence that focuses on learning from data. "
+                    "It replaces explicit programming with statistical inference. "
+                    f"Example {i}: models can generalize from training data to unseen inputs."
+                )
             }),
             data=None,
             parent_id=kwargs.get("parent_id"),
@@ -44,63 +49,82 @@ def nodes(db, col):
         created.append(node)
         return node
 
-    n1 = create_node(1, priority="Aa")
-    n2 = create_node(2, priority="Ab")
-    n3 = create_node(3, priority="Ac")
+    def create_spore(i, parent_id, **kwargs):
+        node = repo.create(
+            type=NodeType.SPORE,
+            collection_id=col.id,
+            content = NodeContent.from_input({
+                "0": (
+                    "Define {{c1::loss function}} and {{c1::gradient descent}}."
+                )
+            }),
+            data=None,
+            parent_id=parent_id,
+            priority=kwargs.get("priority"),
+        )
+        created.append(node)
+        return node
 
-    n4 = create_node(4, parent_id=n3.id, priority="Aaa")
-    n5 = create_node(5, parent_id=n4.id, priority="Aab")
-    n6 = create_node(6, parent_id=n5.id, priority="A")
+    f1 = create_fragment(1, priority="Aa")
+    f2 = create_fragment(2, priority="Ab", parent_id=f1.id)
+    f3 = create_fragment(3, priority="Ac", parent_id=f2.id)
+    f4 = create_fragment(4, priority="Ba")
+    f5 = create_fragment(5, priority="Bb")
+    f6 = create_fragment(6, priority="Ca")
+    f7 = create_fragment(7, priority="Cb")
+    f8 = create_fragment(8, priority="Da")
+    f9 = create_fragment(9, priority="Db")
+    f10 = create_fragment(10, priority="Ea")
 
-    n7 = create_node(7, priority="Ma")
-    n8 = create_node(8, parent_id=n7.id, priority="Zz")
-    n9 = create_node(9, parent_id=n7.id, priority="Cbc")
+    s1 = create_spore(1, f1.id, priority="Ma")
+    s2 = create_spore(2, f2.id, priority="Zz")
+    s3 = create_spore(3, f3.id, priority="Cbc")
+    s4 = create_spore(4, f4.id, priority="Bef")
+    s5 = create_spore(5, f5.id, priority="Mas")
+    s6 = create_spore(6, f6.id, priority="Aa")
+    s7 = create_spore(7, f7.id, priority="Ab")
+    s8 = create_spore(8, f8.id, priority="Ac")
 
-    n10 = create_node(10, priority="Bef")
-    n11 = create_node(11, parent_id=n10.id, priority="Mas")
 
-    n12 = create_node(12, priority="Ba")
-    n13 = create_node(13, priority="Zccd")
-    n14 = create_node(14, priority="Zqs")
-    n15 = create_node(15, priority="Zv")
+    def rand_review(now_ts, due):
+        # 20% des cas : jamais révisé
+        if random.random() < 0.2:
+            return None
 
-    def rand_hours():
-        return random.randint(-6, 6) * hour
+        return random.randint(
+            min(now_ts, due) - 10 * day,
+            min(now_ts, due),
+        )
 
     updates = [
-        (n1, now - 10 * day),
-        (n2, now - 2 * day),
-        (n3, now),
+        (f1, now - 12 * day),
+        (f2, now - 5 * day),
+        (f3, now - 1 * day),
+        (f4, now),
+        (f5, now + 2 * day),
+        (f6, now + 4 * day),
+        (f7, now + 6 * day),
+        (f8, now + 8 * day),
+        (f9, now + 10 * day),
+        (f10, now + 12 * day),
 
-        (n4, now + 1 * day),
-        (n5, now + 3 * day),
-        (n6, now + 7 * day),
-
-        (n7, now - 1 * day),
-        (n8, now - 15 * day),
-        (n9, now + 20 * day),
-
-        (n10, now - 25 * day),
-        (n11, now + 30 * day),
-
-        (n12, now - 40 * day),
-        (n13, now + 50 * day),
-        (n14, now - 60 * day),
-        (n15, now + 90 * day),
+        (s1, now - 3 * day),
+        (s2, now - 20 * day),
+        (s3, now - 1 * day),
+        (s4, now),
+        (s5, now + 1 * day),
+        (s6, now + 3 * day),
+        (s7, now + 5 * day),
+        (s8, now + 7 * day),
     ]
 
     for node, due in updates:
         node.due = due
+        node.last_review = rand_review(now, due)
 
-        # règle importante :
-        # last_review doit être <= due
-        max_review = min(now, due)
-        min_review = max_review - 10 * day
-
-        node.last_review = random.randint(min_review, max_review)
-
-        node.stability = 2.5
-        node.difficulty = 3.0
+        if node.type == NodeType.SPORE:
+            node.type_data.stability = 2.5
+            node.type_data.difficulty = 3.0
 
         repo.update(node)
 

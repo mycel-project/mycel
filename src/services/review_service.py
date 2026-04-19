@@ -7,9 +7,13 @@ from src.models.type_data.fragment_data import FragmentData
 from src.models.type_data.spore_data import SporeData
 from src.repositories.review_repository import ReviewRepository
 from src.core.scheduling_engine import SchedulingEngine
+from src.schemas.fragment_review import FragmentReview
+from src.schemas.spore_review import SporeReview
+from src.schemas.node_review import NodeReview
 from src.schemas.node_update import NodeUpdate
 from src.services.fsrs_service import FsrsService
 from src.types.node_type import NodeType
+from src.utils.cloze import cloze_to_ellipsis, cloze_to_plain, cloze_with_wrapper
 from .node_service import NodeService
 from src.utils.time import add_days_ms, datetime_to_ms, end_of_day_ms, now_ms, start_of_day_ms
 from src.models.node import Node
@@ -91,7 +95,7 @@ class ReviewService:
         today_end = end_of_day_ms(now)
         return self._repo.get_by_period(today_start, today_end)
 
-    def get_next_review(self, col_id: int) -> Optional[int]:
+    def get_next_review_id(self, col_id: int) -> int | None:
         nodes = self._node_service.get_nodes_scheduling_context(col_id)
         today_reviews = self.get_reviews_for_today()
         today_reviews_context = []
@@ -99,7 +103,7 @@ class ReviewService:
         for r in today_reviews:
             node = self._node_service.get_node(r.node_id)
 
-            if not node or node.type:
+            if not node:
                 continue
 
             today_reviews_context.append(
@@ -109,4 +113,30 @@ class ReviewService:
                 )
             )
                                 
-        return self._scheduling_engine.get_next_card(nodes, today_reviews_context)
+        return self._scheduling_engine.get_next_node(nodes, today_reviews_context)
+
+    def get_next_review(self, col_id: int) -> NodeReview | None:
+        next_node_id = self.get_next_review_id(col_id)
+        if not next_node_id:
+            return None
+        node = self._node_service.get_node(next_node_id)
+        if not node:
+            raise ValueError(f"No node with id {next_node_id}")
+        field_value = next(iter(node.content.fields.values()))
+        if node.type == NodeType.FRAGMENT:
+            return FragmentReview(
+                id=next_node_id,
+                collection_id=col_id,
+                type=node.type,
+                content = field_value,
+            )
+        elif node.type == NodeType.SPORE:
+            return SporeReview(
+                id=next_node_id,
+                collection_id=col_id,
+                type=node.type,
+                prompt = cloze_to_ellipsis(field_value),
+                target = cloze_with_wrapper(field_value, "`", "`")
+            )
+        else:
+            raise ValueError(f"Type {node.type} unknown")

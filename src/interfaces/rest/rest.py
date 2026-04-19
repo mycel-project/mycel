@@ -171,3 +171,8 @@ class Rest(BaseInterface):
         async def review_fragment(col_id: int, node_id: int):
             self.review_service.review_fragment(node_id)
             return {"status": "ok"}
+
+        @self.app.get("/collections/{col_id}/next-review")
+        async def get_next_review(col_id: int):
+            node = self.review_service.get_next_review(col_id)
+            return {"node": node}

@@ -22,5 +22,8 @@ def test_review_node(db, col, nodes):
     fsrs_service = FsrsService(collection_service, node_service)
     review_service = ReviewService(db, engine, fsrs_service, node_service)
 
+    next_node = review_service.get_next_review(col.id)
+    if not next_node:
+        return
     print()
-    print(node_service.get_node(review_service.get_next_review(col.id)))
+    print(next_node)

@@ -9,8 +9,9 @@ from src.utils.debug import preview_extract
 from src.utils.format import ensure_double_newline_left, ensure_double_newline_right
 
 
-class NodeFormatService:
 
+class NodeFormatService:
+    
     def inline_region(
         self,
         node: Node,
