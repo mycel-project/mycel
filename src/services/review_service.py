@@ -1,14 +1,18 @@
-from typing import Optional
+from typing import Optional, cast
+from src.core.node_scheduling_context import NodeSchedulingContext
 from src.core.review_context import ReviewContext
 from src.db import Db
 from src.models.review import Review
+from src.models.type_data.fragment_data import FragmentData
 from src.models.type_data.spore_data import SporeData
 from src.repositories.review_repository import ReviewRepository
 from src.core.scheduling_engine import SchedulingEngine
 from src.schemas.node_update import NodeUpdate
 from src.services.fsrs_service import FsrsService
+from src.types.node_type import NodeType
 from .node_service import NodeService
-from src.utils.time import datetime_to_ms, end_of_day_ms, now_ms, start_of_day_ms
+from src.utils.time import add_days_ms, datetime_to_ms, end_of_day_ms, now_ms, start_of_day_ms
+from src.models.node import Node
 
 class ReviewService:
     # No caching at the moment
@@ -18,7 +22,7 @@ class ReviewService:
         self._node_service = node_service
         self._scheduling_engine = scheduling_engine
 
-    def review(
+    def review_spore(
             self,
             col_id: int,
             node_id: int,
@@ -46,6 +50,41 @@ class ReviewService:
             last_review=now
         ))
 
+    def review_fragment(
+            self,
+            node_id: int
+    ) -> None:
+        node = self._node_service.get_node(node_id)
+        if not node:
+            raise ValueError(f"No node found with id {node_id}")            
+        if not node.type == NodeType.FRAGMENT:
+            raise ValueError("Node must be from fragment type."
+                             )
+        fragment_data = cast(FragmentData, node.type_data)
+        encounter_count = fragment_data.encounter_count
+        context = NodeSchedulingContext(
+            id=node.id,
+            type=node.type,
+            encounter_count=encounter_count,
+            due=node.due,
+        )
+        next_interval = self._scheduling_engine.next_linear_interval(context)
+        now = now_ms()
+
+        self._node_service.update(
+            node.id,
+            NodeUpdate(
+                type_data = FragmentData(
+                    encounter_count=encounter_count+1,
+                ),
+                due=add_days_ms(now, next_interval),
+                last_review=now
+            )
+        )
+
+    def get_encounter_count(self, node_id: int) -> int:
+        return self._repo.get_encounter_count(node_id)
+    
     def get_reviews_for_today(self) -> list[Review]:
         now = now_ms()
         today_start = start_of_day_ms(now)

@@ -30,3 +30,6 @@ def start_of_day_ms(ms: int) -> int:
 def end_of_day_ms(ms: int) -> int:
     start = start_of_day_ms(ms)
     return start + MS_PER_DAY
+
+def add_days_ms(now: int, days: int) -> int:
+    return now + days * MS_PER_DAY

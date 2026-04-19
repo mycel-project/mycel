@@ -29,7 +29,7 @@ class Node(BaseModel):
     last_review: Optional[int] = None  
     priority: Optional[str] = None
 
-
+    
     @model_validator(mode="before")
     @classmethod
     def build_type_data(cls, values):

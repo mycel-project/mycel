@@ -16,5 +16,6 @@ class NodeSchedulingContext(BaseModel):
     parent_id: Optional[int] = None
     priority: Optional[str] = None
     overdue: Optional[int] = None
+    encounter_count: Optional[int] = None
 
     model_config = ConfigDict(from_attributes=True)

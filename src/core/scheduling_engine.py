@@ -10,7 +10,12 @@ from collections import Counter
 class SchedulingEngine:
     def __init__(self):
         self.fragment_vs_spore_proportion = 1/4
-        
+
+    def next_linear_interval(self, node: NodeSchedulingContext) -> int:
+        if node.encounter_count is not None:
+            return node.encounter_count + 1
+        else:
+            raise ValueError("No encounter count data for node.")
 
     def get_next_card(self, nodes: list[NodeSchedulingContext], today_reviews: list[ReviewContext]) -> Optional[int]:
         """

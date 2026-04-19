@@ -159,10 +159,15 @@ class Rest(BaseInterface):
             self.collection_service.update_configs(col_id, data.configModel, data.updates)
             return {"status": "ok"}
 
-        class NodeReview(BaseModel):
+        class SporeReview(BaseModel):
             rating: int
             duration: int
-        @self.app.post("/collections/{col_id}/nodes/{node_id}/reviews")
-        async def review_node(col_id: int, node_id: int, data: NodeReview):
-            self.review_service.review(col_id, node_id, data.rating, data.duration)
+        @self.app.post("/collections/{col_id}/nodes/{node_id}/spore-review")
+        async def review_spore(col_id: int, node_id: int, data: SporeReview):
+            self.review_service.review_spore(col_id, node_id, data.rating, data.duration)
+            return {"status": "ok"}
+
+        @self.app.post("/collections/{col_id}/nodes/{node_id}/fragment-review")
+        async def review_fragment(col_id: int, node_id: int):
+            self.review_service.review_fragment(node_id)
             return {"status": "ok"}

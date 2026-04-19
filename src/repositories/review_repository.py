@@ -72,3 +72,10 @@ class ReviewRepository:
             "DELETE FROM reviews WHERE id = ?",
             (review_id,),
         )
+
+    def get_encounter_count(self, node_id: int) -> int:
+        row = self.db.fetch_one(
+            "SELECT COUNT(*) as count FROM reviews WHERE node_id = ?",
+            (node_id,),
+        )
+        return row["count"] if row else 0
