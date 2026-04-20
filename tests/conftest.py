@@ -1,3 +1,4 @@
+from fractional_indexing import generate_n_keys_between
 from src.db import Db
 from pathlib import Path
 import pytest
@@ -13,6 +14,7 @@ from src.types.node_type import NodeType
 @pytest.fixture
 def db():
     return Db(Path("db.db"))
+#    return Db(Path("file::memory:?cache=shared"))
 
 @pytest.fixture
 def col(db):
@@ -21,6 +23,7 @@ def col(db):
     col = service.create_collection("test")
 
     return col  
+
 
 @pytest.fixture
 def nodes(db, col):
@@ -53,10 +56,8 @@ def nodes(db, col):
         node = repo.create(
             type=NodeType.SPORE,
             collection_id=col.id,
-            content = NodeContent.from_input({
-                "0": (
-                    "Define {{c1::loss function}} and {{c1::gradient descent}}."
-                )
+            content=NodeContent.from_input({
+                "0": "Define {{c1::loss function}} and {{c1::gradient descent}}."
             }),
             data=None,
             parent_id=parent_id,
@@ -65,29 +66,31 @@ def nodes(db, col):
         created.append(node)
         return node
 
-    f1 = create_fragment(1, priority="Aa")
-    f2 = create_fragment(2, priority="Ab", parent_id=f1.id)
-    f3 = create_fragment(3, priority="Ac", parent_id=f2.id)
-    f4 = create_fragment(4, priority="Ba")
-    f5 = create_fragment(5, priority="Bb")
-    f6 = create_fragment(6, priority="Ca")
-    f7 = create_fragment(7, priority="Cb")
-    f8 = create_fragment(8, priority="Da")
-    f9 = create_fragment(9, priority="Db")
-    f10 = create_fragment(10, priority="Ea")
+    # generate valid fractional keys for fragments
+    fragment_keys = generate_n_keys_between(None, None, 20)
 
-    s1 = create_spore(1, f1.id, priority="Ma")
-    s2 = create_spore(2, f2.id, priority="Zz")
-    s3 = create_spore(3, f3.id, priority="Cbc")
-    s4 = create_spore(4, f4.id, priority="Bef")
-    s5 = create_spore(5, f5.id, priority="Mas")
-    s6 = create_spore(6, f6.id, priority="Aa")
-    s7 = create_spore(7, f7.id, priority="Ab")
-    s8 = create_spore(8, f8.id, priority="Ac")
+    f1 = create_fragment(1, priority=fragment_keys[0])
+    f2 = create_fragment(2, priority=fragment_keys[1], parent_id=f1.id)
+    f3 = create_fragment(3, priority=fragment_keys[2], parent_id=f2.id)
+    f4 = create_fragment(4, priority=fragment_keys[3])
+    f5 = create_fragment(5, priority=fragment_keys[4])
+    f6 = create_fragment(6, priority=fragment_keys[5])
+    f7 = create_fragment(7, priority=fragment_keys[6])
+    f8 = create_fragment(8, priority=fragment_keys[7])
+    f9 = create_fragment(9, priority=fragment_keys[8])
+    f10 = create_fragment(10, priority=fragment_keys[9])
 
+
+    s1 = create_spore(1, f1.id, priority=fragment_keys[10])
+    s2 = create_spore(2, f2.id, priority=fragment_keys[11])
+    s3 = create_spore(3, f3.id, priority=fragment_keys[12])
+    s4 = create_spore(4, f4.id, priority=fragment_keys[13])
+    s5 = create_spore(5, f5.id, priority=fragment_keys[14])
+    s6 = create_spore(6, f6.id, priority=fragment_keys[15])
+    s7 = create_spore(7, f7.id, priority=fragment_keys[16])
+    s8 = create_spore(8, f8.id, priority=fragment_keys[17])
 
     def rand_review(now_ts, due):
-        # 20% des cas : jamais révisé
         if random.random() < 0.2:
             return None
 

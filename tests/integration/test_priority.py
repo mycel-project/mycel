@@ -21,11 +21,7 @@ def test_review_node(db, col, nodes):
     node_service = NodeService(db, ressource_service, priority_service)
     
     collection_service = CollectionService(db)
-    fsrs_service = FsrsService(collection_service, node_service)
-    review_service = ReviewService(db, engine, fsrs_service, node_service)
 
-    next_node = review_service.get_next_review(col.id)
-    if not next_node:
-        return
-    print()
-    print(next_node)
+    nodes = node_service._repo.get_by_collection(col.id)    
+    key = node_service.prioritise_random_behind_node(col.id, nodes[17].id, 15)
+    print(priority_service.key_to_percentage(nodes, key))

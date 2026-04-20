@@ -9,6 +9,7 @@ from src.interfaces.interface import Interface
 from src.event_bus import EventBus
 from src.core.scheduling_engine import SchedulingEngine
 from src.services.node_format_service import NodeFormatService
+from src.services.priority_service import PriorityService
 from src.sources.registry import SourceRegistry
 from src.services import NodeService, FsrsService, CollectionService, ReviewService, RessourceService, NodeOrchestrator, FragmentService, SporeService
 import logging
@@ -25,7 +26,8 @@ class Application():
 
         ressource_service = RessourceService(source_registry, html_to_markdown_registry)
         node_format_service = NodeFormatService()
-        node_service = NodeService(self.db, ressource_service)
+        priority_service = PriorityService()
+        node_service = NodeService(self.db, ressource_service, priority_service)
         fragment_service = FragmentService(node_service, node_format_service)
         spore_service = SporeService(node_service, node_format_service)
 

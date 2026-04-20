@@ -23,11 +23,11 @@ class Node(BaseModel):
     data: NodeData
     due: int
     content: NodeContent
+    priority: str 
     type: NodeType = NodeType.FRAGMENT
     type_data: TypeData
     parent_id: Optional[int] = None
     last_review: Optional[int] = None  
-    priority: Optional[str] = None
 
     
     @model_validator(mode="before")
