@@ -151,7 +151,8 @@ class ReviewService:
                 collection_id=col_id,
                 type=node.type,
                 prompt = cloze_to_ellipsis(field_value),
-                target = cloze_with_wrapper(field_value, "`", "`")
+                target = cloze_with_wrapper(field_value, "`", "`"),
+                content = field_value,
             )
         else:
             raise ValueError(f"Type {node.type} unknown")

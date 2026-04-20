@@ -7,3 +7,4 @@ class SporeReview(BaseModel):
     type: int
     prompt: str
     target: str
+    content: str
