@@ -2,7 +2,9 @@ import time
 from typing import Optional
 
 from src.db import Db
-from src.models.review import Review
+from src.models.review import TYPE_REVIEW_DATA_MAP, Review
+from src.models.type_review_data import TypeReviewData
+from src.types.node_type import NodeType
 
 
 
@@ -16,13 +18,15 @@ class ReviewRepository:
             node_id=row["node_id"],
             time=row["time"],
             duration=row["duration"],
-            rating=row["rating"],
+            type_review_data=row["type_review_data"],
+            type=row["type"],
         )
 
     def create(
         self,
         node_id: int,
-        rating: int,
+        type: NodeType,
+        type_review_data: Optional[TypeReviewData] = None,
         duration: int | None = None,
         now: int | None = None
     ) -> Review:
@@ -33,18 +37,20 @@ class ReviewRepository:
             node_id=node_id,
             time=now,
             duration=duration,
-            rating=rating,
+            type=type,
+            type_review_data=type_review_data or TYPE_REVIEW_DATA_MAP[type]()
         )
         self.db.execute(
             """INSERT INTO reviews
-               (id, node_id, time, duration, rating)
-               VALUES (?,?,?,?,?)""",
+               (id, node_id, time, duration, type_review_data, type)
+               VALUES (?,?,?,?,?,?)""",
             (
                 review.id,
                 review.node_id,
                 review.time,
                 review.duration,
-                review.rating,
+                review.type_review_data.model_dump_json(),
+                review.type
             ),
         )
         return review

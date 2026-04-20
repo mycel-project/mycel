@@ -5,6 +5,8 @@ from src.db import Db
 from src.models.review import Review
 from src.models.type_data.fragment_data import FragmentData
 from src.models.type_data.spore_data import SporeData
+from src.models.type_review_data.fragment_review_data import FragmentReviewData
+from src.models.type_review_data.spore_review_data import SporeReviewData
 from src.repositories.review_repository import ReviewRepository
 from src.core.scheduling_engine import SchedulingEngine
 from src.schemas.fragment_review import FragmentReview
@@ -34,38 +36,46 @@ class ReviewService:
             duration: int,
     ) -> None:
         card, review_log = self._fsrs_service.review_node(col_id, node_id, rating, duration)
-
+        node = self._node_service.get_node(node_id)
+        if not node:
+            raise ValueError(f"No node with id {node_id} found.")
         now = int(review_log.review_datetime.timestamp() * 1000)
-        self._repo.create(
-            node_id=node_id,
-            rating=rating,
-            duration=duration,
-            now=now
-        )
         type_data = SporeData(
             stability=card.stability,
             difficulty=card.difficulty,
             state=int(card.state.value),
             step=card.step,
         )
-        self._node_service.update(node_id, NodeUpdate(
-            type_data = type_data,
-            due=datetime_to_ms(card.due),
-            last_review=now
-        ))
+        self._repo.create(
+            node_id=node_id,
+            type=node.type,
+            type_review_data=SporeReviewData(
+                rating=rating
+            ),
+            duration=duration,
+            now=now
+        )
+        self._node_service.update(
+            node_id,
+            NodeUpdate(
+                type_data=type_data,
+                due=datetime_to_ms(card.due),
+                last_review=now
+            )
+        )
 
     def review_fragment(
             self,
-            node_id: int
+            col_id: int,
+            node_id: int,
+            duration: int,
     ) -> None:
         node = self._node_service.get_node(node_id)
         if not node:
             raise ValueError(f"No node found with id {node_id}")            
         if not node.type == NodeType.FRAGMENT:
-            raise ValueError("Node must be from fragment type."
-                             )
-        fragment_data = cast(FragmentData, node.type_data)
-        encounter_count = fragment_data.encounter_count
+            raise ValueError("Node must be from fragment type.")
+        encounter_count = self.get_encounter_count(node_id)
         context = NodeSchedulingContext(
             id=node.id,
             type=node.type,
@@ -75,12 +85,17 @@ class ReviewService:
         next_interval = self._scheduling_engine.next_linear_interval(context)
         now = now_ms()
 
+        self._repo.create(
+            node_id=node_id,
+            type=node.type,
+            type_review_data=FragmentReviewData(),
+            duration=duration,
+            now=now
+        )
         self._node_service.update(
             node.id,
             NodeUpdate(
-                type_data = FragmentData(
-                    encounter_count=encounter_count+1,
-                ),
+                type_data=FragmentData(),
                 due=add_days_ms(now, next_interval),
                 last_review=now
             )

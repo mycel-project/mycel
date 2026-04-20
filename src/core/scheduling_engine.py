@@ -63,7 +63,7 @@ class SchedulingEngine:
         - Example: 10.0 means 10 fragment reviews per 1 spore review
         - If no spore reviews exist, returns float('inf')
         """
-        logger.debug(f"{reviews}")
+        logger.debug(f"reviews: {reviews}")
 
         types = [r.node_type for r in reviews]
         counts = Counter(types)

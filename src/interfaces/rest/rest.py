@@ -167,9 +167,11 @@ class Rest(BaseInterface):
             self.review_service.review_spore(col_id, node_id, data.rating, data.duration)
             return {"status": "ok"}
 
+        class FragmentReview(BaseModel):
+            duration: int
         @self.app.post("/collections/{col_id}/nodes/{node_id}/fragment-review")
-        async def review_fragment(col_id: int, node_id: int):
-            self.review_service.review_fragment(node_id)
+        async def review_fragment(col_id: int, node_id: int, data: FragmentReview):
+            self.review_service.review_fragment(col_id, node_id, data.duration)
             return {"status": "ok"}
 
         @self.app.get("/collections/{col_id}/next-review")
