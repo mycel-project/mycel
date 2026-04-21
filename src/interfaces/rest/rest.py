@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 
 from src.event_bus import EventBus
 from src.interfaces.base_interface import BaseInterface
@@ -24,8 +25,7 @@ class Rest(BaseInterface):
         self.app = FastAPI()
         self.app.add_middleware(
             CORSMiddleware,
-            allow_origins=["http://localhost:5173"],
-            allow_credentials=True,
+            allow_origins=["*"],
             allow_methods=["*"],
             allow_headers=["*"],
         )
