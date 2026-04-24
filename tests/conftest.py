@@ -20,7 +20,7 @@ def db():
 def col(db):
     service = CollectionService(db)
 
-    col = service.create_collection("test")
+    col = service.create_collection("pytest")
 
     return col  
 
