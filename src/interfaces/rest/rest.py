@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.event_bus import EventBus
 from src.interfaces.base_interface import BaseInterface
 from src.interfaces.uvicorn import UvicornServer
+from src.schemas.collection_list_view import CollectionListView
 from src.schemas.node_update import NodeUpdate
 from src.services.collection_service import CollectionService
 from src.services.fragment_service import FragmentService
@@ -29,7 +30,6 @@ class Rest(BaseInterface):
             allow_methods=["*"],
             allow_headers=["*"],
         )
-
         self._register_routes()
 
     async def init(self, config, bus, services, orchestrators):
@@ -136,9 +136,9 @@ class Rest(BaseInterface):
             name: str
         @self.app.post("/collections")
         async def create_collection(data: CollectionCreate):
-            self.collection_service.create_collection(data.name)
-            return {"status": "ok"}
-
+            collection = self.collection_service.create_collection(data.name)
+            return {"collection": CollectionListView.model_validate(collection)}
+        
         class CollectionRename(BaseModel):
             newName: str
         @self.app.post("/collections/{colId}/rename")
