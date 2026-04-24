@@ -34,6 +34,9 @@ class CollectionService:
             fsrsconf=fsrsconf
         )
 
+    def delete_collection(self, collection_id: int) -> None:
+        self._repo.delete(collection_id)
+
     def create_default_collection_conf(self) -> CollectionConf:
         return CollectionConf(
             theme="light"

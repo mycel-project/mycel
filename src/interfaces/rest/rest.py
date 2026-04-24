@@ -132,6 +132,11 @@ class Rest(BaseInterface):
             data = self.collection_service.get_collection_detailed(colId)
             return {"details": data}
 
+        @self.app.delete("/collections/{collection_id}")
+        async def delete_collection(collection_id: int):
+            self.collection_service.delete_collection(collection_id)
+            return {"status": "ok"}
+
         class CollectionCreate(BaseModel):
             name: str
         @self.app.post("/collections")

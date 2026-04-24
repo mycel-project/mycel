@@ -215,7 +215,6 @@ class NodeService:
         )
 
     def delete_node(self, node_id: int) -> None:
-        """Delete a node"""
         self._repo.delete(node_id)
 
     def get_nodes_scheduling_context(self, collection_id: int) -> list[NodeSchedulingContext]:
