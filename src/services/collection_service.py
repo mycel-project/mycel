@@ -8,6 +8,7 @@ from src.schemas.collection_list_view import CollectionListView
 from src.models.collection_conf import CollectionConf
 from src.models.fsrs_conf import FsrsConf
 from src.schemas import FsrsConfUpdate, CollectionConfUpdate
+from src.schemas.config_update import ConfigUpdate
 
 
 class CollectionService:
@@ -102,11 +103,12 @@ class CollectionService:
         collection = self._repo.get(col_id)
         return collection
 
-    def update_configs(self, col_id: int, config_model: str, updates: dict) -> None:
-        if config_model=="collection":
-            data = CollectionConfUpdate(**updates)
+    def update_configs(self, col_id: int, new_config: ConfigUpdate) -> None:
+
+        if new_config.collection is not None:
+            data = CollectionConfUpdate(**new_config.collection)
             self.update_collection_conf(col_id, data)
-        elif config_model=="fsrs":
-            data = FsrsConfUpdate(**updates)
+
+        if new_config.fsrs is not None:
+            data = FsrsConfUpdate(**new_config.fsrs)
             self.update_fsrs_conf(col_id, data)
-                

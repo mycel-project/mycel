@@ -11,6 +11,7 @@ from src.event_bus import EventBus
 from src.interfaces.base_interface import BaseInterface
 from src.interfaces.uvicorn import UvicornServer
 from src.schemas.collection_list_view import CollectionListView
+from src.schemas.config_update import ConfigUpdate
 from src.schemas.node_update import NodeUpdate
 from src.services.collection_service import CollectionService
 from src.services.fragment_service import FragmentService
@@ -132,36 +133,31 @@ class Rest(BaseInterface):
             data = self.collection_service.get_collection_detailed(colId)
             return {"details": data}
 
-        @self.app.delete("/collections/{collection_id}")
-        async def delete_collection(collection_id: int):
-            self.collection_service.delete_collection(collection_id)
-            return {"status": "ok"}
-
         class CollectionCreate(BaseModel):
             name: str
         @self.app.post("/collections")
         async def create_collection(data: CollectionCreate):
             collection = self.collection_service.create_collection(data.name)
             return {"collection": CollectionListView.model_validate(collection)}
-        
-        class CollectionRename(BaseModel):
-            newName: str
-        @self.app.post("/collections/{colId}/rename")
-        async def rename_collection(colId: int, data: CollectionRename):
-            self.collection_service.rename_collection(colId, data.newName)
+
+        @self.app.delete("/collections/{collection_id}", status_code = 204)
+        async def delete_collection(collection_id: int):
+            self.collection_service.delete_collection(collection_id)
+
+        class CollectionUpdate(BaseModel):
+            newName: str | None = None
+            config: ConfigUpdate | None = None # We could be more precise here with a schema
+        @self.app.patch("/collections/{col_id}")
+        async def update_collections(col_id: int,  data: CollectionUpdate):
+            if data.newName is not None:
+                self.collection_service.rename_collection(col_id, data.newName)
+            if data.config is not None:
+                self.collection_service.update_configs(col_id, data.config)
             return {"status": "ok"}
-            
+        
         @self.app.post("/collections/{col_id}/reindex")
         async def reindex(col_id: int):
             self.node_service.reindex(col_id)
-            return {"status": "ok"}
-
-        class CollectionConfigsUpdate(BaseModel):
-            configModel: str
-            updates: dict
-        @self.app.patch("/collections/{col_id}")
-        async def update_collections_configs(col_id: int,  data: CollectionConfigsUpdate):
-            self.collection_service.update_configs(col_id, data.configModel, data.updates)
             return {"status": "ok"}
 
         class SporeReview(BaseModel):
