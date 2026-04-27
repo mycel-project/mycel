@@ -180,4 +180,4 @@ class Rest(BaseInterface):
         @self.app.get("/collections/{col_id}/next-review")
         async def get_next_review(col_id: int):
             node = self.review_service.get_next_review(col_id)
-            return {"node": node}
+            return {"node_review": node}
