@@ -238,24 +238,38 @@ class NodeService:
         return self._repo.get_by_collection(collection_id)
 
     def get_nodes(
-        self,
-        collection_id: int,
-        limit: int = 100,
+            self,
+            collection_id: int,
+            limit: int = 1000,
     ) -> list[NodeView]:
         nodes = self._repo.get_by_collection(collection_id, limit)
         return [
-            NodeView(
-                id=n.id,
-                collection_id=n.collection_id,
-                type=n.type,
-                content=n.content.model_dump(),
-                position=i,
-                parent_id=n.parent_id,
-                due=n.due,
-                data=n.data.model_dump()
-            )
+            self.node_to_view(n, i)
             for i, n in enumerate(nodes)
         ]
+
+    
+    def get_position(self, collection_id: int, node_id: int) -> int:
+        nodes = self._repo.get_by_collection(collection_id)
+
+        for i, node in enumerate(nodes):
+            if node.id == node_id:
+                return i
+
+        raise ValueError(f"Node {node_id} not found in collection {collection_id}")
+
+
+    def node_to_view(self, node: Node, position: int) -> NodeView:
+        return NodeView(
+            id=node.id,
+            collection_id=node.collection_id,
+            type=node.type,
+            content=node.content,
+            position=position,
+            parent_id=node.parent_id,
+            due=node.due,
+            data=node.data.model_dump()
+        )
 
     def get_node(self, node_id: int) -> Optional[Node]:
         return self._repo.get(node_id)
@@ -275,7 +289,7 @@ class NodeService:
         node_metrics = self.get_node_metrics(node_id)
         return {"view": node_view, "metrics": node_metrics}
 
-    def update(self, node_id: int, updates: NodeUpdate) -> None:
+    def update(self, node_id: int, updates: NodeUpdate) -> Node:
         node = self._repo.get(node_id)
 
         if node is None:
@@ -285,6 +299,8 @@ class NodeService:
             setattr(node, field, value)
 
         self._repo.update(node)
+
+        return node
         
     def get_due_nodes(self, collection_id: int) -> list[Node]:
         return self._repo.get_due(collection_id)

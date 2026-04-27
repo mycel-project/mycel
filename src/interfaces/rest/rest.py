@@ -122,8 +122,8 @@ class Rest(BaseInterface):
 
         @self.app.patch("/collections/{col_id}/nodes/{node_id}")
         async def update_node(col_id: int, node_id: int, data: NodeUpdate):
-            self.node_service.update(node_id, data)
-            return {"status": "ok"}
+            updated_node = self.node_orchestrator.update_node_to_view(node_id, data)
+            return {"node": updated_node}
 
         @self.app.get("/collections")
         async def get_collections():

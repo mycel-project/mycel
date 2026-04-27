@@ -1,5 +1,7 @@
 from typing import Union, Optional
 
+from src.schemas.node_update import NodeUpdate
+from src.schemas.node_view import NodeView
 from src.services.fragment_service import FragmentService
 from src.services.node_service import NodeService
 from src.services.spore_service import SporeService
@@ -11,6 +13,11 @@ class NodeOrchestrator:
         self._node_service = node_service
         self._fragment_service = fragment_service
         self._spore_service = spore_service
+
+    def update_node_to_view(self, node_id: int, data: NodeUpdate) -> NodeView:
+        updated_node = self._node_service.update(node_id, data)
+        position = self._node_service.get_position(updated_node.collection_id, updated_node.id)
+        return self._node_service.node_to_view(updated_node, position)
 
     def create_node_dispatch(self, col_id: int, type: int, content: str | dict):
         if type == NodeType.FRAGMENT:
