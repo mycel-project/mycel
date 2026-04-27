@@ -64,6 +64,10 @@ class Rest(BaseInterface):
         async def root():
             return {"message": "Hello World"}
 
+        @self.app.get("/health")
+        async def check_reachability():
+            return {"status": "ok"}        
+
         @self.app.get("/node-types")
         async def get_node_types():
             return {
