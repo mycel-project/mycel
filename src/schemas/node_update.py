@@ -1,6 +1,6 @@
 from typing import Optional
 
-from pydantic import BaseModel, field_validator, ConfigDict
+from pydantic import BaseModel, field_validator
 
 from src.models.node_content import NodeContent
 from src.models.node_data import NodeData

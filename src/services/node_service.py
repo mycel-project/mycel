@@ -280,12 +280,11 @@ class NodeService:
 
         if node is None:
             raise ValueError(f"Node {node_id} not found")
-        
-        for field, value in updates:
-            if value is not None:
-                setattr(node, field, value)
+
+        for field, value in updates.model_dump(exclude_unset=True).items():
+            setattr(node, field, value)
 
         self._repo.update(node)
-
+        
     def get_due_nodes(self, collection_id: int) -> list[Node]:
         return self._repo.get_due(collection_id)
