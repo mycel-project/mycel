@@ -2,7 +2,7 @@ from typing import cast, Optional
 from src.core.node_scheduling_context import NodeSchedulingContext
 from src.core.review_context import ReviewContext
 from src.types.node_type import NodeType
-from src.utils.time import MS_PER_DAY, ms_to_datetime, start_of_day_ms
+from src.utils.time import MS_PER_DAY, ms_to_datetime, now_ms, start_of_day_ms
 
 from collections import Counter
 import logging
@@ -33,6 +33,9 @@ class SchedulingEngine:
         earliest_due = min(due_nodes, key=lambda n: cast(int, n.due))
 
         day_start = start_of_day_ms(cast(int, earliest_due.due))
+        if day_start > now_ms():
+            # No more reviews
+            return None
         logger.debug(f"Treating day {ms_to_datetime(day_start)}")
         nodes_due_that_day = self.get_node_due_on_day(day_start, due_nodes)
 

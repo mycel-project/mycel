@@ -13,7 +13,7 @@ from src.schemas.node_update import NodeUpdate
 from src.services.fsrs_service import FsrsService
 from src.types.node_type import NodeType
 from .node_service import NodeService
-from src.utils.time import add_days_ms, datetime_to_ms, end_of_day_ms, now_ms, start_of_day_ms
+from src.utils.time import add_days_ms, datetime_to_ms, end_of_day_ms, ms_to_datetime, now_ms, start_of_day_ms
 from src.models.node import Node
 
 class ReviewService:
@@ -33,8 +33,6 @@ class ReviewService:
     ) -> None:
         card, review_log = self._fsrs_service.review_node(col_id, node_id, rating, duration)
         node = self._node_service.get_node(node_id)
-        if not node:
-            raise ValueError(f"No node with id {node_id} found.")
         now = int(review_log.review_datetime.timestamp() * 1000)
         type_data = SporeData(
             stability=card.stability,
@@ -66,9 +64,7 @@ class ReviewService:
             node_id: int,
             duration: int,
     ) -> None:
-        node = self._node_service.get_node(node_id)
-        if not node:
-            raise ValueError(f"No node found with id {node_id}")            
+        node = self._node_service.get_node(node_id)           
         if not node.type == NodeType.FRAGMENT:
             raise ValueError("Node must be from fragment type.")
         encounter_count = self.get_encounter_count(node_id)
@@ -131,6 +127,4 @@ class ReviewService:
         if not next_node_id:
             return None
         node = self._node_service.get_node(next_node_id)
-        if not node:
-            raise ValueError(f"No node with id {next_node_id}")
         return node
