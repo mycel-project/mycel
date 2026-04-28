@@ -7,6 +7,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
+from src.core.cloze import CLOZE_REGEX
 from src.event_bus import EventBus
 from src.interfaces.base_interface import BaseInterface
 from src.interfaces.uvicorn import UvicornServer
@@ -68,7 +69,7 @@ class Rest(BaseInterface):
         async def check_reachability():
             return {"status": "ok"}        
 
-        @self.app.get("/node-types")
+        @self.app.get("/config/node-types")
         async def get_node_types():
             return {
                 "types": [
@@ -76,6 +77,10 @@ class Rest(BaseInterface):
                     for t in NodeType
                 ]
             }
+
+        @self.app.get("/config/cloze-regex")
+        async def get_cloze_regex():
+            return {"regex": CLOZE_REGEX}
 
         @self.app.get("/collections/{col_id}/nodes")
         async def get_nodes(col_id: int):

@@ -8,8 +8,6 @@ from src.types.text_segment import TextSegment
 from src.utils.debug import preview_extract
 from src.utils.format import ensure_double_newline_left, ensure_double_newline_right
 
-CLOZE_REGEX = r"\{\{c\d+::([^}:]+)(?:::([^}]*))?\}\}"
-
 class NodeFormatService:
     
     def build_cloze(self, text: str, index: int = 1) -> str:
