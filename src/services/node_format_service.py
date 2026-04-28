@@ -8,9 +8,13 @@ from src.types.text_segment import TextSegment
 from src.utils.debug import preview_extract
 from src.utils.format import ensure_double_newline_left, ensure_double_newline_right
 
-
+CLOZE_REGEX = r"\{\{c\d+::([^}:]+)(?:::([^}]*))?\}\}"
 
 class NodeFormatService:
+    
+    def build_cloze(self, text: str, index: int = 1) -> str:
+        safe_text = text.replace("{{", "((").replace("}}", "))")
+        return f"{{{{c{index}::{safe_text}}}}}"
     
     def inline_region(
         self,
@@ -20,6 +24,7 @@ class NodeFormatService:
         end: int,
         expected_text: Optional[str] = None
     ) -> Node:
+
         segment = self.get_content_portions(
             node.content,
             field,
@@ -28,14 +33,14 @@ class NodeFormatService:
             expected_text
         )
 
-        cleaned_target = segment.target.replace("`", "")
+        cleaned = segment.target.replace("`", "")
+        inline = f"`{cleaned}`"
 
         node.content.fields[field] = (
-            segment.before + "`" + cleaned_target + "`" + segment.after
+            segment.before + inline + segment.after
         )
 
         return node
-    
 
     def cloze_region(
         self,
@@ -44,9 +49,9 @@ class NodeFormatService:
         start: int,
         end: int,
         expected_text: Optional[str] = None,
-        cloze_index: Optional[int] = 1,
+        cloze_index: int = 1, # just support one at the moment
     ) -> Node:
-        cloze_index = 1 # just support one at the moment
+
         segment = self.get_content_portions(
             node.content,
             field,
@@ -54,10 +59,13 @@ class NodeFormatService:
             end,
             expected_text
         )
-        cleaned_target = segment.target.replace("{{", "((").replace("}}", "))")
+
+        cloze = self.build_cloze(segment.target, cloze_index)
+
         node.content.fields[field] = (
-            segment.before + "{{c" + str(cloze_index) + "::" + cleaned_target + "}}" + segment.after
+            segment.before + cloze + segment.after
         )
+
         return node
     
 

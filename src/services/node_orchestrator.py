@@ -39,6 +39,7 @@ class NodeOrchestrator:
                 "Possible sync or encoding issue."
             )
         if "\n" in text and type == NodeType.SPORE:
+            # Why???
             raise ValueError("Spore can't include new lines")            
         if source_node.type != NodeType.FRAGMENT:
             raise ValueError("You can only create a new node from a fragment")
@@ -47,9 +48,9 @@ class NodeOrchestrator:
             self._fragment_service.create_fragment(col_id, text, source_node_id)
         elif type == NodeType.SPORE:
             source_content = next(iter(source_node.content.fields.values())) # need simplification
+            # Is three steps really a good idea ? can create problem if crash between steps : a spore without clozed region or extract formatting reminescence.
             spore = self._spore_service.create_spore(col_id, source_content, source_node_id)
             clozed_spore = self._spore_service.cloze_region(spore.id, text, str(field), start_index, end_index)
             self._spore_service.remove_extract_formatting(clozed_spore.id, str(field))
-
             
         self._fragment_service.emphasize_region(source_node_id, type, text, str(field), start_index, end_index)

@@ -9,13 +9,9 @@ from src.models.type_review_data.fragment_review_data import FragmentReviewData
 from src.models.type_review_data.spore_review_data import SporeReviewData
 from src.repositories.review_repository import ReviewRepository
 from src.core.scheduling_engine import SchedulingEngine
-from src.schemas.fragment_review import FragmentReview
-from src.schemas.spore_review import SporeReview
-from src.schemas.node_review import NodeReview
 from src.schemas.node_update import NodeUpdate
 from src.services.fsrs_service import FsrsService
 from src.types.node_type import NodeType
-from src.utils.cloze import cloze_to_ellipsis, cloze_to_plain, cloze_with_wrapper
 from .node_service import NodeService
 from src.utils.time import add_days_ms, datetime_to_ms, end_of_day_ms, now_ms, start_of_day_ms
 from src.models.node import Node
@@ -130,29 +126,11 @@ class ReviewService:
                                 
         return self._scheduling_engine.get_next_node(nodes, today_reviews_context)
 
-    def get_next_review(self, col_id: int) -> NodeReview | None:
+    def get_next_review(self, col_id: int) -> Node | None:
         next_node_id = self.get_next_review_id(col_id)
         if not next_node_id:
             return None
         node = self._node_service.get_node(next_node_id)
         if not node:
             raise ValueError(f"No node with id {next_node_id}")
-        field_value = next(iter(node.content.fields.values()))
-        if node.type == NodeType.FRAGMENT:
-            return FragmentReview(
-                id=next_node_id,
-                collection_id=col_id,
-                type=node.type,
-                content = field_value,
-            )
-        elif node.type == NodeType.SPORE:
-            return SporeReview(
-                id=next_node_id,
-                collection_id=col_id,
-                type=node.type,
-                prompt = cloze_to_ellipsis(field_value),
-                target = cloze_with_wrapper(field_value, "`", "`"),
-                content = field_value,
-            )
-        else:
-            raise ValueError(f"Type {node.type} unknown")
+        return node
