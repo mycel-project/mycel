@@ -1,6 +1,7 @@
 from typing import Optional, Union
 
 from _pytest.nodes import NodeMeta
+from src.domain.domain_exceptions import NotAFragment
 from src.models.node import Node
 from src.schemas.node_update import NodeUpdate
 from src.services.node_format_service import NodeFormatService
@@ -26,6 +27,11 @@ class FragmentService:
             type=NodeType.FRAGMENT
         )
 
+    def update_fragment(self, node_id: int, data: NodeUpdate) -> Node:
+        node = self._node_service.get_node(node_id)
+        if node.type != NodeType.FRAGMENT:
+            raise NotAFragment(node_id)
+        return self._node_service.update(node_id, data)
         
     def emphasize_region(self, node_id: int, node_region_type: int, text: str, field: str, start: int, end: int):
         node = self._node_service.get_node(node_id)

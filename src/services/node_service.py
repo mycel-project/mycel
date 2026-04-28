@@ -2,6 +2,7 @@ from typing import Optional, Union
 
 from src.core.node_scheduling_context import NodeSchedulingContext
 from src.db import Db
+from src.domain.domain_exceptions import NoNodeFound
 from src.models.node import Node
 from src.models.node_data import NodeData
 from src.models.type_data import TypeData
@@ -271,8 +272,11 @@ class NodeService:
             data=node.data.model_dump()
         )
 
-    def get_node(self, node_id: int) -> Optional[Node]:
-        return self._repo.get(node_id)
+    def get_node(self, node_id: int) -> Node:
+        node = self._repo.get(node_id)
+        if node is None:
+            raise NoNodeFound(node_id)
+        return node
 
     def get_node_metrics(self, node_id: int) -> Optional[NodeMetrics]:
         n = self._repo.get(node_id)
@@ -291,6 +295,7 @@ class NodeService:
 
     def update(self, node_id: int, updates: NodeUpdate) -> Node:
         node = self._repo.get(node_id)
+        print("updates:", updates)
 
         if node is None:
             raise ValueError(f"Node {node_id} not found")

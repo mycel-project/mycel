@@ -5,6 +5,11 @@ import json
 class NodeContent(BaseModel):
     fields: dict[str, str] = Field(default_factory=dict)
 
+    def get_first_field(self) -> str | None:
+        if not self.fields:
+            return None
+        return next(iter(self.fields.values()))
+
     @classmethod
     def from_input(cls, data):
         if data is None:

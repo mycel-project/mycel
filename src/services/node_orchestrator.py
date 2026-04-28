@@ -1,5 +1,7 @@
 from typing import Union, Optional
 
+from src.domain.domain_exceptions import NotAKnownType
+from src.models.node import Node
 from src.schemas.node_update import NodeUpdate
 from src.schemas.node_view import NodeView
 from src.services.fragment_service import FragmentService
@@ -15,9 +17,21 @@ class NodeOrchestrator:
         self._spore_service = spore_service
 
     def update_node_to_view(self, node_id: int, data: NodeUpdate) -> NodeView:
-        updated_node = self._node_service.update(node_id, data)
+        updated_node = self.update_node(node_id, data)
         position = self._node_service.get_position(updated_node.collection_id, updated_node.id)
         return self._node_service.node_to_view(updated_node, position)
+
+    def update_node(self, node_id, data: NodeUpdate) -> Node:
+        """
+        Higher level dispatching than node_service.update() to allow specific verifications based on node type
+        """
+        node = self._node_service.get_node(node_id)
+        if node.type == NodeType.FRAGMENT:
+            return self._fragment_service.update_fragment(node_id, data)
+        elif node.type == NodeType.SPORE:
+            return self._spore_service.update_spore(node_id, data)
+        else:
+            raise NotAKnownType(node_id, node.type)
 
     def create_node_dispatch(self, col_id: int, type: int, content: str | dict):
         if type == NodeType.FRAGMENT:

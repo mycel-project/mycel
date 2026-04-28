@@ -1,6 +1,6 @@
 from typing import Optional, Union, Any
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from fastapi.exceptions import RequestValidationError
@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.core.cloze import CLOZE_REGEX
+from src.domain.domain_exceptions import InvalidNodeUpdate
 from src.event_bus import EventBus
 from src.interfaces.base_interface import BaseInterface
 from src.interfaces.uvicorn import UvicornServer
@@ -127,8 +128,20 @@ class Rest(BaseInterface):
 
         @self.app.patch("/collections/{col_id}/nodes/{node_id}")
         async def update_node(col_id: int, node_id: int, data: NodeUpdate):
-            updated_node = self.node_orchestrator.update_node_to_view(node_id, data)
-            return {"node": updated_node}
+            try:
+                updated_node = self.node_orchestrator.update_node_to_view(
+                    node_id,
+                    data
+                )
+                return {"node": updated_node}
+            except InvalidNodeUpdate as e:
+                raise HTTPException(
+                    status_code=400,
+                    detail={
+                        "code": "INVALID_NODE_UPDATE",
+                        "reason": e.reason,
+                    },
+                )
 
         @self.app.get("/collections")
         async def get_collections():
