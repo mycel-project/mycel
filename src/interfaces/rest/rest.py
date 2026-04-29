@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.core.cloze import CLOZE_REGEX
-from src.domain.domain_exceptions import InvalidNodeUpdate
+from src.domain.domain_exceptions import InvalidNodeUpdate, NoNodeFound
 from src.event_bus import EventBus
 from src.interfaces.base_interface import BaseInterface
 from src.interfaces.uvicorn import UvicornServer
@@ -87,6 +87,37 @@ class Rest(BaseInterface):
         async def get_nodes(col_id: int):
             nodes = self.node_service.get_nodes(col_id, 100)
             return {"nodes": nodes}
+
+        @self.app.get("/collections/{col_id}/nodes/{node_id}")
+        async def get_node(col_id: int, node_id: int):
+            try:
+                node = self.node_service.get_node(node_id)
+                return {"node": node}
+            except NoNodeFound as e:
+                raise HTTPException(
+                    status_code=404,
+                    detail={
+                        "code": "NODE_NOT_FOUND",
+                    },
+                )
+
+        @self.app.get("/collections/{col_id}/nodes/{node_id}/root")
+        async def get_root_node(col_id: int, node_id: int):
+            """
+            Get the highest parent node for the given node_id.
+            Useful when the frontend is not using a cache and the node tree is deeply nested.
+            Allows quickly reaching the root without having to traverse manually through multiple calls.
+            """
+            try:
+                node = self.node_service.get_root_node(node_id)
+                return {"node": node}
+            except NoNodeFound as e:
+                raise HTTPException(
+                    status_code=404,
+                    detail={
+                        "code": "NODE_NOT_FOUND",
+                    },
+                )
 
         @self.app.get("/collections/{col_id}/nodes/{node_id}")
         async def get_node_metrics(col_id: int, node_id: int):

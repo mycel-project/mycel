@@ -278,6 +278,21 @@ class NodeService:
             raise NoNodeFound(node_id)
         return node
 
+    def get_root_node(self, node_id: int) -> Node:
+        root_id = self.get_root_id(node_id)
+        return self.get_node(root_id)
+        
+    def get_root_id(self, node_id: int) -> int:
+        current_id = node_id
+
+        while True:
+            node = self.get_node(current_id)
+
+            if node.parent_id is None:
+                return node.id
+
+            current_id = node.parent_id
+
     def get_node_metrics(self, node_id: int) -> Optional[NodeMetrics]:
         n = self._repo.get(node_id)
         if not n:
