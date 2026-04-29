@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.core.cloze import CLOZE_REGEX
-from src.domain.domain_exceptions import InvalidNodeUpdate, NoNodeFound
+from src.domain.domain_exceptions import DomainException, InvalidNodeUpdate, NoNodeFound, NotAFragment
 from src.event_bus import EventBus
 from src.interfaces.base_interface import BaseInterface
 from src.interfaces.uvicorn import UvicornServer
@@ -56,10 +56,23 @@ class Rest(BaseInterface):
     def _register_routes(self):
         @self.app.exception_handler(RequestValidationError)
         async def validation_exception_handler(request: Request, exc: RequestValidationError):
-            print("VALIDATION ERROR:", exc.errors())
             return JSONResponse(
                 status_code=422,
-                content={"detail": exc.errors()},
+                content={
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid request",
+                    "errors": exc.errors(),
+                },
+            )
+
+        @self.app.exception_handler(DomainException)
+        async def domain_exception_handler(request: Request, exc: DomainException):
+            return JSONResponse(
+                status_code=exc.status_code,
+                content={
+                    "code": exc.code,
+                    "message": exc.message,
+                },
             )
         
         @self.app.get("/")
@@ -90,35 +103,20 @@ class Rest(BaseInterface):
 
         @self.app.get("/collections/{col_id}/nodes/{node_id}")
         async def get_node(col_id: int, node_id: int):
-            try:
                 node = self.node_service.get_node(node_id)
                 return {"node": node}
-            except NoNodeFound as e:
-                raise HTTPException(
-                    status_code=404,
-                    detail={
-                        "code": "NODE_NOT_FOUND",
-                    },
-                )
 
         @self.app.get("/collections/{col_id}/nodes/{node_id}/root")
         async def get_root_node(col_id: int, node_id: int):
             """
+            For convenience
             Get the highest parent node for the given node_id.
             Useful when the frontend is not using a cache and the node tree is deeply nested.
             Allows quickly reaching the root without having to traverse manually through multiple calls.
             """
-            try:
-                node = self.node_service.get_root_node(node_id)
-                return {"node": node}
-            except NoNodeFound as e:
-                raise HTTPException(
-                    status_code=404,
-                    detail={
-                        "code": "NODE_NOT_FOUND",
-                    },
-                )
-
+            node = self.node_service.get_root_node(node_id)
+            return {"node": node}
+ 
         @self.app.get("/collections/{col_id}/nodes/{node_id}")
         async def get_node_metrics(col_id: int, node_id: int):
             return self.node_service.get_node_metrics(node_id)
@@ -138,8 +136,9 @@ class Rest(BaseInterface):
             type: NodeType
         @self.app.post("/collections/{col_id}/nodes/{node_id}/extracts")
         async def create_node_extract(col_id: int, node_id: int, data: NodeExtract):
-            self.node_orchestrator.create_extract(col_id, data.type, node_id, data.text, data.field, data.start_index, data.end_index)
-
+            extract_result = self.node_orchestrator.create_extract(col_id, data.type, node_id, data.text, data.field, data.start_index, data.end_index)
+            return extract_result.model_dump()
+            
         class NodeCreateFromUrl(BaseModel):
             url: str
         @self.app.post("/collections/{col_id}/nodes/from-url")
@@ -159,20 +158,11 @@ class Rest(BaseInterface):
 
         @self.app.patch("/collections/{col_id}/nodes/{node_id}")
         async def update_node(col_id: int, node_id: int, data: NodeUpdate):
-            try:
-                updated_node = self.node_orchestrator.update_node_to_view(
-                    node_id,
-                    data
-                )
-                return {"node": updated_node}
-            except InvalidNodeUpdate as e:
-                raise HTTPException(
-                    status_code=400,
-                    detail={
-                        "code": "INVALID_NODE_UPDATE",
-                        "reason": e.reason,
-                    },
-                )
+            updated_node = self.node_orchestrator.update_node_to_view(
+                node_id,
+                data
+            )
+            return {"node": updated_node}
 
         @self.app.get("/collections")
         async def get_collections():
