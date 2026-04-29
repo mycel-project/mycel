@@ -1,4 +1,5 @@
 from typing import Optional, Union, Any
+import logging
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -8,7 +9,7 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.core.cloze import CLOZE_REGEX
-from src.domain.domain_exceptions import DomainException, InvalidNodeUpdate, NoNodeFound, NotAFragment
+from src.domain.domain_exceptions import DomainException
 from src.event_bus import EventBus
 from src.interfaces.base_interface import BaseInterface
 from src.interfaces.uvicorn import UvicornServer
@@ -23,6 +24,7 @@ from src.services.review_service import ReviewService
 from src.services.spore_service import SporeService
 from src.types.node_type import NodeType
 
+logger = logging.getLogger(__name__)
 
 class Rest(BaseInterface):
     def __init__(self):
@@ -56,6 +58,7 @@ class Rest(BaseInterface):
     def _register_routes(self):
         @self.app.exception_handler(RequestValidationError)
         async def validation_exception_handler(request: Request, exc: RequestValidationError):
+            logger.error(str(exc.errors()))
             return JSONResponse(
                 status_code=422,
                 content={
@@ -67,6 +70,8 @@ class Rest(BaseInterface):
 
         @self.app.exception_handler(DomainException)
         async def domain_exception_handler(request: Request, exc: DomainException):
+            logger.error(exc.message)
+            logger.error(exc.code)
             return JSONResponse(
                 status_code=exc.status_code,
                 content={
@@ -133,10 +138,10 @@ class Rest(BaseInterface):
             field: int
             start_index: int
             end_index: int
-            type: NodeType
+            extract_type: NodeType
         @self.app.post("/collections/{col_id}/nodes/{node_id}/extracts")
         async def create_node_extract(col_id: int, node_id: int, data: NodeExtract):
-            extract_result = self.node_orchestrator.create_extract(col_id, data.type, node_id, data.text, data.field, data.start_index, data.end_index)
+            extract_result = self.node_orchestrator.create_extract(col_id, data.extract_type, node_id, data.text, data.field, data.start_index, data.end_index)
             return extract_result.model_dump()
             
         class NodeCreateFromUrl(BaseModel):

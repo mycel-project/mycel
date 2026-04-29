@@ -49,7 +49,15 @@ class NotAKnownType(DomainException):
         
 # Extract errors
 
-class ExtractMismatchError(DomainException):
+class ExtractError(DomainException):
+    def __init__(self, code: str, message: str):
+        super().__init__(
+            code=code,
+            message=message,
+            status_code=400,
+        )
+
+class ExtractMismatchError(ExtractError):
     def __init__(self, rebuilt_text: str, text: str):
         message = (
             "Selection mismatch: extracted content differs from reconstructed slice. "
@@ -58,16 +66,15 @@ class ExtractMismatchError(DomainException):
         super().__init__(
             code="EXTRACT_MISMATCH",
             message=message,
-            status_code=400,
         )
         
-class InvalidSourceNodeType(DomainException):
-    def __init__(self):
+class InvalidSourceNodeType(ExtractError):
+    def __init__(self, node_id: int, type: int):
         super().__init__(
             code="INVALID_SOURCE_NODE_TYPE",
-            message="You can only create a new node from a fragment",
-            status_code=400
+            message=f"You can only create a new node from a fragment, but node with id {node_id} has a type of {type}.",
         )
+
 
 # update errors
 
@@ -79,7 +86,7 @@ class InvalidNodeUpdate(DomainException):
         node_content: Any,
         reason: Optional[str] = None,
     ):
-        content_preview = str(node_content)[:100]
+        content_preview = str(node_content)[:200]
 
         message = (
             f"Invalid update for node {node_id}"
@@ -99,9 +106,9 @@ class InvalidNodeUpdate(DomainException):
 # Other 
 
 class ClozeValidationError(DomainException):
-    def __init__(self, message: str = "Cloze validation error"):
+    def __init__(self, text: str):
         super().__init__(
             code="CLOZE_VALIDATION_ERROR",
-            message="",
+            message=f"No cloze field found in {text[:200]}",
             status_code=400
         )

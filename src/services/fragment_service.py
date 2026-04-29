@@ -1,7 +1,7 @@
 from typing import Optional, Union
 
 from _pytest.nodes import NodeMeta
-from src.domain.domain_exceptions import NotAFragment
+from src.domain.domain_exceptions import NotAFragment, NotAKnownType
 from src.models.node import Node
 from src.schemas.node_update import NodeUpdate
 from src.services.node_format_service import NodeFormatService
@@ -19,8 +19,8 @@ class FragmentService:
         }
 
         
-    def create_fragment(self, col_id: int, content: Union[str, dict], parent_id: Optional[int] = None):
-        self._node_service.create_node(
+    def create_fragment(self, col_id: int, content: Union[str, dict], parent_id: Optional[int] = None) -> Node:
+        return self._node_service.create_node(
             collection_id=col_id,
             content=content,
             parent_id=parent_id,
@@ -33,18 +33,16 @@ class FragmentService:
             raise NotAFragment(node_id)
         return self._node_service.update(node_id, data)
         
-    def emphasize_region(self, node_id: int, node_region_type: int, text: str, field: str, start: int, end: int):
+    def emphasize_region(self, node_id: int, node_region_type: int, text: str, field: str, start: int, end: int) -> Node:
         node = self._node_service.get_node(node_id)
-        if not node:
-            raise ValueError(f"No node found for id {node_id}")
 
         handler = self._emphasis_handlers.get(NodeType(node_region_type))
         if not handler:
-            raise ValueError("Unsupported type")
+            raise NotAKnownType(node_id, node_region_type)
 
         node = handler(node, field, start, end, text)
 
-        self._node_service.update(
+        return self._node_service.update(
             node_id,
             NodeUpdate(content=node.content)
         )

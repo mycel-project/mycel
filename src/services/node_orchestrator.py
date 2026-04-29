@@ -1,6 +1,8 @@
 from typing import Union, Optional
+import logging
 
-from src.domain.domain_exceptions import NotAKnownType
+from src.domain.domain_exceptions import ExtractError, ExtractMismatchError, InvalidSourceNodeType, NotAKnownType
+from src.models.extract_result import ExtractResult
 from src.models.node import Node
 from src.schemas.node_update import NodeUpdate
 from src.schemas.node_view import NodeView
@@ -9,6 +11,8 @@ from src.services.node_service import NodeService
 from src.services.spore_service import SporeService
 from src.types.node_type import NodeType
 
+
+logger = logging.getLogger(__name__)
 
 class NodeOrchestrator:
     def __init__(self, node_service: NodeService, fragment_service: FragmentService, spore_service: SporeService):
@@ -41,30 +45,38 @@ class NodeOrchestrator:
         else:
             raise ValueError(f"Node type with index {type} does not exist, can't create node.")
 
-    def create_extract(self, col_id: int, type: int, source_node_id: int, text: str, field: int, start_index: int, end_index: int):
+    def create_extract(self, col_id: int, extract_type: int, source_node_id: int, text: str, field: int, start_index: int, end_index: int) -> ExtractResult:
         source_node = self._node_service.get_node(source_node_id)
-        
-        if not source_node:
-            raise ValueError(f"No node found for id {source_node_id}, can't create extract")
         rebuilt_text = source_node.content.fields[str(field)][start_index:end_index]
+        
         if rebuilt_text != text: # We compare to avoid incoherences
-            raise ValueError(
-                "Selection mismatch: extracted content differs from reconstructed slice. "
-                "Possible sync or encoding issue."
-            )
-        if "\n" in text and type == NodeType.SPORE:
-            # Why???
-            raise ValueError("Spore can't include new lines")            
+            raise ExtractMismatchError(rebuilt_text, text)
+        if "\n" in text and extract_type == NodeType.SPORE: # I forgot why
+            raise ExtractError("EXTRACT_ERROR", "Spore can't include new lines")            
         if source_node.type != NodeType.FRAGMENT:
-            raise ValueError("You can only create a new node from a fragment")
-
-        if type == NodeType.FRAGMENT:
-            self._fragment_service.create_fragment(col_id, text, source_node_id)
-        elif type == NodeType.SPORE:
-            source_content = next(iter(source_node.content.fields.values())) # need simplification
-            # Is three steps really a good idea ? can create problem if crash between steps : a spore without clozed region or extract formatting reminescence.
+            raise InvalidSourceNodeType(source_node_id, extract_type)
+        
+        if extract_type == NodeType.FRAGMENT:
+            extract = self._fragment_service.create_fragment(col_id, text, source_node_id)
+        elif extract_type == NodeType.SPORE:
+            source_content = next(iter(source_node.content.fields.values())) # temp, need simplification
             spore = self._spore_service.create_spore(col_id, source_content, source_node_id)
-            clozed_spore = self._spore_service.cloze_region(spore.id, text, str(field), start_index, end_index)
-            self._spore_service.remove_extract_formatting(clozed_spore.id, str(field))
-            
-        self._fragment_service.emphasize_region(source_node_id, type, text, str(field), start_index, end_index)
+            try: 
+                clozed_spore = self._spore_service.cloze_region(spore.id, text, str(field), start_index, end_index)
+                extract = self._spore_service.remove_extract_formatting(clozed_spore.id, str(field))
+            except Exception:
+                self._node_service.delete_node(spore.id)
+                raise
+        else:
+            raise NotAKnownType(source_node_id, extract_type)
+        
+        source = source_node
+        try:
+            source = self._fragment_service.emphasize_region(source_node_id, extract_type, text, str(field), start_index, end_index)
+        except Exception as e:
+            logger.warning(f"Failed to emphasize region in parent (id {source_node_id}), but extract is valid: {e}")
+        
+        return ExtractResult(
+            extract_node=extract,
+            source_node=source
+        )

@@ -1,7 +1,7 @@
 from typing import Optional, Union
 
 from src.core.cloze import CLOZE_PATTERN
-from src.domain.domain_exceptions import InvalidNodeUpdate, NotASpore
+from src.domain.domain_exceptions import ClozeValidationError, InvalidNodeUpdate, NotASpore
 from src.models.node_content import NodeContent
 from src.schemas.node_update import NodeUpdate
 from src.services.node_format_service import NodeFormatService
@@ -31,7 +31,7 @@ class SporeService:
             try:
                 self.validate_spore_content(content)
             except ValueError as e:
-                raise InvalidNodeUpdate(node_id, node.type, content, str(e))
+                raise InvalidNodeUpdate(node_id, node.type, content, str(e)) from ClozeValidationError(str(content))
         return self._node_service.update(node_id, data)
 
     def validate_spore_content(self, content: NodeContent):
@@ -48,19 +48,19 @@ class SporeService:
 
     def cloze_region(self, node_id: int, text: str, field: str, start: int, end: int) -> Node:
         node = self._node_service.get_node(node_id)
-        if not node:
-            raise ValueError(f"No node found for id {node_id}")
-        self._node_format_service.cloze_region(node, field, start, end, text)
-        self._node_service.update(
+
+        clozed_node = self._node_format_service.cloze_region(node, field, start, end, text)
+        content = clozed_node.content.fields[field]
+        if not self.has_cloze(content):
+            raise ClozeValidationError(content)
+        return self._node_service.update(
             node_id,
             NodeUpdate(content=node.content)
         )
-        return node
 
     def remove_extract_formatting(self, node_id: int, field_key: str = "0") -> Node:
         node = self._node_service.get_node(node_id)
-        if not node:
-            raise ValueError(f"No node found for id {node_id}")
+
         field_content = node.content.fields[field_key]
         
         text_without_inline = self._node_format_service.remove_inline_code_formatting(field_content)
