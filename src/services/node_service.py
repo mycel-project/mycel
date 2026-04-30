@@ -3,6 +3,7 @@ from typing import Optional, Union
 from src.core.node_scheduling_context import NodeSchedulingContext
 from src.db import Db
 from src.domain.domain_exceptions import NoNodeFound
+from src.models import type_data
 from src.models.node import Node
 from src.models.node_data import NodeData
 from src.models.type_data import TypeData
@@ -269,7 +270,8 @@ class NodeService:
             position=position,
             parent_id=node.parent_id,
             due=node.due,
-            data=node.data.model_dump()
+            data=node.data,
+            type_data=node.type_data if node.type == NodeType.FRAGMENT else None # Can be made more specific if needed, to select specific data depending on the node type. At the moment, only fragment ype_data is used by frontend.
         )
 
     def get_node(self, node_id: int) -> Node:

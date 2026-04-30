@@ -26,7 +26,12 @@ class SchedulingEngine:
         
         return node id
         """
-        due_nodes = [n for n in nodes if n.due is not None]
+        due_nodes = [
+            n for n in nodes
+            if n.due is not None
+            and not (n.type == NodeType.FRAGMENT and getattr(n.type_data, 'dismiss', False))
+        ]
+        
         if not due_nodes:
             return None
 
