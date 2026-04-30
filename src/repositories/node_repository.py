@@ -247,4 +247,29 @@ class NodeRepository:
         )
         return [self._row_to_model(r) for r in rows]
 
-    
+    def get_children(self, node_id: int) -> list[Node]:
+        rows = self.db.fetch_all(
+            "SELECT * FROM nodes WHERE parent_id = ? ORDER BY priority",
+            (node_id,),
+        )
+        return [self._row_to_model(r) for r in rows]
+
+    def get_children_recursive(self, node_id: int) -> list[Node]:
+        """
+        Does not include root node
+        """
+        rows = self.db.fetch_all(
+            """
+            WITH RECURSIVE subtree AS (
+                SELECT * FROM nodes WHERE parent_id = ? 
+                UNION ALL
+                SELECT n.*
+                FROM nodes n
+                INNER JOIN subtree s ON n.parent_id = s.id
+            )
+            SELECT * FROM subtree
+            """,
+            (node_id,),
+        )
+
+        return [self._row_to_model(r) for r in rows]

@@ -132,6 +132,12 @@ class Rest(BaseInterface):
         @self.app.post("/collections/{col_id}/nodes")
         async def create_node(col_id: int, data: NodeCreate):
             self.node_orchestrator.create_node_dispatch(col_id, data.type, data.content)
+
+        @self.app.delete("/collections/{col_id}/nodes/{node_id}")
+        async def delete_node(col_id: int, node_id: int):
+            """Deletes the node and its entire subtree."""
+            deleted_ids = self.node_service.delete_subtree(node_id)
+            return {"deleted_ids": deleted_ids}
             
         class NodeExtract(BaseModel):
             text: str

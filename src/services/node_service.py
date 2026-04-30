@@ -278,6 +278,21 @@ class NodeService:
             raise NoNodeFound(node_id)
         return node
 
+    def get_children_recursive(self, node_id: int) -> list[Node]:
+        self.get_node(node_id)  # To check node validity
+        return self._repo.get_children_recursive(node_id)
+
+    def get_subtree(self, node_id: int) -> list[Node]:
+        root = self.get_node(node_id)
+        return [root] + self.get_children_recursive(node_id)
+
+    def delete_subtree(self, node_id: int) -> list[int]:
+        subtree = self.get_subtree(node_id)
+        ids = [n.id for n in subtree]
+        for node_id in ids:
+            self._repo.delete(node_id)
+        return ids
+
     def get_root_node(self, node_id: int) -> Node:
         root_id = self.get_root_id(node_id)
         return self.get_node(root_id)
