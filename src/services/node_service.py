@@ -2,7 +2,7 @@ from typing import Optional, Union
 
 from src.core.node_scheduling_context import NodeSchedulingContext
 from src.db import Db
-from src.domain.domain_exceptions import NoNodeFound
+from src.domain.domain_exceptions import InvalidUrl, NoNodeFound
 from src.models import type_data
 from src.models.node import Node
 from src.models.node_data import NodeData
@@ -198,7 +198,7 @@ class NodeService:
             data=data,
             type=type,
         )
-
+    
     
     def create_node_from_url(
         self,
@@ -207,7 +207,7 @@ class NodeService:
     ) -> Node:
         valid_url = is_valid_url(url)
         if not valid_url:
-            raise ValueError("Invalid URL")
+            raise InvalidUrl(url)
         ressource = self._ressource_service.get_ressource_from_url(url)
         return self.create_node(
             collection_id=collection_id,

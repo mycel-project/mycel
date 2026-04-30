@@ -1,5 +1,6 @@
-from typing import Optional, Union, Any
+from typing import Optional, Union, Any, Annotated
 import logging
+from pydantic import Field
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,6 +14,7 @@ from src.domain.domain_exceptions import DomainException
 from src.event_bus import EventBus
 from src.interfaces.base_interface import BaseInterface
 from src.interfaces.uvicorn import UvicornServer
+from src.models.node_create import NodeCreate
 from src.schemas.collection_list_view import CollectionListView
 from src.schemas.config_update import ConfigUpdate
 from src.schemas.node_update import NodeUpdate
@@ -126,13 +128,6 @@ class Rest(BaseInterface):
         async def get_node_metrics(col_id: int, node_id: int):
             return self.node_service.get_node_metrics(node_id)
 
-        class NodeCreate(BaseModel):
-            content: Union[str, dict]
-            type: int
-        @self.app.post("/collections/{col_id}/nodes")
-        async def create_node(col_id: int, data: NodeCreate):
-            self.node_orchestrator.create_node_dispatch(col_id, data.type, data.content)
-
         @self.app.delete("/collections/{col_id}/nodes/{node_id}")
         async def delete_node(col_id: int, node_id: int):
             """Deletes the node and its entire subtree."""
@@ -150,12 +145,10 @@ class Rest(BaseInterface):
             extract_result = self.node_orchestrator.create_extract(col_id, data.extract_type, node_id, data.text, data.field, data.start_index, data.end_index)
             return extract_result.model_dump()
             
-        class NodeCreateFromUrl(BaseModel):
-            url: str
-        @self.app.post("/collections/{col_id}/nodes/from-url")
-        async def create_node_from_url(col_id: int, data: NodeCreateFromUrl):
-            self.node_service.create_node_from_url(col_id, data.url)
-            return {"status": "ok"}
+        @self.app.post("/collections/{col_id}/nodes")
+        async def create_node(col_id: int, data: NodeCreate):
+            node = self.node_orchestrator.create_node_to_view(col_id, data) 
+            return {"node": node}
 
         class ReprioritiseNode(BaseModel):
             new_position_node_id: int

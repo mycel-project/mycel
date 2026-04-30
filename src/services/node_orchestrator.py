@@ -1,9 +1,10 @@
 from typing import Union, Optional
 import logging
 
-from src.domain.domain_exceptions import ExtractError, ExtractMismatchError, InvalidSourceNodeType, NotAKnownType
+from src.domain.domain_exceptions import ExtractError, ExtractMismatchError, InvalidSourceNodeType, NotAKnownType, UnknownRessourceTypeError
 from src.models.extract_result import ExtractResult
 from src.models.node import Node
+from src.models.node_create import NodeCreate, NodeCreateFromUrl
 from src.schemas.node_update import NodeUpdate
 from src.schemas.node_view import NodeView
 from src.services.fragment_service import FragmentService
@@ -19,6 +20,17 @@ class NodeOrchestrator:
         self._node_service = node_service
         self._fragment_service = fragment_service
         self._spore_service = spore_service
+
+    def create_node_to_view(self, collection_id: int, data: NodeCreate) -> NodeView:
+        new_node = self.create_node(collection_id, data)
+        position = self._node_service.get_position(new_node.collection_id, new_node.id)
+        return self._node_service.node_to_view(new_node, position)
+
+    def create_node(self, collection_id: int, data: NodeCreate) -> Node:
+        if isinstance(data, NodeCreateFromUrl):
+            return self._node_service.create_node_from_url(collection_id, data.url)
+        else:
+            raise UnknownRessourceTypeError(type(data).__name__)
 
     def update_node_to_view(self, node_id: int, data: NodeUpdate) -> NodeView:
         updated_node = self.update_node(node_id, data)
@@ -36,14 +48,6 @@ class NodeOrchestrator:
             return self._spore_service.update_spore(node_id, data)
         else:
             raise NotAKnownType(node_id, node.type)
-
-    def create_node_dispatch(self, col_id: int, type: int, content: str | dict):
-        if type == NodeType.FRAGMENT:
-            self._fragment_service.create_fragment(col_id, content)
-        elif type == NodeType.SPORE:
-            self._spore_service.create_spore(col_id, content)
-        else:
-            raise ValueError(f"Node type with index {type} does not exist, can't create node.")
 
     def create_extract(self, col_id: int, extract_type: int, source_node_id: int, text: str, field: int, start_index: int, end_index: int) -> ExtractResult:
         source_node = self._node_service.get_node(source_node_id)

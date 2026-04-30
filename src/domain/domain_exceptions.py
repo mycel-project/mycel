@@ -102,6 +102,31 @@ class InvalidNodeUpdate(DomainException):
             status_code=400
         )
 
+# Ressource Errors
+
+class RessourceError(DomainException):
+    def __init__(self, code: str, message: str, status_code: int):
+        super().__init__(
+            code=code,
+            message=message,
+            status_code=400,
+        )
+
+class UnknownRessourceTypeError(RessourceError):
+    def __init__(self, type: str):
+        super().__init__(
+            code="UNKNOWN_RESSOURCE_TYPE",
+            message=f"Cannot create resource: unknown type '{type}'",
+            status_code=400
+        )
+
+class InvalidUrl(RessourceError):
+    def __init__(self, url: str):
+        super().__init__(
+            code="INVALID_URL",
+            message=f"'{url}' is not a valid URL",
+            status_code=400
+        )
 
 # Other 
 
