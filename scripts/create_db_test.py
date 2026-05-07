@@ -1,56 +1,27 @@
-from unittest.mock import Mock
-from fractional_indexing import generate_n_keys_between
-from src.db import Db
 from pathlib import Path
-import pytest
-
-import random
 import time
+import random
 
+from src.db import Db
 from src.models.node_content import NodeContent
 from src.repositories.node_repository import NodeRepository
 from src.services.collection_service import CollectionService
-from src.services.review_service import ReviewService
 from src.types.node_type import NodeType
-
-@pytest.fixture
-def review_service():
-    db = Mock()
-    scheduling_engine = Mock()
-    fsrs_service = Mock()
-    node_service = Mock()
-    pending_cache = Mock()
-    
-    repo = Mock()  
-    
-    service = ReviewService(
-        db=db,
-        scheduling_engine=scheduling_engine,
-        fsrs_service=fsrs_service,
-        node_service=node_service,
-        pending_review_cache=pending_cache,
-    )
-    service._repo = repo
-    
-    return service
-
-@pytest.fixture
-def db():
-    return Db(Path("db_test.db"))
-#    return Db(Path("file::memory:?cache=shared"))
-
-@pytest.fixture
-def col(db):
-    service = CollectionService(db)
-
-    col = service.create_collection("pytest")
-
-    return col  
+from fractional_indexing import generate_n_keys_between
 
 
-@pytest.fixture
-def nodes(db, col):
+def main():
+    db_path = Path("db_test.db")
+
+    if db_path.exists():
+        db_path.unlink()
+
+    db = Db(db_path)
+
+    collection_service = CollectionService(db)
     repo = NodeRepository(db)
+
+    col = collection_service.create_collection("pytest")
 
     now = int(time.time() * 1000)
     day = 86_400_000
@@ -80,7 +51,7 @@ def nodes(db, col):
             type=NodeType.SPORE,
             collection_id=col.id,
             content=NodeContent.from_input({
-                "0": "Define {{c1::loss function}} and {{c1::gradient descent}}."
+                "0": "Define "+str(i)+" {{c1::loss function}} and {{c1::gradient descent}}."
             }),
             data=None,
             parent_id=parent_id,
@@ -154,4 +125,10 @@ def nodes(db, col):
 
         repo.update(node)
 
-    return repo.get_by_collection(col.id)
+    print(f"✅ Test DB created at {db_path}")
+    print(f"📦 Collection id: {col.id}")
+    print(f"📊 Nodes: {len(created)}")
+
+
+if __name__ == "__main__":
+    main()
