@@ -36,8 +36,7 @@ def review_service():
 
 @pytest.fixture
 def db():
-    return Db(Path("db_test.db"))
-#    return Db(Path("file::memory:?cache=shared"))
+    return Db(Path("file::memory:?cache=shared"))
 
 @pytest.fixture
 def col(db):
