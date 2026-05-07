@@ -85,3 +85,18 @@ class ReviewRepository:
             (node_id,),
         )
         return row["count"] if row else 0
+
+    def get_last_review_by_collection(self, col_id: int) -> Optional[Review]:
+        row = self.db.fetch_one(
+            """
+            SELECT r.*
+            FROM reviews r
+            JOIN nodes n ON n.id = r.node_id
+            WHERE n.collection_id = ?
+            ORDER BY r.time DESC
+            LIMIT 1
+            """,
+            (col_id,),
+        )
+
+        return self._row_to_model(row) if row else None

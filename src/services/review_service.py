@@ -2,7 +2,7 @@ from typing import Optional, cast
 from src.core.node_scheduling_context import NodeSchedulingContext
 from src.core.review_context import ReviewContext
 from src.db import Db
-from src.domain.domain_exceptions import NotAFragment, NotASpore
+from src.domain.domain_exceptions import NoReviewToUndo, NotAFragment, NotASpore, UndoNotAllowedError
 from src.models.review import Review
 from src.models.type_data.fragment_data import FragmentData
 from src.models.type_data.spore_data import SporeData
@@ -15,7 +15,7 @@ from src.services.cache.pending_review_cache import PendingReviewCache
 from src.services.fsrs_service import FsrsService
 from src.types.node_type import NodeType
 from .node_service import NodeService
-from src.utils.time import add_days_ms, datetime_to_ms, end_of_day_ms, ms_to_datetime, now_ms, start_of_day_ms
+from src.utils.time import add_days_ms, datetime_to_ms, end_of_day_ms, ms_to_datetime, now_ms, now_s, start_of_day_ms
 from src.models.node import Node
 
 class ReviewService:
@@ -133,3 +133,17 @@ class ReviewService:
 
     def get_pending_node_id(self) -> int | None:
         return self._pending_review_cache.get()
+
+    def undo_review(self, col_id: int, max_age_s: int | None = None):
+        last_review = self._repo.get_last_review_by_collection(col_id)
+
+        if last_review is None:
+            raise NoReviewToUndo()
+
+        if max_age_s is not None:
+            max_age_ms = max_age_s * 1000
+            age = now_ms() - last_review.time
+            if age > max_age_ms:
+                raise UndoNotAllowedError(age, max_age_ms)
+
+        self._repo.delete(last_review.id)

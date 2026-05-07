@@ -8,6 +8,9 @@ MS_PER_DAY = 86_400_000
 def now_ms() -> int:
     return int(time.time() * 1000)
 
+def now_s() -> int:
+    return int(time.time())
+
 def now_datetime() -> datetime.datetime:
     return datetime.datetime.now(datetime.timezone.utc)
 

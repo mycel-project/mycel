@@ -162,6 +162,22 @@ class UnknownReviewTypeError(ReviewError):
             status_code=400,
         )
 
+class NoReviewToUndo(ReviewError):
+    def __init__(self):
+        super().__init__(
+            code="NO_REVIEW_TO_UNDO",
+            message = f"No review available to undo",
+            status_code=409,
+        )
+
+class UndoNotAllowedError(ReviewError):
+    def __init__(self, review_age_ms: int, max_age_ms: int):
+        super().__init__(
+            code="UNDO_REVIEW_NOT_ALLOWED",
+            message = f"Undo not allowed: review is too old\n({review_age_ms}ms > {max_age_ms}ms)",
+            status_code=403,
+        )
+        
 # Other 
 
 class ClozeValidationError(DomainException):

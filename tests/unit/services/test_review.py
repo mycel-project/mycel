@@ -1,6 +1,6 @@
 from unittest.mock import Mock
 
-from src.domain.domain_exceptions import NoPendingNodeError, NotAFragment, NotASpore, PendingReviewMismatchError, UnknownReviewTypeError
+from src.domain.domain_exceptions import NoPendingNodeError, NoReviewToUndo, NotAFragment, NotASpore, PendingReviewMismatchError, UndoNotAllowedError, UnknownReviewTypeError
 from src.models.type_review_data.fragment_review_data import FragmentReviewData
 from src.models.type_review_data.spore_review_data import SporeReviewData
 from src.services.review_orchestrator import ReviewOrchestrator
@@ -8,6 +8,7 @@ from src.services.review_orchestrator import ReviewOrchestrator
 import pytest
 
 from src.types.node_type import NodeType
+from src.utils.time import now_ms
 
 
 # review_orchestrator
@@ -90,3 +91,40 @@ def test_review_spore_not_spore_node(review_service):
 
     with pytest.raises(NotASpore):
         review_service.review_spore(1, 1, data)
+
+## Undo
+        
+def test_undo_review_success(review_service):
+    repo = review_service._repo
+
+    repo.get_last_review_by_collection.return_value = Mock(
+        id=1,
+        time=now_ms() - 10000 
+    )
+
+    review_service.undo_review(col_id=1, max_age_s=500)
+
+    repo.delete.assert_called_once_with(1)
+
+def test_undo_review_no_review(review_service):
+    repo = review_service._repo
+
+    repo.get_last_review_by_collection.return_value = None
+
+    with pytest.raises(NoReviewToUndo):
+        review_service.undo_review(col_id=1, max_age_s=500)
+
+    repo.delete.assert_not_called()
+
+def test_undo_review_too_old(review_service):
+    repo = review_service._repo
+
+    repo.get_last_review_by_collection.return_value = Mock(
+        id=1,
+        time=now_ms() - 1000000
+    )
+
+    with pytest.raises(UndoNotAllowedError):
+        review_service.undo_review(col_id=1, max_age_s=100)
+
+    repo.delete.assert_not_called()

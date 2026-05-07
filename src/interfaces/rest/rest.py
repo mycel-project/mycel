@@ -219,7 +219,14 @@ class Rest(BaseInterface):
             self.review_orchestrator.review(col_id, node_id, data)
             return Response(status_code=204)
 
-        @self.app.get("/collections/{col_id}/next-review")
+        class UndoRequest(BaseModel):
+            max_age: int | None = None
+        @self.app.post("/collections/{col_id}/reviews/undo")
+        async def undo_review(col_id: int, data: UndoRequest):
+            self.review_service.undo_review(col_id, data.max_age)
+            return Response(status_code=204)
+        
+        @self.app.get("/collections/{col_id}/reviews/next")
         async def get_next_review(col_id: int):
             node = self.review_service.get_next_review(col_id)
             return {"node_review": node}

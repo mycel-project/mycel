@@ -20,14 +20,19 @@ def review_service():
     fsrs_service = Mock()
     node_service = Mock()
     pending_cache = Mock()
-
-    return ReviewService(
+    
+    repo = Mock()  
+    
+    service = ReviewService(
         db=db,
         scheduling_engine=scheduling_engine,
         fsrs_service=fsrs_service,
         node_service=node_service,
         pending_review_cache=pending_cache,
     )
+    service._repo = repo
+    
+    return service
 
 @pytest.fixture
 def db():
