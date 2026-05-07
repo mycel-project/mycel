@@ -46,6 +46,10 @@ class NotAKnownType(DomainException):
             status_code=400
         )
 
+class NodeDeleted(Exception):
+    def __init__(self, node_id: int):
+        super().__init__(f"Node {node_id} exists but has been deleted")
+
         
 # Extract errors
 
@@ -170,7 +174,18 @@ class NoReviewToUndo(ReviewError):
             status_code=409,
         )
 
-class UndoNotAllowedError(ReviewError):
+class ReviewUndoError(ReviewError):
+    def __init__(self, code: str, message: str, status_code=409):
+        super().__init__(code=code, message=message, status_code=status_code)
+
+class ReviewUndoNodeInaccessible(ReviewUndoError):
+    def __init__(self, node_id: int, review_id: int):
+        super().__init__(
+            code="UNDO_NODE_INACCESSIBLE",
+            message=f"Review {review_id} was undone but node {node_id} is inaccessible",
+        )
+
+class ReviewUndoNotAllowedError(ReviewUndoError):
     def __init__(self, review_age_ms: int, max_age_ms: int):
         super().__init__(
             code="UNDO_REVIEW_NOT_ALLOWED",
