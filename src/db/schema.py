@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS reviews (
     time     INTEGER NOT NULL,
     duration     INTEGER NOT NULL,
     type_review_data      TEXT DEFAULT "{}",
+    node_state_before       TEXT DEFAULT NULL,
 
     FOREIGN KEY(node_id) REFERENCES nodes(id) ON DELETE CASCADE
 );

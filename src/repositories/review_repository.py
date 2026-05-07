@@ -1,7 +1,9 @@
+import json
 import time
 from typing import Optional
 
 from src.db import Db
+from src.models.node_state_before import NodeStateBefore
 from src.models.review import TYPE_REVIEW_DATA_MAP, Review
 from src.models.type_review_data import TypeReviewData
 from src.types.node_type import NodeType
@@ -21,12 +23,19 @@ class ReviewRepository:
             duration=row["duration"],
             type_review_data=row["type_review_data"],
             type=row["type"],
+            node_state_before=(
+                NodeStateBefore.from_dict(
+                    json.loads(row["node_state_before"]),
+                    NodeType(row["type"])
+                )
+            ),
         )
 
     def create(
         self,
         node_id: int,
         type: NodeType,
+        node_state_before: NodeStateBefore,
         type_review_data: Optional[TypeReviewData] = None,
         duration: int | None = None,
         now: int | None = None
@@ -39,19 +48,21 @@ class ReviewRepository:
             time=now,
             duration=duration,
             type=type,
-            type_review_data=type_review_data or TYPE_REVIEW_DATA_MAP[type]()
+            type_review_data=type_review_data or TYPE_REVIEW_DATA_MAP[type](),
+            node_state_before=node_state_before,
         )
         self.db.execute(
             """INSERT INTO reviews
-               (id, node_id, time, duration, type_review_data, type)
-               VALUES (?,?,?,?,?,?)""",
+               (id, node_id, time, duration, type_review_data, type, node_state_before)
+               VALUES (?,?,?,?,?,?,?)""",
             (
                 review.id,
                 review.node_id,
                 review.time,
                 review.duration,
                 review.type_review_data.model_dump_json(),
-                review.type
+                review.type,
+                review.node_state_before.model_dump_json() if review.node_state_before else None
             ),
         )
         return review

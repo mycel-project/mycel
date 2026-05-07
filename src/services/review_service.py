@@ -2,7 +2,8 @@ from typing import Optional, cast
 from src.core.node_scheduling_context import NodeSchedulingContext
 from src.core.review_context import ReviewContext
 from src.db import Db
-from src.domain.domain_exceptions import NoReviewToUndo, NotAFragment, NotASpore, UndoNotAllowedError
+from src.domain.domain_exceptions import NoReviewToUndo, NotAFragment, NotASpore, ReviewUndoNotAllowedError
+from src.models.node_state_before import NodeStateBefore
 from src.models.review import Review
 from src.models.type_data.fragment_data import FragmentData
 from src.models.type_data.spore_data import SporeData
@@ -27,6 +28,13 @@ class ReviewService:
         self._scheduling_engine = scheduling_engine
         self._pending_review_cache = pending_review_cache
 
+    def _build_node_state_before(self, node: Node) -> NodeStateBefore:
+        return NodeStateBefore(
+            due=node.due,
+            last_review=node.last_review,
+            type_data=node.type_data,
+        )
+
     def review_spore(
             self,
             col_id: int,
@@ -45,12 +53,14 @@ class ReviewService:
             state=int(card.state.value),
             step=card.step,
         )
+        node_state_before = self._build_node_state_before(node)
         self._repo.create(
             node_id=node_id,
             type=node.type,
             type_review_data=data,
             duration=duration,
-            now=now
+            now=now,
+            node_state_before=node_state_before
         )
         self._node_service.update(
             node_id,
@@ -80,14 +90,14 @@ class ReviewService:
         )
         next_interval = self._scheduling_engine.next_linear_interval(context)
         now = now_ms()
-
-
+        node_state_before = self._build_node_state_before(node)
         self._repo.create(
             node_id=node_id,
             type=node.type,
             type_review_data=data,
             duration=duration,
-            now=now
+            now=now,
+            node_state_before=node_state_before
         )
         self._node_service.update(
             node.id,
@@ -138,10 +148,10 @@ class ReviewService:
     def set_pending_node_id(self, node_id: int):
         self._pending_review_cache.set(node_id)
 
-    def get_pending_node_id(self) -> int | None:
+    def get_pending_node_id(self) -> int | None: 
         return self._pending_review_cache.get()
 
-    def undo_review(self, col_id: int, max_age_s: int | None = None) -> int:
+    def undo_review(self, col_id: int, max_age_s: int | None = None) -> Review:
         last_review = self._repo.get_last_review_by_collection(col_id)
 
         if last_review is None:
@@ -151,9 +161,8 @@ class ReviewService:
             max_age_ms = max_age_s * 1000
             age = now_ms() - last_review.time
             if age > max_age_ms:
-                raise UndoNotAllowedError(age, max_age_ms)
+                raise ReviewUndoNotAllowedError(age, max_age_ms)
 
-        last_review_node_id = last_review.node_id
         self._repo.delete(last_review.id)
         
-        return last_review_node_id
+        return last_review
