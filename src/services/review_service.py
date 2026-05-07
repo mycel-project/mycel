@@ -31,12 +31,13 @@ class ReviewService:
             self,
             col_id: int,
             node_id: int,
-            data: SporeReviewData
+            duration: int,
+            data: SporeReviewData,
     ) -> None:
         node = self._node_service.get_node(node_id)
         if not node.type == NodeType.SPORE:
             raise NotASpore(node_id)
-        card, review_log = self._fsrs_service.review_node(col_id, node_id, data.rating, data.duration)
+        card, review_log = self._fsrs_service.review_node(col_id, node_id, data.rating, duration)
         now = int(review_log.review_datetime.timestamp() * 1000)
         type_data = SporeData(
             stability=card.stability,
@@ -48,7 +49,7 @@ class ReviewService:
             node_id=node_id,
             type=node.type,
             type_review_data=data,
-            duration=data.duration,
+            duration=duration,
             now=now
         )
         self._node_service.update(
@@ -64,7 +65,8 @@ class ReviewService:
             self,
             col_id: int,
             node_id: int,
-            data: FragmentReviewData
+            duration: int,
+            data: FragmentReviewData,
     ) -> None:
         node = self._node_service.get_node(node_id)
         if not node.type == NodeType.FRAGMENT:
@@ -79,10 +81,12 @@ class ReviewService:
         next_interval = self._scheduling_engine.next_linear_interval(context)
         now = now_ms()
 
+
         self._repo.create(
             node_id=node_id,
             type=node.type,
             type_review_data=data,
+            duration=duration,
             now=now
         )
         self._node_service.update(
@@ -131,10 +135,13 @@ class ReviewService:
         self._pending_review_cache.set(next_node_id)
         return node
 
+    def set_pending_node_id(self, node_id: int):
+        self._pending_review_cache.set(node_id)
+
     def get_pending_node_id(self) -> int | None:
         return self._pending_review_cache.get()
 
-    def undo_review(self, col_id: int, max_age_s: int | None = None):
+    def undo_review(self, col_id: int, max_age_s: int | None = None) -> int:
         last_review = self._repo.get_last_review_by_collection(col_id)
 
         if last_review is None:
@@ -146,4 +153,7 @@ class ReviewService:
             if age > max_age_ms:
                 raise UndoNotAllowedError(age, max_age_ms)
 
+        last_review_node_id = last_review.node_id
         self._repo.delete(last_review.id)
+        
+        return last_review_node_id

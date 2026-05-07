@@ -22,7 +22,7 @@ def test_review_mismatch():
     orchestrator = ReviewOrchestrator(node_service, review_service)
 
     with pytest.raises(PendingReviewMismatchError):
-        orchestrator.review(col_id=1, node_id=20, data=Mock())
+        orchestrator.review(col_id=1, node_id=20, duration=10, data=Mock())
 
 def test_review_unknown_type():
     review_service = Mock()
@@ -33,7 +33,7 @@ def test_review_unknown_type():
     orchestrator = ReviewOrchestrator(node_service, review_service)
 
     with pytest.raises(UnknownReviewTypeError):
-        orchestrator.review(col_id=1, node_id=20, data=Mock())
+        orchestrator.review(col_id=1, node_id=20, duration=10, data=Mock())
 
 def test_review_no_pending():
     review_service = Mock()
@@ -44,7 +44,7 @@ def test_review_no_pending():
     orchestrator = ReviewOrchestrator(node_service, review_service)
 
     with pytest.raises(NoPendingNodeError):
-        orchestrator.review(1, 10, Mock())
+        orchestrator.review(1, 10, duration=10, data=Mock())
 
 def test_review_spore_success():
     review_service = Mock()
@@ -55,9 +55,9 @@ def test_review_spore_success():
 
     orchestrator = ReviewOrchestrator(node_service, review_service)
 
-    data = SporeReviewData(duration=10, rating=1)
+    data = SporeReviewData(rating=1)
 
-    orchestrator.review(1, 10, data)
+    orchestrator.review(1, 10, duration=10, data=data)
 
     review_service.review_spore.assert_called_once()
 
@@ -73,10 +73,10 @@ def test_review_fragment_not_fragment_node(review_service):
         due=1000,
     )
 
-    data = FragmentReviewData(duration=10)
+    data = FragmentReviewData()
 
     with pytest.raises(NotAFragment):
-        review_service.review_fragment(1, 1, data)
+        review_service.review_fragment(1, 1, 10, data)
 
 def test_review_spore_not_spore_node(review_service):
     node_service = review_service._node_service
@@ -87,10 +87,10 @@ def test_review_spore_not_spore_node(review_service):
         due=1000,
     )
 
-    data = SporeReviewData(duration=10, rating=1)
+    data = SporeReviewData(rating=1)
 
     with pytest.raises(NotASpore):
-        review_service.review_spore(1, 1, data)
+        review_service.review_spore(1, 1, 10, data)
 
 ## Undo
         

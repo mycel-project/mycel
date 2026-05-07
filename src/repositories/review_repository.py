@@ -9,6 +9,7 @@ from src.types.node_type import NodeType
 
 
 class ReviewRepository:
+    # when implemeting cache, remember to delete from cache too in delete method
     def __init__(self, db: Db):
         self.db = db
 

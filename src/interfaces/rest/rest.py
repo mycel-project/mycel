@@ -15,6 +15,7 @@ from src.event_bus import EventBus
 from src.interfaces.base_interface import BaseInterface
 from src.interfaces.uvicorn import UvicornServer
 from src.models.node_create import NodeCreate
+from src.models.type_review_data import TypeReviewData
 from src.models.type_review_data.fragment_review_data import FragmentReviewData
 from src.models.type_review_data.spore_review_data import SporeReviewData
 from src.schemas.collection_list_view import CollectionListView
@@ -209,22 +210,25 @@ class Rest(BaseInterface):
             self.node_service.reindex(col_id)
             return {"status": "ok"}
 
+        class ReviewData(BaseModel):
+            duration: int # generic data for all reviews no matter the node type
+            type_review_data: TypeReviewData # data specific to node type
         @self.app.post("/collections/{col_id}/nodes/{node_id}/spore-review")
-        async def review_spore(col_id: int, node_id: int, data: SporeReviewData):
-            self.review_orchestrator.review(col_id, node_id, data)
+        async def review_spore(col_id: int, node_id: int, data: ReviewData):
+            self.review_orchestrator.review(col_id, node_id, data.duration, data.type_review_data)
             return Response(status_code=204)
 
         @self.app.post("/collections/{col_id}/nodes/{node_id}/fragment-review")
-        async def review_fragment(col_id: int, node_id: int, data: FragmentReviewData):
-            self.review_orchestrator.review(col_id, node_id, data)
+        async def review_fragment(col_id: int, node_id: int, data: ReviewData):
+            self.review_orchestrator.review(col_id, node_id, data.duration, data.type_review_data)
             return Response(status_code=204)
 
         class UndoRequest(BaseModel):
             max_age: int | None = None
         @self.app.post("/collections/{col_id}/reviews/undo")
         async def undo_review(col_id: int, data: UndoRequest):
-            self.review_service.undo_review(col_id, data.max_age)
-            return Response(status_code=204)
+            node_from_undone_review = self.review_orchestrator.undo_review(col_id, data.max_age)
+            return {"node_review": node_from_undone_review}
         
         @self.app.get("/collections/{col_id}/reviews/next")
         async def get_next_review(col_id: int):
