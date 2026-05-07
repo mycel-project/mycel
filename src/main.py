@@ -8,10 +8,11 @@ from src.db import Db
 from src.interfaces.interface import Interface
 from src.event_bus import EventBus
 from src.core.scheduling_engine import SchedulingEngine
+from src.services.cache.pending_review_cache import PendingReviewCache
 from src.services.node_format_service import NodeFormatService
 from src.services.priority_service import PriorityService
 from src.sources.registry import SourceRegistry
-from src.services import NodeService, FsrsService, CollectionService, ReviewService, RessourceService, NodeOrchestrator, FragmentService, SporeService
+from src.services import NodeService, FsrsService, CollectionService, ReviewService, RessourceService, NodeOrchestrator, FragmentService, SporeService, ReviewOrchestrator
 import logging
 
 class Application():
@@ -34,10 +35,13 @@ class Application():
         collection_service = CollectionService(self.db)
         fsrs_service = FsrsService(collection_service, node_service)
         scheduling_engine = SchedulingEngine()
-        review_service = ReviewService(self.db, scheduling_engine, fsrs_service, node_service)
+
+        pending_review_cache = PendingReviewCache()
+        review_service = ReviewService(self.db, scheduling_engine, fsrs_service, node_service, pending_review_cache)
 
         node_orchestrator = NodeOrchestrator(node_service, fragment_service, spore_service)
-
+        review_orchestrator = ReviewOrchestrator(node_service, review_service)
+        
         services = {
             "node_service": node_service,
             "collection_service": collection_service,
@@ -49,6 +53,7 @@ class Application():
 
         orchestrators = {
             "node_orchestrator": node_orchestrator,
+            "review_orchestrator": review_orchestrator
         }
 
         self.interface = Interface(config = self.config, bus = self.bus, services = services, orchestrators = orchestrators)

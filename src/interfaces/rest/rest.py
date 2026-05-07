@@ -2,7 +2,7 @@ from typing import Optional, Union, Any, Annotated
 import logging
 from pydantic import Field
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from fastapi.exceptions import RequestValidationError
@@ -15,6 +15,8 @@ from src.event_bus import EventBus
 from src.interfaces.base_interface import BaseInterface
 from src.interfaces.uvicorn import UvicornServer
 from src.models.node_create import NodeCreate
+from src.models.type_review_data.fragment_review_data import FragmentReviewData
+from src.models.type_review_data.spore_review_data import SporeReviewData
 from src.schemas.collection_list_view import CollectionListView
 from src.schemas.config_update import ConfigUpdate
 from src.schemas.node_update import NodeUpdate
@@ -22,6 +24,7 @@ from src.services.collection_service import CollectionService
 from src.services.fragment_service import FragmentService
 from src.services.node_orchestrator import NodeOrchestrator
 from src.services.node_service import NodeService
+from src.services.review_orchestrator import ReviewOrchestrator
 from src.services.review_service import ReviewService
 from src.services.spore_service import SporeService
 from src.types.node_type import NodeType
@@ -47,6 +50,7 @@ class Rest(BaseInterface):
         self.collection_service: CollectionService = services["collection_service"]
         self.review_service: ReviewService = services["review_service"]
         self.node_orchestrator: NodeOrchestrator = orchestrators["node_orchestrator"]
+        self.review_orchestrator: ReviewOrchestrator = orchestrators["review_orchestrator"]
         self.uvicorn = UvicornServer()
         await self.start()
         
@@ -205,20 +209,15 @@ class Rest(BaseInterface):
             self.node_service.reindex(col_id)
             return {"status": "ok"}
 
-        class SporeReview(BaseModel):
-            rating: int
-            duration: int
         @self.app.post("/collections/{col_id}/nodes/{node_id}/spore-review")
-        async def review_spore(col_id: int, node_id: int, data: SporeReview):
-            self.review_service.review_spore(col_id, node_id, data.rating, data.duration)
-            return {"status": "ok"}
+        async def review_spore(col_id: int, node_id: int, data: SporeReviewData):
+            self.review_orchestrator.review(col_id, node_id, data)
+            return Response(status_code=204)
 
-        class FragmentReview(BaseModel):
-            duration: int
         @self.app.post("/collections/{col_id}/nodes/{node_id}/fragment-review")
-        async def review_fragment(col_id: int, node_id: int, data: FragmentReview):
-            self.review_service.review_fragment(col_id, node_id, data.duration)
-            return {"status": "ok"}
+        async def review_fragment(col_id: int, node_id: int, data: FragmentReviewData):
+            self.review_orchestrator.review(col_id, node_id, data)
+            return Response(status_code=204)
 
         @self.app.get("/collections/{col_id}/next-review")
         async def get_next_review(col_id: int):

@@ -1,5 +1,6 @@
 from src.converters.html_to_md.registry import HtmlToMdRegistry
 from src.core.scheduling_engine import SchedulingEngine
+from src.services.cache.pending_review_cache import PendingReviewCache
 from src.services.collection_service import CollectionService
 from src.services.fsrs_service import FsrsService
 from src.services.node_service import NodeService
@@ -22,7 +23,7 @@ def test_review_node(db, col, nodes):
     
     collection_service = CollectionService(db)
     fsrs_service = FsrsService(collection_service, node_service)
-    review_service = ReviewService(db, engine, fsrs_service, node_service)
+    review_service = ReviewService(db, engine, fsrs_service, node_service, PendingReviewCache())
 
     next_node = review_service.get_next_review(col.id)
     if not next_node:

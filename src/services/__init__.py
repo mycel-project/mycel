@@ -7,5 +7,6 @@ from .ressource_service import RessourceService
 from .node_orchestrator import NodeOrchestrator
 from .fragment_service import FragmentService
 from .spore_service import SporeService
+from .review_orchestrator import ReviewOrchestrator
 
-__all__ = ["NodeService", "PriorityService", "CollectionService", "ReviewService", "FsrsService", "RessourceService", "NodeOrchestrator", "FragmentService", "SporeService"]
+__all__ = ["NodeService", "PriorityService", "CollectionService", "ReviewService", "FsrsService", "RessourceService", "NodeOrchestrator", "FragmentService", "SporeService", "ReviewOrchestrator"]

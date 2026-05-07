@@ -16,6 +16,7 @@ from src.types.node_type import NodeType
 logger = logging.getLogger(__name__)
 
 class NodeOrchestrator:
+    # Only CRUD orchestration ? 
     def __init__(self, node_service: NodeService, fragment_service: FragmentService, spore_service: SporeService):
         self._node_service = node_service
         self._fragment_service = fragment_service

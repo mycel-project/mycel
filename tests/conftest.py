@@ -1,3 +1,4 @@
+from unittest.mock import Mock
 from fractional_indexing import generate_n_keys_between
 from src.db import Db
 from pathlib import Path
@@ -9,7 +10,24 @@ import time
 from src.models.node_content import NodeContent
 from src.repositories.node_repository import NodeRepository
 from src.services.collection_service import CollectionService
+from src.services.review_service import ReviewService
 from src.types.node_type import NodeType
+
+@pytest.fixture
+def review_service():
+    db = Mock()
+    scheduling_engine = Mock()
+    fsrs_service = Mock()
+    node_service = Mock()
+    pending_cache = Mock()
+
+    return ReviewService(
+        db=db,
+        scheduling_engine=scheduling_engine,
+        fsrs_service=fsrs_service,
+        node_service=node_service,
+        pending_review_cache=pending_cache,
+    )
 
 @pytest.fixture
 def db():

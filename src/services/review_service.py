@@ -2,6 +2,7 @@ from typing import Optional, cast
 from src.core.node_scheduling_context import NodeSchedulingContext
 from src.core.review_context import ReviewContext
 from src.db import Db
+from src.domain.domain_exceptions import NotAFragment, NotASpore
 from src.models.review import Review
 from src.models.type_data.fragment_data import FragmentData
 from src.models.type_data.spore_data import SporeData
@@ -10,6 +11,7 @@ from src.models.type_review_data.spore_review_data import SporeReviewData
 from src.repositories.review_repository import ReviewRepository
 from src.core.scheduling_engine import SchedulingEngine
 from src.schemas.node_update import NodeUpdate
+from src.services.cache.pending_review_cache import PendingReviewCache
 from src.services.fsrs_service import FsrsService
 from src.types.node_type import NodeType
 from .node_service import NodeService
@@ -18,21 +20,23 @@ from src.models.node import Node
 
 class ReviewService:
     # No caching at the moment
-    def __init__(self, db: Db, scheduling_engine: SchedulingEngine, fsrs_service: FsrsService, node_service: NodeService):
+    def __init__(self, db: Db, scheduling_engine: SchedulingEngine, fsrs_service: FsrsService, node_service: NodeService, pending_review_cache: PendingReviewCache):
         self._repo = ReviewRepository(db)
         self._fsrs_service = fsrs_service
         self._node_service = node_service
         self._scheduling_engine = scheduling_engine
+        self._pending_review_cache = pending_review_cache
 
     def review_spore(
             self,
             col_id: int,
             node_id: int,
-            rating: int,
-            duration: int,
+            data: SporeReviewData
     ) -> None:
-        card, review_log = self._fsrs_service.review_node(col_id, node_id, rating, duration)
         node = self._node_service.get_node(node_id)
+        if not node.type == NodeType.SPORE:
+            raise NotASpore(node_id)
+        card, review_log = self._fsrs_service.review_node(col_id, node_id, data.rating, data.duration)
         now = int(review_log.review_datetime.timestamp() * 1000)
         type_data = SporeData(
             stability=card.stability,
@@ -43,10 +47,8 @@ class ReviewService:
         self._repo.create(
             node_id=node_id,
             type=node.type,
-            type_review_data=SporeReviewData(
-                rating=rating
-            ),
-            duration=duration,
+            type_review_data=data,
+            duration=data.duration,
             now=now
         )
         self._node_service.update(
@@ -62,11 +64,11 @@ class ReviewService:
             self,
             col_id: int,
             node_id: int,
-            duration: int,
+            data: FragmentReviewData
     ) -> None:
-        node = self._node_service.get_node(node_id)           
+        node = self._node_service.get_node(node_id)
         if not node.type == NodeType.FRAGMENT:
-            raise ValueError("Node must be from fragment type.")
+            raise NotAFragment(node_id)
         encounter_count = self.get_encounter_count(node_id)
         context = NodeSchedulingContext(
             id=node.id,
@@ -80,8 +82,7 @@ class ReviewService:
         self._repo.create(
             node_id=node_id,
             type=node.type,
-            type_review_data=FragmentReviewData(),
-            duration=duration,
+            type_review_data=data,
             now=now
         )
         self._node_service.update(
@@ -127,4 +128,8 @@ class ReviewService:
         if not next_node_id:
             return None
         node = self._node_service.get_node(next_node_id)
+        self._pending_review_cache.set(next_node_id)
         return node
+
+    def get_pending_node_id(self) -> int | None:
+        return self._pending_review_cache.get()

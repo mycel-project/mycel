@@ -128,6 +128,40 @@ class InvalidUrl(RessourceError):
             status_code=400
         )
 
+# Reviews Errors
+
+class ReviewError(DomainException):
+    def __init__(self, code: str, message: str, status_code: int):
+        super().__init__(
+            code=code,
+            message=message,
+            status_code=400,
+        )
+
+class PendingReviewMismatchError(ReviewError):
+    def __init__(self, review_id: int, pending_id: int):
+        super().__init__(
+            code="PENDING_REVIEW_MISMATCH",
+            message=f"Received review id ({review_id}) does not match pending id ({pending_id})",
+            status_code=409,
+        )
+
+class NoPendingNodeError(ReviewError):
+    def __init__(self, review_id: int):
+        super().__init__(
+            code="NO_PENDING_NODE",
+            message=f"No pending review node (received {review_id})",
+            status_code=409,
+        )
+
+class UnknownReviewTypeError(ReviewError):
+    def __init__(self, review_type: str):
+        super().__init__(
+            code="UNKNOWN_REVIEW_TYPE",
+            message=f"Unknown review type: {review_type}",
+            status_code=400,
+        )
+
 # Other 
 
 class ClozeValidationError(DomainException):
