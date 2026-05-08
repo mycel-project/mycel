@@ -1,13 +1,23 @@
 import sqlite3
 
 SCHEMA = """
+CREATE TABLE IF NOT EXISTS users (
+    id          INTEGER PRIMARY KEY,
+    name        TEXT NOT NULL,
+    created_at  INTEGER NOT NULL,
+    conf        TEXT DEFAULT "{}"
+);
+
 CREATE TABLE IF NOT EXISTS collections (
     id          INTEGER PRIMARY KEY,
+    user_id     INTEGER NOT NULL,
     name        TEXT NOT NULL,
     created_at  INTEGER NOT NULL,
     updated_at  INTEGER NOT NULL,
     conf        TEXT DEFAULT "{}",
-    fsrsconf    TEXT DEFAULT "{}"
+    fsrsconf    TEXT DEFAULT "{}",
+
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS nodes (

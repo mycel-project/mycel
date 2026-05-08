@@ -27,8 +27,8 @@ class CollectionService:
         self,
         name: str
     ) -> Collection:
-        conf = self.create_default_collection_conf()
-        fsrsconf = self.create_default_fsrs_conf()
+        conf = self.create_default_collection_conf() # Can juste do conf = CollectionConf() if it has default values in model
+        fsrsconf = self.create_default_fsrs_conf() # //
         return self._repo.create(
             name=name,
             conf=conf,

@@ -9,6 +9,24 @@ class DomainException(Exception):
         self.message = message
         self.status_code = status_code
 
+# User errors
+
+class UserError(DomainException):
+    def __init__(self, code: str, message: str, status_code: int):
+        super().__init__(
+            code=code,
+            message=message,
+            status_code=status_code,
+        )
+
+class NoUserFound(UserError):
+    def __init__(self, user_id: int):
+        super().__init__(
+            code="USER_NOT_FOUND",
+            message=f"No user found for id {user_id}",
+            status_code=404,
+        )
+
 # Node errors
 
 class NoNodeFound(DomainException):
@@ -139,7 +157,7 @@ class ReviewError(DomainException):
         super().__init__(
             code=code,
             message=message,
-            status_code=400,
+            status_code=status_code,
         )
 
 class PendingReviewMismatchError(ReviewError):

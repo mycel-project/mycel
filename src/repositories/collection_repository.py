@@ -15,36 +15,57 @@ class CollectionRepository:
     def _row_to_model(self, row) -> Collection:
         return Collection(
             id=row["id"],
+            user_id=row["user_id"],
             name=row["name"],
             created_at=row["created_at"],
             updated_at=row["updated_at"],
             conf=CollectionConf.from_dict(
-                json.loads(row["conf"]) if isinstance(row["conf"], str) else row["conf"]
+                json.loads(row["conf"])
+                if isinstance(row["conf"], str)
+                else row["conf"]
             ),
-            fsrsconf=FsrsConf.from_dict(json.loads(row["fsrsconf"]) if isinstance(row["fsrsconf"], str) else row["fsrsconf"]),
+            fsrsconf=FsrsConf.from_dict(
+                json.loads(row["fsrsconf"])
+                if isinstance(row["fsrsconf"], str)
+                else row["fsrsconf"]
+            ),
         )
 
     def create(
         self,
+        user_id: int,
         name: str,
         conf: CollectionConf,
         fsrsconf: FsrsConf,
     ) -> Collection:
         now = int(time.time() * 1000)
-        
+
         self.db.execute(
-            "INSERT INTO collections (id, name, created_at, updated_at, conf, fsrsconf) VALUES (?, ?, ?, ?, ?, ?)",
-            (now, name, now, now, json.dumps(conf.to_dict()), json.dumps(fsrsconf.to_dict())),
+            """
+            INSERT INTO collections
+            (id, user_id, name, created_at, updated_at, conf, fsrsconf)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                now,
+                user_id,
+                name,
+                now,
+                now,
+                json.dumps(conf.to_dict()),
+                json.dumps(fsrsconf.to_dict()),
+            ),
         )
+
         return Collection(
             id=now,
+            user_id=user_id,
             name=name,
             created_at=now,
             updated_at=now,
             conf=conf,
-            fsrsconf=fsrsconf
+            fsrsconf=fsrsconf,
         )
-
     def get(self, id: int) -> Optional[Collection]:
         row = self.db.fetch_one("SELECT * FROM collections WHERE id = ?", (id,))
         return self._row_to_model(row) if row else None
