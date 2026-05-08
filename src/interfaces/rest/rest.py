@@ -18,6 +18,7 @@ from src.models.node_create import NodeCreate
 from src.models.type_review_data import TypeReviewData
 from src.models.type_review_data.fragment_review_data import FragmentReviewData
 from src.models.type_review_data.spore_review_data import SporeReviewData
+from src.models.user_conf_update import UserConfUpdate
 from src.schemas.collection_list_view import CollectionListView
 from src.schemas.config_update import ConfigUpdate
 from src.schemas.node_update import NodeUpdate
@@ -241,3 +242,8 @@ class Rest(BaseInterface):
         async def get_current_user():
             user = self.user_service.get_user(1)
             return {"user": user}
+
+        @self.app.patch("/users/me/settings")
+        async def update_user_conf(data: UserConfUpdate):
+            user = self.user_service.update_user_conf(1, data)
+            return {"user": user}        
