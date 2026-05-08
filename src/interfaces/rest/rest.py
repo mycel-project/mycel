@@ -246,4 +246,9 @@ class Rest(BaseInterface):
         @self.app.patch("/users/me/settings")
         async def update_user_conf(data: UserConfUpdate):
             user = self.user_service.update_user_conf(1, data)
-            return {"user": user}        
+            return {"user": user}
+
+        @self.app.get("/users/settings/schema")
+        async def user_config_schema():
+            schema = self.user_service.get_user_config_schema()
+            return {"schema": schema}        

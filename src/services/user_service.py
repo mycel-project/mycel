@@ -1,6 +1,8 @@
 from typing import Optional
+
+from pydantic import ValidationError
 from src.db import Db
-from src.domain.domain_exceptions import NoUserFound
+from src.domain.domain_exceptions import InvalidUserConfError, NoUserFound
 from src.models.user import User
 from src.models.user_conf import UserConf
 from src.models.user_conf_update import UserConfUpdate
@@ -39,9 +41,11 @@ class UserService:
 
     def update_user_conf(self, user_id: int, conf_update: UserConfUpdate) -> User:
         user = self.get_user(user_id)
+        updated_data = user.conf.model_dump()
         for field, value in conf_update:
             if value is not None:
-                setattr(user.conf, field, value)
+                updated_data[field] = value
+        user.conf = UserConf(**updated_data)
         self._repo.update(user)
         return user
     
@@ -60,3 +64,7 @@ class UserService:
                 setattr(user, field, value)
         self._repo.update(user)
         return user
+
+    def get_user_config_schema(self):
+        return UserConf.model_json_schema()
+        
