@@ -2,7 +2,7 @@ from typing import Optional
 
 from pydantic import ValidationError
 from src.db import Db
-from src.domain.domain_exceptions import InvalidUserConfError, NoUserFound
+from src.domain.domain_exceptions import NoUserFound
 from src.models.user import User
 from src.models.user_conf import UserConf
 from src.models.user_conf_update import UserConfUpdate
