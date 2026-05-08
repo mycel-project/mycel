@@ -12,7 +12,7 @@ from src.services.cache.pending_review_cache import PendingReviewCache
 from src.services.node_format_service import NodeFormatService
 from src.services.priority_service import PriorityService
 from src.sources.registry import SourceRegistry
-from src.services import NodeService, FsrsService, CollectionService, ReviewService, RessourceService, NodeOrchestrator, FragmentService, SporeService, ReviewOrchestrator
+from src.services import NodeService, FsrsService, CollectionService, ReviewService, RessourceService, NodeOrchestrator, FragmentService, SporeService, ReviewOrchestrator, UserService
 import logging
 
 class Application():
@@ -32,6 +32,8 @@ class Application():
         fragment_service = FragmentService(node_service, node_format_service)
         spore_service = SporeService(node_service, node_format_service)
 
+        user_service = UserService(self.db)
+
         collection_service = CollectionService(self.db)
         fsrs_service = FsrsService(collection_service, node_service)
         scheduling_engine = SchedulingEngine()
@@ -43,6 +45,7 @@ class Application():
         review_orchestrator = ReviewOrchestrator(node_service, review_service)
         
         services = {
+            "user_service": user_service,
             "node_service": node_service,
             "collection_service": collection_service,
             "review_service": review_service,

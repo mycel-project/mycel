@@ -28,6 +28,7 @@ from src.services.node_service import NodeService
 from src.services.review_orchestrator import ReviewOrchestrator
 from src.services.review_service import ReviewService
 from src.services.spore_service import SporeService
+from src.services.user_service import UserService
 from src.types.node_type import NodeType
 
 logger = logging.getLogger(__name__)
@@ -47,6 +48,7 @@ class Rest(BaseInterface):
         # Would be better if interfaces only had access to orchestrators?
         self.config = config
         self.bus: EventBus = bus
+        self.user_service: UserService = services["user_service"]
         self.node_service: NodeService = services["node_service"]
         self.collection_service: CollectionService = services["collection_service"]
         self.review_service: ReviewService = services["review_service"]
@@ -234,3 +236,8 @@ class Rest(BaseInterface):
         async def get_next_review(col_id: int):
             node = self.review_service.get_next_review(col_id)
             return {"node_review": node}
+
+        @self.app.get("/users/me")
+        async def get_current_user():
+            user = self.user_service.get_user(1)
+            return {"user": user}
