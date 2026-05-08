@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS nodes (
     content         TEXT DEFAULT "{}",
     created_at      INTEGER NOT NULL,
     updated_at      INTEGER NOT NULL,
+    deleted_at      INTEGER,
     data            TEXT DEFAULT "{}",
 
     type_data       TEXT DEFAULT "{}",

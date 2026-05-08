@@ -26,6 +26,7 @@ class Node(BaseModel):
     priority: str 
     type: NodeType = NodeType.FRAGMENT
     type_data: TypeData
+    deleted_at: Optional[int] = None
     parent_id: Optional[int] = None
     last_review: Optional[int] = None  
 

@@ -21,6 +21,7 @@ class NodeRepository:
             type=row["type"],
             created_at=row["created_at"],
             updated_at=row["updated_at"],
+            deleted_at=row["deleted_at"],
             data=NodeData.from_db(row["data"]),
             due=row["due"],
             content=NodeContent.from_db(row["content"]),
@@ -35,10 +36,9 @@ class NodeRepository:
         content: NodeContent,
         data: Optional[NodeData],
         type: NodeType,
+        priority: str,        
         type_data: Optional[TypeData] = None,
-        
         parent_id: Optional[int] = None,
-        priority: Optional[str] = None,
     ) -> Node:
         now = int(time.time() * 1000)
         node = Node(
@@ -47,6 +47,7 @@ class NodeRepository:
             parent_id=parent_id,
             created_at=now,
             updated_at=now,
+            deleted_at=None,
             data=data or NodeData(),
             type_data=type_data or TYPE_DATA_MAP[type](),
             due=now,
@@ -56,8 +57,8 @@ class NodeRepository:
         )
         self.db.execute(
             """INSERT INTO nodes
-               (id, collection_id, parent_id, type, created_at, updated_at, data, type_data, due, content, priority)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
+               (id, collection_id, parent_id, type, created_at, updated_at, deleted_at, data, type_data, due, content, priority)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
             (
                 node.id,
                 node.collection_id,
@@ -65,6 +66,7 @@ class NodeRepository:
                 node.type,
                 node.created_at,
                 node.updated_at,
+                node.deleted_at,
                 node.data.to_db(),
                 node.type_data.model_dump_json(),
                 node.due,
@@ -83,7 +85,7 @@ class NodeRepository:
         self.db.execute(
             """UPDATE nodes SET
                parent_id=?, type=?, due=?, content=?, 
-               last_review=?, type_data=?, priority=?, updated_at=?, data=?
+               last_review=?, type_data=?, priority=?, updated_at=?, data=?, deleted_at=?
                WHERE id=?""",
             (
                 node.parent_id,
@@ -95,6 +97,7 @@ class NodeRepository:
                 node.priority,
                 now,
                 node.data.to_db(),
+                node.deleted_at,
                 node.id,
             ),
         )

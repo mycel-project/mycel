@@ -139,7 +139,7 @@ class Rest(BaseInterface):
         @self.app.delete("/collections/{col_id}/nodes/{node_id}")
         async def delete_node(col_id: int, node_id: int):
             """Deletes the node and its entire subtree."""
-            deleted_ids = self.node_service.delete_subtree(node_id)
+            deleted_ids = self.node_service.soft_delete_subtree(node_id)
             return {"deleted_ids": deleted_ids}
             
         class NodeExtract(BaseModel):

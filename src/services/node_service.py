@@ -218,6 +218,18 @@ class NodeService:
 
     def delete_node(self, node_id: int) -> None:
         self._repo.delete(node_id)
+    
+    def soft_delete_node(self, node_id: int) -> Node:
+        return self.update(node_id, NodeUpdate(
+            deleted_at=now_ms()
+        ))
+
+    def soft_delete_subtree(self, node_id: int) -> list[int]:
+        subtree = self.get_subtree(node_id)
+        ids = [n.id for n in subtree]
+        for node_id in ids:
+            self.soft_delete_node(node_id)
+        return ids
 
     def get_nodes_scheduling_context(self, collection_id: int) -> list[NodeSchedulingContext]:
         nodes = self.get_raw_nodes(collection_id)
