@@ -27,6 +27,24 @@ class NoUserFound(UserError):
             status_code=404,
         )
 
+# Collection errors
+
+class CollectionError(DomainException):
+    def __init__(self, code: str, message: str, status_code: int):
+        super().__init__(
+            code=code,
+            message=message,
+            status_code=status_code,
+        )
+
+class NoCollectionFound(CollectionError):
+    def __init__(self, collection_id: int):
+        super().__init__(
+            code="COLLECTION_NOT_FOUND",
+            message=f"No collection found for id {collection_id}",
+            status_code=404,
+        )
+
 # Node errors
 
 class NoNodeFound(DomainException):

@@ -21,7 +21,7 @@ def main():
     collection_service = CollectionService(db)
     repo = NodeRepository(db)
 
-    col = collection_service.create_collection("pytest")
+    col = collection_service.create_collection("pytest", 1)
 
     now = int(time.time() * 1000)
     day = 86_400_000

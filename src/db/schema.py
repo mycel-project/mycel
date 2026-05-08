@@ -1,4 +1,5 @@
 import sqlite3
+import time
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS users (
@@ -58,3 +59,8 @@ CREATE INDEX IF NOT EXISTS idx_reviews_node ON reviews(node_id);
 
 def init_schema(con: sqlite3.Connection) -> None:
     con.executescript(SCHEMA)
+
+    con.execute("""
+        INSERT OR IGNORE INTO users (id, name, created_at, conf)
+        VALUES (1, 'default', ?, '{}')
+    """, (int(time.time() * 1000),))

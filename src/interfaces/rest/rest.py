@@ -175,7 +175,7 @@ class Rest(BaseInterface):
 
         @self.app.get("/collections")
         async def get_collections():
-            collections = self.collection_service.get_collections()
+            collections = self.collection_service.get_collections(1)
             return {"collections": collections}
 
         @self.app.get("/collections/{colId}")
@@ -187,7 +187,7 @@ class Rest(BaseInterface):
             name: str
         @self.app.post("/collections")
         async def create_collection(data: CollectionCreate):
-            collection = self.collection_service.create_collection(data.name)
+            collection = self.collection_service.create_collection(data.name, 1)
             return {"collection": CollectionListView.model_validate(collection)}
 
         @self.app.delete("/collections/{collection_id}", status_code = 204)

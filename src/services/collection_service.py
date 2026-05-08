@@ -2,6 +2,7 @@ from typing import Optional
 from dataclasses import  asdict
 
 from src.db import Db
+from src.domain.domain_exceptions import NoCollectionFound
 from src.models.collection import Collection
 from src.repositories.collection_repository import CollectionRepository
 from src.schemas.collection_list_view import CollectionListView
@@ -25,15 +26,23 @@ class CollectionService:
 
     def create_collection(
         self,
-        name: str
+        name: str,
+        user_id: int
     ) -> Collection:
         conf = self.create_default_collection_conf() # Can juste do conf = CollectionConf() if it has default values in model
         fsrsconf = self.create_default_fsrs_conf() # //
         return self._repo.create(
+            user_id=user_id,
             name=name,
             conf=conf,
             fsrsconf=fsrsconf
         )
+
+    def get_collection(self, collection_id: int) -> Collection:
+        collection = self._repo.get(collection_id)
+        if collection is None:
+            raise NoCollectionFound(collection_id)
+        return collection
 
     def delete_collection(self, collection_id: int) -> None:
         self._repo.delete(collection_id)
@@ -79,8 +88,8 @@ class CollectionService:
             raise ValueError("Collection not found")
         return collection.fsrsconf
 
-    def get_collections(self) -> list[CollectionListView]:
-        collections = self._repo.list()
+    def get_collections(self, user_id) -> list[CollectionListView]:
+        collections = self._repo.list(user_id)
         return [
             CollectionListView(
                 id=c.id,

@@ -103,6 +103,9 @@ class CollectionRepository:
     def delete(self, id: int) -> None:
         self.db.execute("DELETE FROM collections WHERE id = ?", (id,))
 
-    def list(self) -> list[Collection]:
-        rows = self.db.fetch_all("SELECT * FROM collections ORDER BY created_at")
+    def list(self, user_id: int) -> list[Collection]:
+        rows = self.db.fetch_all(
+            "SELECT * FROM collections WHERE user_id = ? ORDER BY created_at",
+            (user_id,)
+        )
         return [self._row_to_model(r) for r in rows]
