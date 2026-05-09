@@ -151,9 +151,9 @@ class Rest(BaseInterface):
             restore_ancestors: bool = False
             restore_descendants: bool = False
         @self.app.post("/collections/{col_id}/nodes/{node_id}/restore")
-        async def restore_node(col_id: int, node_id: int, body: RestoreNodeRequest):
+        async def restore_nodes(col_id: int, node_id: int, body: RestoreNodeRequest):
             """Restore a node, optionally including its parents and/or children."""
-            nodes = self.node_orchestrator.restore_node(
+            nodes = self.node_orchestrator.restore_nodes_to_views(
                 node_id,
                 restore_ancestors=body.restore_ancestors,
                 restore_descendants=body.restore_descendants,
