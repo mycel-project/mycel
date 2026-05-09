@@ -17,6 +17,7 @@ class NodeView(BaseModel):
     content: Optional[NodeContent] = None
     position: int
     due: int
+    deleted_at: Optional[int] = None
     data: Optional[NodeData] = None
     type_data: Optional[TypeData] = None
 

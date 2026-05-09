@@ -113,7 +113,12 @@ class Rest(BaseInterface):
 
         @self.app.get("/collections/{col_id}/nodes")
         async def get_nodes(col_id: int):
-            nodes = self.node_service.get_nodes(col_id, 100)
+            nodes = self.node_service.get_nodes_view(col_id, 100)
+            return {"nodes": nodes}
+
+        @self.app.get("/collections/{col_id}/nodes/deleted")
+        async def get_deleted_nodes(col_id: int):
+            nodes = self.node_service.get_deleted_nodes_view(col_id)
             return {"nodes": nodes}
 
         @self.app.get("/collections/{col_id}/nodes/{node_id}")
@@ -141,6 +146,12 @@ class Rest(BaseInterface):
             """Deletes the node and its entire subtree."""
             deleted_ids = self.node_service.soft_delete_subtree(node_id)
             return {"deleted_ids": deleted_ids}
+
+        @self.app.post("/collections/{col_id}/nodes/{node_id}/restore")
+        async def restore_node(col_id: int, node_id: int):
+            """Deletes the node and its entire subtree."""
+            node = self.node_service.restore_node(node_id)
+            return {"node": node}
             
         class NodeExtract(BaseModel):
             text: str

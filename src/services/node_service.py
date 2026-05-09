@@ -2,7 +2,7 @@ from typing import Optional, Union
 
 from src.core.node_scheduling_context import NodeSchedulingContext
 from src.db import Db
-from src.domain.domain_exceptions import InvalidUrl, NoNodeFound
+from src.domain.domain_exceptions import InvalidUrl, NoNodeFound, NodeDeleted
 from src.models import type_data
 from src.models.node import Node
 from src.models.node_data import NodeData
@@ -22,14 +22,46 @@ from src.utils.url import is_valid_url
 class NodeService:
     """
     Node service logic (higher level than node_repository)
+
+    Default behaviour is to filter nodes by aliveness (deleted_at field at None), excepted in get_node where we raise exception if node is deleted
     """
     def __init__(self, db: Db, ressource_service: RessourceService, priority_service: PriorityService):
         self._repo = NodeRepository(db)
         self._ressource_service = ressource_service
         self._priority_service = priority_service
+        
+    def get_node(self, node_id: int) -> Node:
+        node = self._repo.get(node_id)
+        if node is None:
+            raise NoNodeFound(node_id)
+        if node.deleted_at != None:
+            raise NodeDeleted(node_id)
+        return node
+
+    def get_nodes(
+        self,
+        collection_id: int,
+        limit: int = 1000,
+        include_alive: bool = True,
+        include_deleted: bool = False,
+    ) -> list[Node]:
+        if not include_alive and not include_deleted:
+            raise ValueError("At least one of include_alive or include_deleted must be True")
+        nodes = self._repo.get_by_collection(collection_id, limit)
+        if include_alive and include_deleted:
+            return nodes
+        if include_alive:
+            return self._keep_alive(nodes)
+        return self._keep_deleted(nodes)
+
+    def _keep_alive(self, nodes: list[Node]) -> list[Node]:
+        return [n for n in nodes if n.deleted_at is None]
+
+    def _keep_deleted(self, nodes: list[Node]) -> list[Node]:
+        return [n for n in nodes if n.deleted_at is not None]
 
     def reindex_all(self, collection_id: int) -> None:
-        nodes = self._repo.get_by_collection(collection_id)
+        nodes = self.get_nodes(collection_id)
         nodes = sorted(nodes, key=lambda n: n.priority or "")
         new_keys = self._priority_service.spread_keys(len(nodes))
         for node, new_key in zip(nodes, new_keys):
@@ -199,7 +231,6 @@ class NodeService:
             type=type,
         )
     
-    
     def create_node_from_url(
         self,
         collection_id: int,
@@ -218,6 +249,15 @@ class NodeService:
 
     def delete_node(self, node_id: int) -> None:
         self._repo.delete(node_id)
+
+    def restore_node(self, node_id: int) -> Node:
+        # Not passing through self.get_node and self.update to not raise NodeDeleted
+        node = self._repo.get(node_id)
+        if node is None:
+            raise NoNodeFound(node_id)
+        node.deleted_at = None
+        self._repo.update(node)
+        return node
     
     def soft_delete_node(self, node_id: int) -> Node:
         return self.update(node_id, NodeUpdate(
@@ -232,7 +272,7 @@ class NodeService:
         return ids
 
     def get_nodes_scheduling_context(self, collection_id: int) -> list[NodeSchedulingContext]:
-        nodes = self.get_raw_nodes(collection_id)
+        nodes = self.get_nodes(collection_id)
         now = now_ms()
         return [
             NodeSchedulingContext(
@@ -247,24 +287,29 @@ class NodeService:
             )
             for n in nodes
         ]
-
-    def get_raw_nodes(self, collection_id: int) -> list[Node]:
-        return self._repo.get_by_collection(collection_id)
-
-    def get_nodes(
-            self,
-            collection_id: int,
-            limit: int = 1000,
+    def get_deleted_nodes_view(
+        self,
+        collection_id: int,
     ) -> list[NodeView]:
-        nodes = self._repo.get_by_collection(collection_id, limit)
+        nodes = self.get_nodes(collection_id, include_alive=False, include_deleted=True)
         return [
             self.node_to_view(n, i)
             for i, n in enumerate(nodes)
         ]
 
+    def get_nodes_view(
+            self,
+            collection_id: int,
+            limit: int = 1000,
+    ) -> list[NodeView]:
+        nodes = self.get_nodes(collection_id, limit)
+        return [
+            self.node_to_view(n, i)
+            for i, n in enumerate(nodes)
+        ]
     
     def get_position(self, collection_id: int, node_id: int) -> int:
-        nodes = self._repo.get_by_collection(collection_id)
+        nodes = self.get_nodes(collection_id)
 
         for i, node in enumerate(nodes):
             if node.id == node_id:
@@ -283,14 +328,9 @@ class NodeService:
             parent_id=node.parent_id,
             due=node.due,
             data=node.data,
-            type_data=node.type_data if node.type == NodeType.FRAGMENT else None # Can be made more specific if needed, to select specific data depending on the node type. At the moment, only fragment ype_data is used by frontend.
+            deleted_at=node.deleted_at,
+            type_data=node.type_data if node.type == NodeType.FRAGMENT else None # Can be made more specific if needed, to select specific data depending on the node type. At the moment, only fragment type_data is used by frontend.
         )
-
-    def get_node(self, node_id: int) -> Node:
-        node = self._repo.get(node_id)
-        if node is None:
-            raise NoNodeFound(node_id)
-        return node
 
     def get_children_recursive(self, node_id: int) -> list[Node]:
         self.get_node(node_id)  # To check node validity
@@ -323,13 +363,11 @@ class NodeService:
             current_id = node.parent_id
 
     def get_node_metrics(self, node_id: int) -> Optional[NodeMetrics]:
-        n = self._repo.get(node_id)
-        if not n:
-            return
+        node = self.get_node(node_id)
         return NodeMetrics(
-            id=n.id,
-            last_review=n.last_review,
-            type_data=n.type_data
+            id=node.id,
+            last_review=node.last_review,
+            type_data=node.type_data
         )
 
     def get_node_extanded(self, node_id: int) -> dict:
@@ -338,11 +376,8 @@ class NodeService:
         return {"view": node_view, "metrics": node_metrics}
 
     def update(self, node_id: int, updates: NodeUpdate) -> Node:
-        node = self._repo.get(node_id)
+        node = self.get_node(node_id)
         print("updates:", updates)
-
-        if node is None:
-            raise ValueError(f"Node {node_id} not found")
 
         for field, value in updates:
             if value is not None:
@@ -353,4 +388,4 @@ class NodeService:
         return node
         
     def get_due_nodes(self, collection_id: int) -> list[Node]:
-        return self._repo.get_due(collection_id)
+        return self._keep_alive(self._repo.get_due(collection_id))
