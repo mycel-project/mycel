@@ -259,7 +259,7 @@ class NodeService:
         self._repo.update(node)
         return node
     
-    def soft_delete_node(self, node_id: int) -> Node:
+    def soft_delete_node(self, node_id: int) -> Node | None:
         return self.update(node_id, NodeUpdate(
             deleted_at=now_ms()
         ))
@@ -268,7 +268,10 @@ class NodeService:
         subtree = self.get_subtree(node_id)
         ids = [n.id for n in subtree]
         for node_id in ids:
-            self.soft_delete_node(node_id)
+            try: 
+                self.soft_delete_node(node_id)
+            except NodeDeleted: # If node in subtree is already soft deleted, nothing more to do
+                continue
         return ids
 
     def get_nodes_scheduling_context(self, collection_id: int) -> list[NodeSchedulingContext]:
