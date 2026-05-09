@@ -22,7 +22,7 @@ class UserConf(BaseModel):
             "category": "review",
             "step": 1,
             "unit": "d",
-            "warning": "Reducing this value will immediately and permanently delete nodes that have been soft-deleted for longer than the new value."
+            "warning": "Changing this value will immediately and permanently delete nodes that have been soft-deleted for longer than the new value."
         }
     )
     ping_frequency: int = Field(

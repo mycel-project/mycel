@@ -258,7 +258,27 @@ class NodeService:
         node.deleted_at = None
         self._repo.update(node)
         return node
-    
+
+    def restore_ancestors(self, node_id: int) -> list[Node]:
+        restored = []
+        node = self._repo.get(node_id)
+        while node is not None and node.parent_id is not None:
+            parent = self._repo.get(node.parent_id)
+            if parent is None:
+                break
+            if parent.deleted_at is not None:
+                restored.append(self.restore_node(parent.id))
+            node = parent
+        return restored
+
+    def restore_descendants(self, node_id: int) -> list[Node]:
+        children = self._repo.get_children_recursive(node_id)
+        restored = []
+        for child in children:
+            if child.deleted_at is not None:
+                restored.append(self.restore_node(child.id))
+        return restored
+
     def soft_delete_node(self, node_id: int) -> Node | None:
         return self.update(node_id, NodeUpdate(
             deleted_at=now_ms()
@@ -335,7 +355,7 @@ class NodeService:
             type_data=node.type_data if node.type == NodeType.FRAGMENT else None # Can be made more specific if needed, to select specific data depending on the node type. At the moment, only fragment type_data is used by frontend.
         )
 
-    def get_children_recursive(self, node_id: int) -> list[Node]:
+    def get_children_recursive(self, node_id: int) -> list[Node]: # Rename to descendants?
         self.get_node(node_id)  # To check node validity
         return self._repo.get_children_recursive(node_id)
 

@@ -1,7 +1,7 @@
 from typing import Union, Optional
 import logging
 
-from src.domain.domain_exceptions import ExtractError, ExtractMismatchError, InvalidSourceNodeType, NotAKnownType, UnknownRessourceTypeError
+from src.domain.domain_exceptions import ExtractError, ExtractMismatchError, InvalidSourceNodeType, NoNodeFound, NodeDeleted, NotAKnownType, UnknownRessourceTypeError
 from src.models.extract_result import ExtractResult
 from src.models.node import Node
 from src.models.node_create import NodeCreate, NodeCreateFromUrl
@@ -85,3 +85,20 @@ class NodeOrchestrator:
             extract_node=extract,
             source_node=source
         )
+
+    def restore_node(
+        self,
+        node_id: int,
+        restore_ancestors: bool = False,
+        restore_descendants: bool = False,
+    ) -> list[Node]:
+        node = self._node_service.restore_node(node_id)
+        print(restore_descendants)
+        print(restore_ancestors)
+        restored = [node]
+        if restore_ancestors:
+            restored += self._node_service.restore_ancestors(node_id)
+        if restore_descendants:
+            restored += self._node_service.restore_descendants(node_id)
+        print(len(restored))
+        return restored

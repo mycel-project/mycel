@@ -147,11 +147,18 @@ class Rest(BaseInterface):
             deleted_ids = self.node_service.soft_delete_subtree(node_id)
             return {"deleted_ids": deleted_ids}
 
+        class RestoreNodeRequest(BaseModel):
+            restore_ancestors: bool = False
+            restore_descendants: bool = False
         @self.app.post("/collections/{col_id}/nodes/{node_id}/restore")
-        async def restore_node(col_id: int, node_id: int):
-            """Deletes the node and its entire subtree."""
-            node = self.node_service.restore_node(node_id)
-            return {"node": node}
+        async def restore_node(col_id: int, node_id: int, body: RestoreNodeRequest):
+            """Restore a node, optionally including its parents and/or children."""
+            nodes = self.node_orchestrator.restore_node(
+                node_id,
+                restore_ancestors=body.restore_ancestors,
+                restore_descendants=body.restore_descendants,
+            )
+            return {"nodes": nodes}
             
         class NodeExtract(BaseModel):
             text: str
