@@ -222,10 +222,10 @@ class ReviewUndoNodeInaccessible(ReviewUndoError):
         )
 
 class ReviewUndoNotAllowedError(ReviewUndoError):
-    def __init__(self, review_age_ms: int, max_age_ms: int):
+    def __init__(self, review_age_s: int, max_age_s: int):
         super().__init__(
             code="UNDO_REVIEW_NOT_ALLOWED",
-            message = f"Undo not allowed: review is too old\n({review_age_ms}ms > {max_age_ms}ms)",
+            message = f"Undo not allowed: review is too old\n({review_age_s}ms > {max_age_s}ms)",
             status_code=403,
         )
         

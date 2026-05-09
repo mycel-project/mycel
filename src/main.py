@@ -42,7 +42,7 @@ class Application():
         review_service = ReviewService(self.db, scheduling_engine, fsrs_service, node_service, pending_review_cache)
 
         node_orchestrator = NodeOrchestrator(node_service, fragment_service, spore_service)
-        review_orchestrator = ReviewOrchestrator(node_service, review_service)
+        review_orchestrator = ReviewOrchestrator(user_service, node_service, review_service)
         
         services = {
             "user_service": user_service,

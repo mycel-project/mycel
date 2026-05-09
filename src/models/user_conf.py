@@ -3,13 +3,13 @@ from pydantic import BaseModel, model_validator, Field
 
 class UserConf(BaseModel):
     undo_review_max_age: int = Field(
-        default=5,
+        default=10,
         ge=0,
         le=60,
         description="Maximum time allowed to undo a review.",
         json_schema_extra={
             "category": "review",
-            "step": 1,
+            "step": 5,
             "unit": "min"
         }
     )

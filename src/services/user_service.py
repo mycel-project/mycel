@@ -35,6 +35,20 @@ class UserService:
             conf=user_conf
         )
 
+    def get_config(
+        self,
+        user_id: int
+    ) -> UserConf:
+        user = self.get_user(user_id)
+        return user.conf
+
+    def get_undo_max_age_s(
+        self,
+        user_id: int
+    ) -> int:
+        minutes = self.get_config(user_id).undo_review_max_age
+        return minutes
+
     def delete_user(self, user_id: int) -> None:
         self.get_user(user_id)
         self._repo.delete(user_id)

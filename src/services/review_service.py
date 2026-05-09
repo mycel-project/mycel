@@ -158,10 +158,9 @@ class ReviewService:
             raise NoReviewToUndo()
 
         if max_age_s is not None:
-            max_age_ms = max_age_s * 1000
-            age = now_ms() - last_review.time
-            if age > max_age_ms:
-                raise ReviewUndoNotAllowedError(age, max_age_ms)
+            age = now_s() - (last_review.time // 1000)
+            if age > max_age_s:
+                raise ReviewUndoNotAllowedError(age, max_age_s)
 
         self._repo.delete(last_review.id)
         

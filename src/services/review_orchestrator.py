@@ -7,11 +7,13 @@ from src.schemas.node_update import NodeUpdate
 from src.services.node_service import NodeService
 from src.services.review_service import ReviewService
 from src.models.node import Node
+from src.services.user_service import UserService
 
 
 
 class ReviewOrchestrator:
-    def __init__(self, node_service: NodeService, review_service: ReviewService):
+    def __init__(self, user_service: UserService, node_service: NodeService, review_service: ReviewService):
+        self._user_service = user_service
         self._node_service = node_service
         self._review_service = review_service
 
@@ -38,8 +40,9 @@ class ReviewOrchestrator:
             )
         )
 
-    def undo_review(self, col_id: int, max_age_s: int | None = 600) -> Node:
-        last_review = self._review_service.undo_review(col_id, max_age_s)
+    def undo_review(self, col_id: int) -> Node:
+        max_undo_age = self._user_service.get_undo_max_age_s(1)
+        last_review = self._review_service.undo_review(col_id, max_undo_age)
         try:
             node_from_undone_review = self._node_service.get_node(last_review.node_id)
         except NodeDeleted as e:
