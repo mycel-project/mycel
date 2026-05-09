@@ -13,6 +13,18 @@ class UserConf(BaseModel):
             "unit": "min"
         }
     )
+    delete_max_age: int = Field(
+        default=30,
+        ge=0,
+        le=90,
+        description="Number of days after which deleted nodes are permanently removed.",
+        json_schema_extra={
+            "category": "review",
+            "step": 1,
+            "unit": "d",
+            "warning": "Reducing this value will immediately and permanently delete nodes that have been soft-deleted for longer than the new value."
+        }
+    )
     ping_frequency: int = Field(
         default=3,
         ge=1,
