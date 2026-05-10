@@ -20,11 +20,11 @@ class NodeService:
     def __init__(self, node_repository: NodeRepository):
         self._repo = node_repository
         
-    def get_node(self, node_id: int) -> Node:
+    def get_node(self, node_id: int, include_deleted: bool = False) -> Node:
         node = self._repo.get(node_id)
         if node is None:
             raise NoNodeFound(node_id)
-        if node.deleted_at != None:
+        if not include_deleted and node.deleted_at is not None:
             raise NodeDeleted(node_id)
         return node
 

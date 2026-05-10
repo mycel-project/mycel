@@ -123,7 +123,7 @@ class ReviewService:
         today_reviews_context = []
 
         for r in today_reviews:
-            node = self._node_service.get_node(r.node_id)
+            node = self._node_service.get_node(r.node_id, True)
 
             if not node:
                 continue
