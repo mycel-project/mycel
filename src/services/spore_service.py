@@ -1,6 +1,7 @@
 from typing import Optional, Union
 
 from src.core.cloze import CLOZE_PATTERN
+from src.domain.create_node_usecase import CreateNodeUseCase
 from src.domain.domain_exceptions import ClozeValidationError, InvalidNodeUpdate, NotASpore
 from src.models.node_content import NodeContent
 from src.schemas.node_update import NodeUpdate
@@ -10,12 +11,18 @@ from src.types.node_type import NodeType
 from src.models.node import Node
 
 class SporeService:
-    def __init__(self, node_service: NodeService, node_format_service: NodeFormatService):
+    def __init__(
+        self,
+        node_service: NodeService,
+        node_format_service: NodeFormatService,
+        create_node_use_case: CreateNodeUseCase,
+    ):
         self._node_service = node_service
         self._node_format_service = node_format_service
+        self._create_node = create_node_use_case
 
     def create_spore(self, col_id: int, content: Union[str, dict], parent_id: Optional[int] = None) -> Node:
-        return self._node_service.create_node(
+        return self._create_node.execute(
             collection_id=col_id,
             content=content,
             parent_id=parent_id,

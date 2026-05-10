@@ -1,6 +1,7 @@
 from typing import Optional, Union
 
 from _pytest.nodes import NodeMeta
+from src.domain.create_node_usecase import CreateNodeUseCase
 from src.domain.domain_exceptions import NotAFragment, NotAKnownType
 from src.models.node import Node
 from src.schemas.node_update import NodeUpdate
@@ -10,17 +11,22 @@ from src.types.node_type import NodeType
 
 
 class FragmentService:
-    def __init__(self, node_service: NodeService, node_format_service: NodeFormatService):
+    def __init__(
+        self,
+        node_service: NodeService,
+        node_format_service: NodeFormatService,
+        create_node_use_case: CreateNodeUseCase,
+    ):
         self._node_service = node_service
         self._node_format_service = node_format_service
+        self._create_node = create_node_use_case
         self._emphasis_handlers = {
             NodeType.FRAGMENT: self._node_format_service.blockquote_region,
             NodeType.SPORE: self._node_format_service.inline_region,
         }
-
         
     def create_fragment(self, col_id: int, content: Union[str, dict], parent_id: Optional[int] = None) -> Node:
-        return self._node_service.create_node(
+        return self._create_node.execute(
             collection_id=col_id,
             content=content,
             parent_id=parent_id,
