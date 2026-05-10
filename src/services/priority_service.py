@@ -45,6 +45,11 @@ class PriorityService:
         left_key = self._repo.get_position_at_offset(collection_id, target_index)
         right_key = self._repo.get_position_at_offset(collection_id, target_index + 1) if target_index + 1 < total else None
 
+        while right_key is not None and left_key == right_key:
+            # Handle temporary duplicate positions, e.g. when restoring nodes
+            target_index += 1
+            right_key = self._repo.get_position_at_offset(collection_id, target_index + 1) if target_index + 1 < total else None
+
         return self._lexical_order.insert_between(left_key, right_key)
  
     def prioritise_random_between_percentage(
