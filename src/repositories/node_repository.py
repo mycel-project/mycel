@@ -200,7 +200,7 @@ class NodeRepository:
 
     def get_all_positions(self, collection_id: int) -> list[tuple[int, str]]:
         rows = self.db.fetch_all(
-            "SELECT id, position FROM nodes WHERE collection_id = ? ORDER BY position",
+            "SELECT id, position FROM nodes WHERE collection_id = ? AND deleted_at IS NULL ORDER BY position",
             (collection_id,),
         )
         return [(row["id"], row["position"]) for row in rows]

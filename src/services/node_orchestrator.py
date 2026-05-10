@@ -119,3 +119,6 @@ class NodeOrchestrator:
     def get_root_node(self, node_id: int) -> NodeView:
         root_node = self._node_service.get_root_node(node_id)
         return self._node_view_builder.to_view(root_node)
+
+    def get_priorities(self, col_id: int) -> dict[int, int]:
+        return self._priority_service.get_priorities(col_id)

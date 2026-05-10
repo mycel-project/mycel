@@ -118,6 +118,12 @@ class Rest(BaseInterface):
             nodes = self.node_orchestrator.get_nodes_view(col_id, 100)
             return {"nodes": nodes}
 
+        @self.app.get("/collections/{col_id}/nodes/priorities")
+        async def get_priorities(col_id: int):
+            # This route is important because adding or modifying a node's priority on the frontend invalidates other priorities, as priority is a relative value. It allows quickly refreshing all node priorities in a collection.
+            priorities = self.node_orchestrator.get_priorities(col_id)
+            return {"priorities": priorities}
+
         @self.app.get("/collections/{col_id}/nodes/deleted")
         async def get_deleted_nodes(col_id: int):
             nodes = self.node_service.get_deleted_nodes_view(col_id)

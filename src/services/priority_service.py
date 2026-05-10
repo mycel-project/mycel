@@ -21,7 +21,17 @@ class PriorityService:
             return 0
  
         return round((rank / (total - 1)) * 100)
- 
+
+    def get_priorities(self, collection_id: int) -> dict[int, int]:
+        total = self._repo.count_by_collection(collection_id)
+        if total <= 1:
+            return {}
+        positions = self._repo.get_all_positions(collection_id)
+        return {
+            node_id: round((rank / (total - 1)) * 100)
+            for rank, (node_id, _) in enumerate(positions)
+    }
+    
     def get_position_for_priority(self, collection_id: int, percentage: float) -> str:
         if not 0 <= percentage <= 100:
             raise ValueError("Percentage must be between 0 and 100")

@@ -31,7 +31,7 @@ class NodeService:
     def get_nodes(
         self,
         collection_id: int,
-        limit: int = 1000,
+        limit: int = 5000,
         include_alive: bool = True,
         include_deleted: bool = False,
     ) -> list[Node]:
