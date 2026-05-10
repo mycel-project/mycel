@@ -1,7 +1,7 @@
-from typing import Union, Optional
 import logging
 
-from src.domain.domain_exceptions import ExtractError, ExtractMismatchError, InvalidSourceNodeType, NoNodeFound, NodeDeleted, NotAKnownType, UnknownRessourceTypeError
+from src.domain.create_node_from_url_usecase import CreateNodeFromUrlUseCase
+from src.domain.domain_exceptions import ExtractError, ExtractMismatchError, InvalidSourceNodeType, NotAKnownType, UnknownRessourceTypeError
 from src.models.extract_result import ExtractResult
 from src.models.node import Node
 from src.models.node_create import NodeCreate, NodeCreateFromUrl
@@ -95,23 +95,28 @@ class NodeOrchestrator:
             logger.warning(f"Failed to emphasize region in parent (id {source_node_id}), but extract is valid: {e}")
         
         return ExtractResult(
-            extract_node=extract,
-            source_node=source
+            extract_node=self._to_view(extract),
+            source_node=self._to_view(source),
         )
 
-    def restore_node(
+    def restore_nodes_to_views(
         self,
         node_id: int,
         restore_ancestors: bool = False,
         restore_descendants: bool = False,
-    ) -> list[Node]:
+    ) -> list[NodeView]:
         node = self._node_service.restore_node(node_id)
-        print(restore_descendants)
-        print(restore_ancestors)
         restored = [node]
         if restore_ancestors:
             restored += self._node_service.restore_ancestors(node_id)
         if restore_descendants:
             restored += self._node_service.restore_descendants(node_id)
-        print(len(restored))
-        return restored
+
+        for n in restored:
+            # Ensure restored node positions do not conflict with existing collection nodes
+            current_priority = self._priority_service.get_priority(n.collection_id, n.id)
+            new_position = self._priority_service.get_position_for_priority(n.collection_id, current_priority)
+            n.position = new_position
+            self._node_service.update_position(n.id, new_position)
+
+        return self._to_views(restored)
