@@ -26,6 +26,7 @@ from src.services.collection_service import CollectionService
 from src.services.fragment_service import FragmentService
 from src.services.node_orchestrator import NodeOrchestrator
 from src.services.node_service import NodeService
+from src.services.priority_service import PriorityService
 from src.services.review_orchestrator import ReviewOrchestrator
 from src.services.review_service import ReviewService
 from src.services.spore_service import SporeService
@@ -53,6 +54,7 @@ class Rest(BaseInterface):
         self.node_service: NodeService = services["node_service"]
         self.collection_service: CollectionService = services["collection_service"]
         self.review_service: ReviewService = services["review_service"]
+        self.priority_service: PriorityService = services["priority_service"]
         self.node_orchestrator: NodeOrchestrator = orchestrators["node_orchestrator"]
         self.review_orchestrator: ReviewOrchestrator = orchestrators["review_orchestrator"]
         self.uvicorn = UvicornServer()
@@ -113,7 +115,7 @@ class Rest(BaseInterface):
 
         @self.app.get("/collections/{col_id}/nodes")
         async def get_nodes(col_id: int):
-            nodes = self.node_service.get_nodes_view(col_id, 100)
+            nodes = self.node_orchestrator.get_nodes_view(col_id, 100)
             return {"nodes": nodes}
 
         @self.app.get("/collections/{col_id}/nodes/deleted")
@@ -177,14 +179,14 @@ class Rest(BaseInterface):
             return {"node": node}
 
         class ReprioritiseNode(BaseModel):
-            new_position_node_id: int
+            priority: int 
         @self.app.post("/collections/{col_id}/nodes/{node_id}/reprioritise")
         async def reprioritise_node(col_id: int, node_id: int, data: ReprioritiseNode):
-            self.node_service.reprioritise_node(
+            node = self.node_orchestrator.reprioritise_node_to_view(
+                col_id,
                 node_id,
-                data.new_position_node_id
-            )
-            return {"status": "ok"}
+                data.priority)
+            return {"node": node}
 
         @self.app.patch("/collections/{col_id}/nodes/{node_id}")
         async def update_node(col_id: int, node_id: int, data: NodeUpdate):
@@ -226,10 +228,10 @@ class Rest(BaseInterface):
                 self.collection_service.update_configs(col_id, data.config)
             return {"status": "ok"}
         
-        @self.app.post("/collections/{col_id}/reindex")
-        async def reindex(col_id: int):
-            self.node_service.reindex(col_id)
-            return {"status": "ok"}
+        # @self.app.post("/collections/{col_id}/reindex")
+        # async def reindex(col_id: int):
+        #     self.node_service.reindex_all(col_id)
+        #     return {"status": "ok"}
 
         class ReviewData(BaseModel):
             duration: int # generic data for all reviews no matter the node type
