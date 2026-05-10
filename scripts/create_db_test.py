@@ -41,7 +41,7 @@ def main():
             }),
             data=None,
             parent_id=kwargs.get("parent_id"),
-            priority=kwargs.get("priority"),
+            position=kwargs.get("position"),
         )
         created.append(node)
         return node
@@ -55,7 +55,7 @@ def main():
             }),
             data=None,
             parent_id=parent_id,
-            priority=kwargs.get("priority"),
+            position=kwargs.get("position"),
         )
         created.append(node)
         return node
@@ -63,26 +63,26 @@ def main():
     # generate valid fractional keys for fragments
     fragment_keys = generate_n_keys_between(None, None, 20)
 
-    f1 = create_fragment(1, priority=fragment_keys[0])
-    f2 = create_fragment(2, priority=fragment_keys[1], parent_id=f1.id)
-    f3 = create_fragment(3, priority=fragment_keys[2], parent_id=f2.id)
-    f4 = create_fragment(4, priority=fragment_keys[3])
-    f5 = create_fragment(5, priority=fragment_keys[4])
-    f6 = create_fragment(6, priority=fragment_keys[5])
-    f7 = create_fragment(7, priority=fragment_keys[6])
-    f8 = create_fragment(8, priority=fragment_keys[7])
-    f9 = create_fragment(9, priority=fragment_keys[8])
-    f10 = create_fragment(10, priority=fragment_keys[9])
+    f1 = create_fragment(1, position=fragment_keys[0])
+    f2 = create_fragment(2, position=fragment_keys[1], parent_id=f1.id)
+    f3 = create_fragment(3, position=fragment_keys[2], parent_id=f2.id)
+    f4 = create_fragment(4, position=fragment_keys[3])
+    f5 = create_fragment(5, position=fragment_keys[4])
+    f6 = create_fragment(6, position=fragment_keys[5])
+    f7 = create_fragment(7, position=fragment_keys[6])
+    f8 = create_fragment(8, position=fragment_keys[7])
+    f9 = create_fragment(9, position=fragment_keys[8])
+    f10 = create_fragment(10, position=fragment_keys[9])
 
 
-    s1 = create_spore(1, f1.id, priority=fragment_keys[10])
-    s2 = create_spore(2, f2.id, priority=fragment_keys[11])
-    s3 = create_spore(3, f3.id, priority=fragment_keys[12])
-    s4 = create_spore(4, f4.id, priority=fragment_keys[13])
-    s5 = create_spore(5, f5.id, priority=fragment_keys[14])
-    s6 = create_spore(6, f6.id, priority=fragment_keys[15])
-    s7 = create_spore(7, f7.id, priority=fragment_keys[16])
-    s8 = create_spore(8, f8.id, priority=fragment_keys[17])
+    s1 = create_spore(1, f1.id, position=fragment_keys[10])
+    s2 = create_spore(2, f2.id, position=fragment_keys[11])
+    s3 = create_spore(3, f3.id, position=fragment_keys[12])
+    s4 = create_spore(4, f4.id, position=fragment_keys[13])
+    s5 = create_spore(5, f5.id, position=fragment_keys[14])
+    s6 = create_spore(6, f6.id, position=fragment_keys[15])
+    s7 = create_spore(7, f7.id, position=fragment_keys[16])
+    s8 = create_spore(8, f8.id, position=fragment_keys[17])
 
     def rand_review(now_ts, due):
         if random.random() < 0.2:

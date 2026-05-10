@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS nodes (
     due             INTEGER NOT NULL DEFAULT 0,
     last_review     INTEGER,
 
-    priority        TEXT,
+    position        TEXT,
     FOREIGN KEY(collection_id) REFERENCES collections(id) ON DELETE CASCADE
 );
 

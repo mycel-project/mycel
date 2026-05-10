@@ -8,14 +8,14 @@ from src.models.type_data import TypeData
 
 class NodeView(BaseModel):
     """
-    To build a DTO containing data used by the frontend
+    DTO containing data used by the frontend
     """
     id: int
     collection_id: int
     parent_id: Optional[int] = None
     type: int
     content: Optional[NodeContent] = None
-    position: int
+    priority: int
     due: int
     deleted_at: Optional[int] = None
     data: Optional[NodeData] = None

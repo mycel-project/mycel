@@ -23,7 +23,7 @@ class Node(BaseModel):
     data: NodeData
     due: int
     content: NodeContent
-    priority: str 
+    position: str 
     type: NodeType = NodeType.FRAGMENT
     type_data: TypeData
     deleted_at: Optional[int] = None

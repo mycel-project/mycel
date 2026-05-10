@@ -27,7 +27,7 @@ class NodeRepository:
             content=NodeContent.from_db(row["content"]),
             last_review=row["last_review"], 
             type_data=row["type_data"],
-            priority=row["priority"],
+            position=row["position"],
     )
 
     def create(
@@ -36,7 +36,7 @@ class NodeRepository:
         content: NodeContent,
         data: Optional[NodeData],
         type: NodeType,
-        priority: str,        
+        position: str,        
         type_data: Optional[TypeData] = None,
         parent_id: Optional[int] = None,
     ) -> Node:
@@ -52,12 +52,12 @@ class NodeRepository:
             type_data=type_data or TYPE_DATA_MAP[type](),
             due=now,
             content=content, 
-            priority=priority,
+            position=position,
             type=type
         )
         self.db.execute(
             """INSERT INTO nodes
-               (id, collection_id, parent_id, type, created_at, updated_at, deleted_at, data, type_data, due, content, priority)
+               (id, collection_id, parent_id, type, created_at, updated_at, deleted_at, data, type_data, due, content, position)
                VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
             (
                 node.id,
@@ -71,7 +71,7 @@ class NodeRepository:
                 node.type_data.model_dump_json(),
                 node.due,
                 node.content.to_db(),  
-                node.priority,
+                node.position,
             ),
         )
         return node
@@ -85,7 +85,7 @@ class NodeRepository:
         self.db.execute(
             """UPDATE nodes SET
                parent_id=?, type=?, due=?, content=?, 
-               last_review=?, type_data=?, priority=?, updated_at=?, data=?, deleted_at=?
+               last_review=?, type_data=?, position=?, updated_at=?, data=?, deleted_at=?
                WHERE id=?""",
             (
                 node.parent_id,
@@ -94,7 +94,7 @@ class NodeRepository:
                 node.content.to_db(), 
                 node.last_review,
                 node.type_data.model_dump_json(),
-                node.priority,
+                node.position,
                 now,
                 node.data.to_db(),
                 node.deleted_at,
@@ -108,35 +108,35 @@ class NodeRepository:
     def get_by_collection(self, collection_id: int, limit: Optional[int] = None) -> list[Node]:
         if limit:
             rows = self.db.fetch_all(
-                "SELECT * FROM nodes WHERE collection_id = ? ORDER BY priority LIMIT ?",
+                "SELECT * FROM nodes WHERE collection_id = ? ORDER BY position LIMIT ?",
                 (collection_id, limit),
             )
         else:
             rows = self.db.fetch_all(
-                "SELECT * FROM nodes WHERE collection_id = ? ORDER BY priority",
+                "SELECT * FROM nodes WHERE collection_id = ? ORDER BY position",
                 (collection_id,),
             )
         return [self._row_to_model(r) for r in rows]
 
     def get_by_type(self, collection_id: int, type: int) -> list[Node]:
         rows = self.db.fetch_all(
-            "SELECT * FROM nodes WHERE collection_id = ? AND type = ? ORDER BY priority",
+            "SELECT * FROM nodes WHERE collection_id = ? AND type = ? ORDER BY position",
             (collection_id, type),
         )
         return [self._row_to_model(r) for r in rows]
 
     def get_by_state(self, collection_id: int, state: int) -> list[Node]:
         rows = self.db.fetch_all(
-            "SELECT * FROM nodes WHERE collection_id = ? AND state = ? ORDER BY priority",
+            "SELECT * FROM nodes WHERE collection_id = ? AND state = ? ORDER BY position",
             (collection_id, state),
         )
         return [self._row_to_model(r) for r in rows]
 
-    def update_priority(self, node_id: int, priority: str) -> None:
+    def update_position(self, node_id: int, position: str) -> None:
         now = int(time.time() * 1000)
         self.db.execute(
-            "UPDATE nodes SET priority = ?, updated_at = ? WHERE id = ?",
-            (priority, now, node_id),
+            "UPDATE nodes SET position = ?, updated_at = ? WHERE id = ?",
+            (position, now, node_id),
         )
 
     def update_state(self, node_id: int, state: int) -> None:
@@ -163,7 +163,7 @@ class NodeRepository:
 
     def get_children(self, node_id: int) -> list[Node]:
         rows = self.db.fetch_all(
-            "SELECT * FROM nodes WHERE parent_id = ? ORDER BY priority",
+            "SELECT * FROM nodes WHERE parent_id = ? ORDER BY position",
             (node_id,),
         )
         return [self._row_to_model(r) for r in rows]

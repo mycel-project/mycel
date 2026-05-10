@@ -12,7 +12,7 @@ class NodeUpdate(BaseModel):
     data: Optional[NodeData] = None
     type: Optional[int] = None
     due: Optional[int] = None
-    priority: Optional[str] = None    
+    position: Optional[str] = None    # rather priority?
     last_review: Optional[int] = None
     type_data: Optional[TypeData] = None
     deleted_at: Optional[int] = None

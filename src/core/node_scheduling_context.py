@@ -14,7 +14,7 @@ class NodeSchedulingContext(BaseModel):
     type_data: Optional[TypeData] = None
     due: Optional[int] = None
     parent_id: Optional[int] = None
-    priority: Optional[str] = None
+    position: Optional[str] = None
     overdue: Optional[int] = None
     encounter_count: Optional[int] = None
 
