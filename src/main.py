@@ -6,6 +6,8 @@ from pathlib import Path
 from src.converters.html_to_md.registry import HtmlToMdRegistry
 from src.core.lexical_order import LexicalOrder
 from src.db import Db
+from src.domain.create_node_from_url_usecase import CreateNodeFromUrlUseCase
+from src.domain.create_node_usecase import CreateNodeUseCase
 from src.interfaces.interface import Interface
 from src.event_bus import EventBus
 from src.core.scheduling_engine import SchedulingEngine
@@ -14,7 +16,16 @@ from src.services.cache.pending_review_cache import PendingReviewCache
 from src.services.node_format_service import NodeFormatService
 from src.services.priority_service import PriorityService
 from src.sources.registry import SourceRegistry
-from src.services import NodeService, FsrsService, CollectionService, ReviewService, RessourceService, NodeOrchestrator, FragmentService, SporeService, ReviewOrchestrator, UserService
+from src.services.node_service import NodeService
+from src.services.fsrs_service import FsrsService
+from src.services.collection_service import CollectionService
+from src.services.review_service import ReviewService
+from src.services.ressource_service import RessourceService
+from src.services.node_orchestrator import NodeOrchestrator
+from src.services.fragment_service import FragmentService
+from src.services.spore_service import SporeService
+from src.services.review_orchestrator import ReviewOrchestrator
+from src.services.user_service import UserService
 import logging
 
 class Application():
@@ -29,12 +40,16 @@ class Application():
 
         node_repository = NodeRepository(self.db)
         lexical_order = LexicalOrder()
+        
         ressource_service = RessourceService(source_registry, html_to_markdown_registry)
         node_format_service = NodeFormatService()
-        priority_service = PriorityService()
-        node_service = NodeService(self.db, ressource_service, priority_service)
-        fragment_service = FragmentService(node_service, node_format_service)
-        spore_service = SporeService(node_service, node_format_service)
+        priority_service = PriorityService(node_repository, lexical_order)
+        node_service = NodeService(node_repository)
+
+        create_node_usecase = CreateNodeUseCase(node_service, priority_service)
+
+        fragment_service = FragmentService(node_service, node_format_service, create_node_usecase)
+        spore_service = SporeService(node_service, node_format_service, create_node_usecase)
 
         user_service = UserService(self.db)
 
@@ -45,7 +60,9 @@ class Application():
         pending_review_cache = PendingReviewCache()
         review_service = ReviewService(self.db, scheduling_engine, fsrs_service, node_service, pending_review_cache)
 
-        node_orchestrator = NodeOrchestrator(node_service, fragment_service, spore_service)
+        create_node_from_url_usecase = CreateNodeFromUrlUseCase(create_node_usecase, ressource_service)
+
+        node_orchestrator = NodeOrchestrator(node_service, fragment_service, spore_service, priority_service, ressource_service, create_node_from_url_usecase)
         review_orchestrator = ReviewOrchestrator(user_service, node_service, review_service)
         
         services = {
