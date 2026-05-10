@@ -123,10 +123,10 @@ class Rest(BaseInterface):
             nodes = self.node_service.get_deleted_nodes_view(col_id)
             return {"nodes": nodes}
 
-        @self.app.get("/collections/{col_id}/nodes/{node_id}")
-        async def get_node(col_id: int, node_id: int):
-                node = self.node_service.get_node(node_id)
-                return {"node": node}
+        # @self.app.get("/collections/{col_id}/nodes/{node_id}")
+        # async def get_node(col_id: int, node_id: int):
+        #         node = self.node_service.get_node(node_id)
+        #         return {"node": node}
 
         @self.app.get("/collections/{col_id}/nodes/{node_id}/root")
         async def get_root_node(col_id: int, node_id: int):
@@ -136,7 +136,7 @@ class Rest(BaseInterface):
             Useful when the frontend is not using a cache and the node tree is deeply nested.
             Allows quickly reaching the root without having to traverse manually through multiple calls.
             """
-            node = self.node_service.get_root_node(node_id)
+            node = self.node_orchestrator.get_root_node(node_id)
             return {"node": node}
  
         @self.app.get("/collections/{col_id}/nodes/{node_id}")
@@ -253,7 +253,7 @@ class Rest(BaseInterface):
         
         @self.app.get("/collections/{col_id}/reviews/next")
         async def get_next_review(col_id: int):
-            node = self.review_service.get_next_review(col_id)
+            node = self.review_orchestrator.get_next_review(col_id)
             return {"node_review": node}
 
         @self.app.get("/users/me")

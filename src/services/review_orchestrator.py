@@ -4,18 +4,19 @@ from src.models.type_review_data import TypeReviewData
 from src.models.type_review_data.fragment_review_data import FragmentReviewData
 from src.models.type_review_data.spore_review_data import SporeReviewData
 from src.schemas.node_update import NodeUpdate
+from src.schemas.node_view import NodeView
 from src.services.node_service import NodeService
+from src.services.node_view_builder import NodeViewBuilder
 from src.services.review_service import ReviewService
-from src.models.node import Node
 from src.services.user_service import UserService
 
 
-
 class ReviewOrchestrator:
-    def __init__(self, user_service: UserService, node_service: NodeService, review_service: ReviewService):
+    def __init__(self, user_service: UserService, node_service: NodeService, review_service: ReviewService, node_view_builder: NodeViewBuilder):
         self._user_service = user_service
         self._node_service = node_service
         self._review_service = review_service
+        self._node_view_builder = node_view_builder
 
     def review(self, col_id: int, node_id: int, duration: int, data: TypeReviewData):
         pending_review_id = self._review_service.get_pending_node_id()
@@ -40,7 +41,14 @@ class ReviewOrchestrator:
             )
         )
 
-    def undo_review(self, col_id: int) -> Node:
+    def get_next_review(self, col_id: int) -> NodeView | None:
+        node = self._review_service.get_next_review(col_id)
+        if node:
+            return self._node_view_builder.to_view(node)
+        else:
+            return None
+
+    def undo_review(self, col_id: int) -> NodeView:
         max_undo_age = self._user_service.get_undo_max_age_s(1)
         last_review = self._review_service.undo_review(col_id, max_undo_age)
         try:
@@ -52,4 +60,5 @@ class ReviewOrchestrator:
             raise ReviewUndoNodeInaccessible(last_review.node_id, last_review.id) from e
         self._restore_node_from_snapshot(last_review)
         self._review_service.set_pending_node_id(node_from_undone_review.id)
-        return self._node_service.get_node(node_from_undone_review.id)
+        node = self._node_service.get_node(node_from_undone_review.id)
+        return self._node_view_builder.to_view(node)

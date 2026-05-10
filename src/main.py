@@ -26,6 +26,7 @@ from src.services.fragment_service import FragmentService
 from src.services.spore_service import SporeService
 from src.services.review_orchestrator import ReviewOrchestrator
 from src.services.user_service import UserService
+from src.services.node_view_builder import NodeViewBuilder
 import logging
 
 class Application():
@@ -57,13 +58,15 @@ class Application():
         fsrs_service = FsrsService(collection_service, node_service)
         scheduling_engine = SchedulingEngine()
 
+        node_view_builder = NodeViewBuilder(node_service, priority_service)
+
         pending_review_cache = PendingReviewCache()
         review_service = ReviewService(self.db, scheduling_engine, fsrs_service, node_service, pending_review_cache)
 
         create_node_from_url_usecase = CreateNodeFromUrlUseCase(create_node_usecase, ressource_service)
 
-        node_orchestrator = NodeOrchestrator(node_service, fragment_service, spore_service, priority_service, ressource_service, create_node_from_url_usecase)
-        review_orchestrator = ReviewOrchestrator(user_service, node_service, review_service)
+        node_orchestrator = NodeOrchestrator(node_service, fragment_service, spore_service, priority_service, ressource_service, create_node_from_url_usecase, node_view_builder)
+        review_orchestrator = ReviewOrchestrator(user_service, node_service, review_service, node_view_builder)
         
         services = {
             "user_service": user_service,
