@@ -1,86 +1,85 @@
-from typing import Optional
 import random
 
-from fractional_indexing import generate_key_between, generate_n_keys_between
-from src.models.node import Node
-
-
+from src.core.lexical_order import LexicalOrder
+from src.repositories.node_repository import NodeRepository
+ 
+ 
 class PriorityService:
-    # need clarification
-    def insert_between(self, a_key: Optional[str], b_key: Optional[str]) -> str:
-        return generate_key_between(a_key, b_key)
+    def __init__(self, node_repository: NodeRepository, lexical_order: LexicalOrder):
+        self._repo = node_repository
+        self._lexical_order = lexical_order
+ 
+    def get_priority(self, collection_id: int, node_id: int) -> int:
+        position = self._repo.get_position(node_id)
+        if position is None:
+            raise ValueError(f"Node {node_id} not found or has no position")
+ 
+        rank = self._repo.count_before_position(collection_id, position)
+        total = self._repo.count_by_collection(collection_id)
+ 
+        if total <= 1:
+            return 0
+ 
+        return round((rank / (total - 1)) * 100)
+ 
+    def get_position_for_priority(self, collection_id: int, percentage: float) -> str:
+        if not 0 <= percentage <= 100:
+            raise ValueError("Percentage must be between 0 and 100")
+ 
+        total = self._repo.count_by_collection(collection_id)
+ 
+        if total == 0:
+            return self._lexical_order.insert_between(None, None)
 
-    def spread_keys(self, n: int) -> list[str]:
-        if n == 0:
-            return []
-        return generate_n_keys_between(None, None, n)
+        if percentage == 100:
+            tail_key = self._repo.get_tail_key(collection_id)
+            return self._lexical_order.insert_between(tail_key, None)
 
-    def _sorted_nodes(self, nodes: list[Node]) -> list[Node]:
-        return sorted(
-            [n for n in nodes if n.priority],
-            key=lambda n: n.priority
-        )
-
-    def get_nodes_between_percentage(
+        if percentage == 0:
+            head_key = self._repo.get_position_at_offset(collection_id, 0)
+            return self._lexical_order.insert_between(None, head_key)
+ 
+        target_index = round((percentage / 100) * (total - 1))
+        target_index = max(0, min(target_index, total - 1))
+ 
+        left_key = self._repo.get_position_at_offset(collection_id, target_index - 1) if target_index > 0 else None
+        right_key = self._repo.get_position_at_offset(collection_id, target_index) if target_index < total else None
+ 
+        return self._lexical_order.insert_between(left_key, right_key)
+ 
+    def prioritise_random_between_percentage(
         self,
-        nodes: list[Node],
+        collection_id: int,
         min_percentage: float,
         max_percentage: float,
-    ) -> list[Node]:
+    ) -> str:
+        percentage = random.uniform(min_percentage, max_percentage)
+        return self.get_position_for_priority(collection_id, percentage)
 
-        nodes_sorted = self._sorted_nodes(nodes)
-        n = len(nodes_sorted)
+    def prioritise_random_behind_node(
+        self,
+        collection_id: int,
+        node_id: int,
+        percentage_range: float,
+    ) -> str:
+        current = self.get_priority(collection_id, node_id)
+        min_pct = min(current, 100 - percentage_range)
+        max_pct = min(min_pct + percentage_range, 100)
+        return self.prioritise_random_between_percentage(collection_id, min_pct, max_pct)
 
-        if n == 0:
-            return []
+    def reprioritise_node(self, collection_id: int, node_id: int, priority: int) -> None:
+        new_position = self.get_position_for_priority(collection_id, priority)
+        self._repo.update_position(node_id, new_position)
 
-        min_index = round((min_percentage / 100) * n)
-        max_index = round((max_percentage / 100) * n)
-
-        min_index = max(0, min(min_index, n))
-        max_index = max(0, min(max_index, n))
-
-        if min_index > max_index:
-            min_index, max_index = max_index, min_index
-
-        if min_index == max_index and min_index < n:
-            max_index = min_index + 1
-
-        return nodes_sorted[min_index:max_index]
-
-    def key_to_percentage(self, nodes: list[Node], key: str) -> float:
-        nodes_sorted = self._sorted_nodes(nodes)
-
-        if not nodes_sorted:
-            return 0.0
-
-        keys = [n.priority for n in nodes_sorted if n.priority]
-
-        extended = sorted(keys + [key])
-
-        index = extended.index(key)
-
-        return (index / (len(extended) - 1)) * 100
-
-    def insert_between_nodes_random(self, nodes: list[Node]) -> str:
-        nodes_sorted = self._sorted_nodes(nodes)
-
-        if len(nodes_sorted) < 2:
-            raise ValueError("Need at least 2 nodes")
-
-        existing_keys = {n.priority for n in nodes_sorted if n.priority}
-
-        i = random.randint(1, len(nodes_sorted) - 1)
-
-        left_key = nodes_sorted[i - 1].priority
-        right_key = nodes_sorted[i].priority
-
-        if not left_key or not right_key:
-            raise ValueError("Nodes must have valid priorities")
-
-        new_key = generate_key_between(left_key, right_key)
-
-        while new_key in existing_keys:
-            new_key = generate_key_between(left_key, right_key)
-
-        return new_key
+    def reindex_all(self, collection_id: int) -> None:
+        """
+        Rebalances fractional index keys across the entire collection.
+    
+        Over time, repeated insertions between the same neighbors can produce
+        increasingly long keys. This method reassigns evenly spread keys to all
+        nodes while preserving their relative order.
+        """
+        positions = self._repo.get_all_positions(collection_id)
+        new_keys = self._lexical_order.spread_keys(len(positions))
+        for (node_id, _), new_key in zip(positions, new_keys):
+            self._repo.update_position(node_id, new_key)

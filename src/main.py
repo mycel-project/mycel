@@ -4,10 +4,12 @@ import json
 from pathlib import Path
 
 from src.converters.html_to_md.registry import HtmlToMdRegistry
+from src.core.lexical_order import LexicalOrder
 from src.db import Db
 from src.interfaces.interface import Interface
 from src.event_bus import EventBus
 from src.core.scheduling_engine import SchedulingEngine
+from src.repositories import NodeRepository
 from src.services.cache.pending_review_cache import PendingReviewCache
 from src.services.node_format_service import NodeFormatService
 from src.services.priority_service import PriorityService
@@ -25,6 +27,8 @@ class Application():
         source_registry = SourceRegistry(self.config["network_user_agent"])
         html_to_markdown_registry = HtmlToMdRegistry()
 
+        node_repository = NodeRepository(self.db)
+        lexical_order = LexicalOrder()
         ressource_service = RessourceService(source_registry, html_to_markdown_registry)
         node_format_service = NodeFormatService()
         priority_service = PriorityService()
@@ -52,6 +56,7 @@ class Application():
             "ressource_service": ressource_service,
             "fragment_service": fragment_service,
             "spore_service": spore_service,
+            "priority_service": priority_service,
         }
 
         orchestrators = {

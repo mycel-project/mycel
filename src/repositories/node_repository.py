@@ -152,95 +152,6 @@ class NodeRepository:
             "UPDATE nodes SET last_review = ?, updated_at = ? WHERE id = ?",
             (now, now, node_id),
         )
-
-    def get_predecessor_priority(
-        self,
-        collection_id: int,
-        priority: str,
-        exclude_id: int,
-    ) -> Optional[str]:
-        row = self.db.fetch_one(
-            "SELECT priority FROM nodes "
-            "WHERE collection_id = ? AND priority < ? AND id != ? "
-            "ORDER BY priority DESC LIMIT 1",
-            (collection_id, priority, exclude_id),
-        )
-        return row["priority"] if row else None
-
-    def get_successor_priority(
-        self,
-        collection_id: int,
-        priority: str,
-        exclude_id: int,
-    ) -> Optional[str]:
-        row = self.db.fetch_one(
-            "SELECT priority FROM nodes "
-            "WHERE collection_id = ? AND priority > ? AND id != ? "
-            "ORDER BY priority ASC LIMIT 1",
-            (collection_id, priority, exclude_id),
-        )
-        return row["priority"] if row else None
-
-    def get_all_priorities(self, collection_id: int) -> list[tuple[int, str]]:
-        rows = self.db.fetch_all(
-            "SELECT id, priority FROM nodes WHERE collection_id = ? ORDER BY priority",
-            (collection_id,),
-        )
-        return [(row["id"], row["priority"]) for row in rows]
-
-    def get_tail_key(self, collection_id: int) -> Optional[str]:
-        """Get the last priority in the collection"""
-        row = self.db.fetch_one(
-            "SELECT MAX(priority) FROM nodes WHERE collection_id = ?",
-            (collection_id,),
-        )
-        return row[0] if row and row[0] is not None else None
-
-    def get_neighbor_keys(
-        self,
-        collection_id: int,
-        before_id: int | None,
-        after_id: int | None,
-    ) -> tuple[Optional[str], Optional[str]]:
-        """Get priorities of nodes before and after for insertion"""
-        a_key = None
-        b_key = None
-        if before_id is not None:
-            row = self.db.fetch_one(
-                "SELECT priority FROM nodes WHERE id = ? AND collection_id = ?",
-                (before_id, collection_id),
-            )
-            if row is None:
-                raise ValueError(f"Node {before_id} not found in collection {collection_id}")
-            a_key = row["priority"]
-        if after_id is not None:
-            row = self.db.fetch_one(
-                "SELECT priority FROM nodes WHERE id = ? AND collection_id = ?",
-                (after_id, collection_id),
-            )
-            if row is None:
-                raise ValueError(f"Node {after_id} not found in collection {collection_id}")
-            b_key = row["priority"]
-        return a_key, b_key
-
-    def get_nodes_after(
-        self,
-        collection_id: int,
-        priority: Optional[str],
-        limit: int,
-    ) -> list[Node]:
-        """Get nodes after a given priority, ordered by priority"""
-        if priority is None:
-            rows = self.db.fetch_all(
-                "SELECT * FROM nodes WHERE collection_id = ? ORDER BY priority LIMIT ?",
-                (collection_id, limit),
-            )
-        else:
-            rows = self.db.fetch_all(
-                "SELECT * FROM nodes WHERE collection_id = ? AND priority > ? ORDER BY priority LIMIT ?",
-                (collection_id, priority, limit),
-            )
-        return [self._row_to_model(r) for r in rows]
     
     def get_due(self, collection_id: int, now_ms: Optional[int] = None) -> list[Node]:
         now_ms = now_ms or int(time.time() * 1000)
@@ -276,3 +187,67 @@ class NodeRepository:
         )
 
         return [self._row_to_model(r) for r in rows]
+
+    
+    # Priorisation. Exclude soft deleted nodes.
+
+    def get_position(self, node_id: int) -> Optional[str]:
+        row = self.db.fetch_one(
+            "SELECT position FROM nodes WHERE id = ?",
+            (node_id,),
+        )
+        return row["position"] if row else None
+
+    def get_all_positions(self, collection_id: int) -> list[tuple[int, str]]:
+        rows = self.db.fetch_all(
+            "SELECT id, position FROM nodes WHERE collection_id = ? ORDER BY position",
+            (collection_id,),
+        )
+        return [(row["id"], row["position"]) for row in rows]
+
+    def count_before_position(self, collection_id: int, position: str) -> int:
+        row = self.db.fetch_one(
+            "SELECT COUNT(*) FROM nodes WHERE collection_id = ? AND position < ? AND deleted_at IS NULL",
+            (collection_id, position),
+        )
+        return row[0] if row else 0
+
+    def count_by_collection(self, collection_id: int) -> int:
+        row = self.db.fetch_one(
+            "SELECT COUNT(*) FROM nodes WHERE collection_id = ? AND deleted_at IS NULL",
+            (collection_id,),
+        )
+        return row[0] if row else 0
+
+    def get_position_at_offset(self, collection_id: int, offset: int) -> Optional[str]:
+        row = self.db.fetch_one(
+            "SELECT position FROM nodes WHERE collection_id = ? AND deleted_at IS NULL ORDER BY position LIMIT 1 OFFSET ?",
+            (collection_id, offset),
+        )
+        return row["position"] if row else None
+
+    def get_predecessor_position(self, collection_id: int, position: str, exclude_id: int) -> Optional[str]:
+        row = self.db.fetch_one(
+            "SELECT position FROM nodes "
+            "WHERE collection_id = ? AND position < ? AND id != ? AND deleted_at IS NULL "
+            "ORDER BY position DESC LIMIT 1",
+            (collection_id, position, exclude_id),
+        )
+        return row["position"] if row else None
+
+    def get_successor_position(self, collection_id: int, position: str, exclude_id: int) -> Optional[str]:
+        row = self.db.fetch_one(
+            "SELECT position FROM nodes "
+            "WHERE collection_id = ? AND position > ? AND id != ? AND deleted_at IS NULL "
+            "ORDER BY position ASC LIMIT 1",
+            (collection_id, position, exclude_id),
+        )
+        return row["position"] if row else None
+
+    def get_tail_key(self, collection_id: int) -> Optional[str]:
+        """Get the last position in the collection, ordered lexicographically."""
+        row = self.db.fetch_one(
+            "SELECT position FROM nodes WHERE collection_id = ? AND deleted_at IS NULL ORDER BY position DESC LIMIT 1",
+            (collection_id,),
+        )
+        return row["position"] if row else None
