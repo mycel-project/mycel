@@ -1,0 +1,33 @@
+name: Release Backend
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release-python:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create VERSION file
+        run: echo "${{ github.ref_name }}" | sed 's/^v//' > VERSION
+
+      - name: Create Zip Bundle
+        run: |
+          mkdir dist
+          cp -r src/ LICENSE config.json requirements.txt VERSION run dist/
+          cd dist && zip -r ../mycel-backend.zip .
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: mycel-backend.zip
+          name: Release ${{ github.ref_name }}
+          body: "Automated production bundle for tag ${{ github.ref_name }}"
+          token: ${{ secrets.GITHUB_TOKEN }}
