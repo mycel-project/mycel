@@ -38,7 +38,7 @@ jobs:
           VERSION_CLEAN=$(echo "${{ github.ref_name }}" | sed 's/^v//')
           FOLDER_NAME="mycel-$VERSION_CLEAN"
           mkdir -p "dist/$FOLDER_NAME"
-          cp -r src/ LICENSE config.json requirements.txt VERSION run.sh CHANGELOG.md "dist/$FOLDER_NAME/" || cp -r src/ LICENSE config.json requirements.txt VERSION run.sh "dist/$FOLDER_NAME/"
+          cp -r src/ LICENSE config.json requirements.txt VERSION run.sh run.bat setup.sh setup.bat README.md CHANGELOG.md "dist/$FOLDER_NAME/"
           chmod +x "dist/$FOLDER_NAME/run.sh"
 
       - name: Create Zip Bundle
