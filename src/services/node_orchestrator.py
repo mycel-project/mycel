@@ -31,6 +31,10 @@ class NodeOrchestrator:
     def get_nodes_view(self, collection_id: int, limit: int = 1000) -> list[NodeView]:
         nodes = self._node_service.get_nodes(collection_id, limit)
         return self._node_view_builder.to_views(nodes)
+
+    def get_node_view(self, node_id: int) -> NodeView:
+        node = self._node_service.get_node(node_id)
+        return self._node_view_builder.to_view(node)
         
     def create_node(self, collection_id: int, data: NodeCreate) -> Node:
         if isinstance(data, NodeCreateFromUrl):
