@@ -98,7 +98,12 @@ class Rest(BaseInterface):
 
         @self.app.get("/health")
         async def check_reachability():
-            return {"status": "ok"}        
+            return {"status": "ok"}
+
+        @self.app.get("/")
+        async def root():
+            version
+            return {"version": version}
 
         @self.app.get("/config/node-types")
         async def get_node_types():
@@ -129,10 +134,10 @@ class Rest(BaseInterface):
             nodes = self.node_service.get_deleted_nodes_view(col_id)
             return {"nodes": nodes}
 
-        # @self.app.get("/collections/{col_id}/nodes/{node_id}")
-        # async def get_node(col_id: int, node_id: int):
-        #         node = self.node_service.get_node(node_id)
-        #         return {"node": node}
+        @self.app.get("/collections/{col_id}/nodes/{node_id}")
+        async def get_node(col_id: int, node_id: int):
+            node = self.node_orchestrator.get_node_view(node_id)
+            return {"node": node}
 
         @self.app.get("/collections/{col_id}/nodes/{node_id}/root")
         async def get_root_node(col_id: int, node_id: int):

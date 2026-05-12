@@ -1,5 +1,6 @@
 import asyncio
 import json
+from importlib.metadata import version
 
 from pathlib import Path
 
@@ -35,6 +36,13 @@ class Application():
         self.config = self.load_config()
         self.bus = EventBus()
         self.db = Db(Path(self.config["db_path"]))
+
+        try:
+            VERSION = Path("VERSION").read_text().strip()
+        except FileNotFoundError:
+            VERSION = "unknown"
+
+        print(f"Running Mycel {VERSION}")
 
         source_registry = SourceRegistry(self.config["network_user_agent"])
         html_to_markdown_registry = HtmlToMdRegistry()
