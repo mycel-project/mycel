@@ -21,7 +21,7 @@ jobs:
       - name: Create Zip Bundle
         run: |
           mkdir dist
-          cp -r src/ LICENSE config.json requirements.txt VERSION run dist/
+          cp -r src/ LICENSE config.json requirements.txt VERSION run.sh dist/
           cd dist && zip -r ../mycel-backend.zip .
 
       - name: Create GitHub Release

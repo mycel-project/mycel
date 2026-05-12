@@ -14,7 +14,6 @@ html-to-markdown==3.3.2
 idna==3.13
 iniconfig==2.3.0
 lxml==6.1.0
-markdownify==1.2.2
 packaging==26.1
 pillow==12.2.0
 pluggy==1.6.0

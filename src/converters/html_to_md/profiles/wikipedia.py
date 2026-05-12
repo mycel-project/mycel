@@ -1,7 +1,6 @@
 from src.converters.html_to_md.profile import Profile
 from src.types.md_content import MdContent
 from html_to_markdown import convert as md
-#from markdownify import markdownify as md
 
 
 class WikipediaConverter(Profile):
