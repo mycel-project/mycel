@@ -18,16 +18,39 @@ jobs:
       - name: Create VERSION file
         run: echo "${{ github.ref_name }}" | sed 's/^v//' > VERSION
 
+      - name: Extract changelog
+        id: changelog
+        run: |
+          VERSION="${{ github.ref_name }}"
+          VERSION_NO_V=$(echo "$VERSION" | sed 's/^v//')
+          NOTES=$(awk "/^## ($VERSION|$VERSION_NO_V)/{flag=1; next} /^## /{flag=0} flag" CHANGELOG.md | tr -d '\r')
+          
+          if [ -z "$NOTES" ]; then
+            NOTES="No release notes found for $VERSION"
+          fi
+
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          echo "$NOTES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Prepare Distribution Folder
+        run: |
+          VERSION_CLEAN=$(echo "${{ github.ref_name }}" | sed 's/^v//')
+          FOLDER_NAME="mycel-$VERSION_CLEAN"
+          mkdir -p "dist/$FOLDER_NAME"
+          cp -r src/ LICENSE config.json requirements.txt VERSION run.sh CHANGELOG.md "dist/$FOLDER_NAME/" || cp -r src/ LICENSE config.json requirements.txt VERSION run.sh "dist/$FOLDER_NAME/"
+          chmod +x "dist/$FOLDER_NAME/run.sh"
+
       - name: Create Zip Bundle
         run: |
-          mkdir dist
-          cp -r src/ LICENSE config.json requirements.txt VERSION run.sh dist/
-          cd dist && zip -r ../mycel-backend.zip .
+          VERSION_CLEAN=$(echo "${{ github.ref_name }}" | sed 's/^v//')
+          cd dist && zip -r "../mycel-v$VERSION_CLEAN.zip" .
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: mycel-backend.zip
+          prerelease: true
+          files: mycel-v*.zip
           name: Release ${{ github.ref_name }}
-          body: "Automated production bundle for tag ${{ github.ref_name }}"
+          body: ${{ steps.changelog.outputs.notes }}
           token: ${{ secrets.GITHUB_TOKEN }}
