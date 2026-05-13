@@ -1,11 +1,13 @@
+from src.core.app_infos import AppInfos
 from .factory import InterfaceFactory
 
 class Interface():
-    def __init__(self, config, bus, services = {}, orchestrators = {}):
+    def __init__(self, config, bus, app_infos: AppInfos, services = {}, orchestrators = {}):
         self.interface = None
         self.interface_name = None
         self.config = config
         self.bus = bus
+        self.app_infos = app_infos
         self.services = services
         self.orchestrators = orchestrators
         
@@ -18,4 +20,4 @@ class Interface():
             print("No interface set in config")
             return
         self.interface = InterfaceFactory.create(self.interface_name)
-        await self.interface.init(self.config, self.bus, self.services, self.orchestrators)
+        await self.interface.init(self.config, self.bus, self.app_infos, self.services, self.orchestrators)

@@ -1,10 +1,10 @@
 import asyncio
 import json
-from importlib.metadata import version
 
 from pathlib import Path
 
 from src.converters.html_to_md.registry import HtmlToMdRegistry
+from src.core.app_infos import AppInfos
 from src.core.lexical_order import LexicalOrder
 from src.db import Db
 from src.domain.create_node_from_url_usecase import CreateNodeFromUrlUseCase
@@ -30,6 +30,7 @@ from src.services.user_service import UserService
 from src.services.node_view_builder import NodeViewBuilder
 import logging
 
+
 class Application():
     def __init__(self):
         self.config_file = "config.json"
@@ -37,13 +38,9 @@ class Application():
         setup_logging(self.config.get("log_level"))
         self.bus = EventBus()
         self.db = Db(Path(self.config["db_path"]))
+        self.app_infos = AppInfos()
 
-        try:
-            VERSION = Path("VERSION").read_text().strip()
-        except FileNotFoundError:
-            VERSION = "unknown"
-
-        print(f"Running Mycel {VERSION}")
+        print(f"Running Mycel {self.app_infos.version}")
 
         source_registry = SourceRegistry(self.config["network_user_agent"])
         html_to_markdown_registry = HtmlToMdRegistry()
@@ -93,13 +90,12 @@ class Application():
             "review_orchestrator": review_orchestrator
         }
 
-        self.interface = Interface(config = self.config, bus = self.bus, services = services, orchestrators = orchestrators)
+        self.interface = Interface(config = self.config, bus = self.bus, app_infos = self.app_infos, services = services, orchestrators = orchestrators)
         
     # self.bus.subscribe("say_hello", self.say_hello)
 
     # async def say_hello(self, data=None):
     #     print(data)
-
 
     async def init_async(self):
         await self.interface.init_interface()

@@ -9,6 +9,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
+from src.core.app_infos import AppInfos
 from src.core.cloze import CLOZE_REGEX
 from src.domain.domain_exceptions import DomainException
 from src.event_bus import EventBus
@@ -46,10 +47,11 @@ class Rest(BaseInterface):
         )
         self._register_routes()
 
-    async def init(self, config, bus, services, orchestrators):
+    async def init(self, config, bus, app_infos, services, orchestrators):
         # Would be better if interfaces only had access to orchestrators?
         self.config = config
         self.bus: EventBus = bus
+        self.app_infos: AppInfos = app_infos
         self.user_service: UserService = services["user_service"]
         self.node_service: NodeService = services["node_service"]
         self.collection_service: CollectionService = services["collection_service"]
@@ -100,9 +102,9 @@ class Rest(BaseInterface):
         async def check_reachability():
             return {"status": "ok"}
 
-        @self.app.get("/")
-        async def root():
-            version
+        @self.app.get("/version")
+        async def version():
+            version = self.app_infos.version
             return {"version": version}
 
         @self.app.get("/config/node-types")
