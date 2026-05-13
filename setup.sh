@@ -15,7 +15,7 @@ echo "Installing dependencies..."
 
 if [ ! -f "config.json" ]; then
     echo "Creating configuration file..."
-    cp config.example.json config.json
+    cp config.json.example config.json
 else
     echo "config.json already exists. Your settings have been preserved."
 fi
