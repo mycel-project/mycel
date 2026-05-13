@@ -34,6 +34,7 @@ class Application():
     def __init__(self):
         self.config_file = "config.json"
         self.config = self.load_config()
+        setup_logging(self.config.get("log_level"))
         self.bus = EventBus()
         self.db = Db(Path(self.config["db_path"]))
 
@@ -112,14 +113,21 @@ class Application():
         with open(self.config_file, "w") as f:
             json.dump(self.config, f, indent=4)
 
-def setup_logging():
+def setup_logging(level_str):
+    LOG_LEVELS = {
+        "debug": logging.DEBUG,
+        "info": logging.INFO,
+        "warning": logging.WARNING,
+        "error": logging.ERROR,
+        "critical": logging.CRITICAL
+    }
+    level = LOG_LEVELS.get(level_str, logging.INFO)
     logging.basicConfig(
-        level=logging.DEBUG,  
+        level=level,  
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
     )
 
 if __name__ == "__main__":
-    setup_logging()
     app = Application()
     asyncio.run(app.init_async())
     
