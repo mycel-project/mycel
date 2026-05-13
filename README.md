@@ -1,24 +1,16 @@
 # Mycel
 
-## Install 
+## Installation
 
-Ensure **Python 3** is installed on your system.
-
-### Windows
-1. Download and unzip the release.
-2. Double-click on `setup.bat`.
-
-### Linux / macOS
-1. Download and unzip the release.
-2. Open a terminal in the extracted folder.
-3. Make the script executable: `chmod +x setup.sh`
-4. Run the setup: `./setup.sh`
+- Ensure **Python** and **git** are installed on your system.
+- Clone this repo : `git clone https://github.com/mycel-project/mycel`
+- Depending on your OS, run setup.bat (windows) or setup.sh (linux/macOS). Don't forget to make the script executable if needed.
    
 ## Running the app
 
-After installation, use the provided launch scripts:
-- **Windows**: Run `run.bat`
-- **Linux/macOS**: Run `./run.sh`.
+After installation, use the provided launch scripts: run.bat for Windows and run.sh for Linux/macOS.
 
-## Update Mycel
-coming soon...
+## Updating Mycel
+Run `git pull` to get the last stable release of Mycel.
+
+*Note*: Some updates may introduce new configuration options. If so, you might need to manually update your config.json file by referring to the config.example.json template.

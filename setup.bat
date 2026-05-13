@@ -12,5 +12,12 @@ echo Installing dependencies...
 .\env\Scripts\python.exe -m pip install --upgrade pip
 .\env\Scripts\pip install -r requirements.txt
 
+if not exist config.json (
+    echo Creating configuration file...
+    copy config.example.json config.json
+) else (
+    echo config.json already exists. Your settings have been preserved.
+)
+
 echo Setup complete! You can now run the application.
 pause

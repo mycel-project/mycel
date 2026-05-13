@@ -1,56 +1,60 @@
 name: Release Backend
-
 on:
   push:
     tags:
       - 'v*'
-
+      
 permissions:
   contents: write
-
+  
 jobs:
-  release-python:
+  release:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Create VERSION file
+      - name: Update VERSION file
         run: echo "${{ github.ref_name }}" | sed 's/^v//' > VERSION
 
+      - name: Update VERSION and re-tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          git fetch origin
+          
+          BRANCH=$(git branch -r --contains ${{ github.ref_name }} | grep -v 'HEAD' | head -n 1 | sed 's|.*origin/||' | xargs)
+          
+          if [ -z "$BRANCH" ]; then
+          BRANCH="main"
+          fi
+          
+          git add VERSION
+          git commit -m "chore: bump VERSION to ${{ github.ref_name }}"
+            
+          git tag -f ${{ github.ref_name }}
+          
+          git push origin HEAD:refs/heads/$BRANCH
+          git push origin ${{ github.ref_name }} --force
+            
       - name: Extract changelog
         id: changelog
         run: |
           VERSION="${{ github.ref_name }}"
           VERSION_NO_V=$(echo "$VERSION" | sed 's/^v//')
           NOTES=$(awk "/^## ($VERSION|$VERSION_NO_V)/{flag=1; next} /^## /{flag=0} flag" CHANGELOG.md | tr -d '\r')
-          
           if [ -z "$NOTES" ]; then
             NOTES="No release notes found for $VERSION"
           fi
-
           echo "notes<<EOF" >> $GITHUB_OUTPUT
           echo "$NOTES" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-
-      - name: Prepare Distribution Folder
-        run: |
-          VERSION_CLEAN=$(echo "${{ github.ref_name }}" | sed 's/^v//')
-          FOLDER_NAME="mycel-$VERSION_CLEAN"
-          mkdir -p "dist/$FOLDER_NAME"
-          cp -r src/ LICENSE config.json requirements.txt VERSION run.sh run.bat setup.sh setup.bat README.md CHANGELOG.md "dist/$FOLDER_NAME/"
-          chmod +x "dist/$FOLDER_NAME/run.sh"
-
-      - name: Create Zip Bundle
-        run: |
-          VERSION_CLEAN=$(echo "${{ github.ref_name }}" | sed 's/^v//')
-          cd dist && zip -r "../mycel-v$VERSION_CLEAN.zip" .
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           prerelease: true
-          files: mycel-v*.zip
           name: Release ${{ github.ref_name }}
           body: ${{ steps.changelog.outputs.notes }}
           token: ${{ secrets.GITHUB_TOKEN }}

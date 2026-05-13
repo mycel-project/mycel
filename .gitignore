@@ -58,3 +58,6 @@ secrets.*
 .toml
 /draft/
 file::memory:?cache=shared
+
+config.json
+!config.json.example
