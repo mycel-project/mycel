@@ -25,6 +25,15 @@ class UserConf(BaseModel):
             "warning": "Changing this value will immediately and permanently delete nodes that have been soft-deleted for longer than the new value."
         }
     )
+    add_extract_to_nav: bool = Field(
+        default=True,
+        description=(
+            "When extracting, insert it into the navigation history for instant access."
+        ),
+        json_schema_extra={
+            "category": "review",
+        }
+    )
     ping_frequency: int = Field(
         default=3,
         ge=1,

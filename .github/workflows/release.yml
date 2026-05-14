@@ -21,21 +21,27 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          
+            
           git fetch origin
-          
-          BRANCH=$(git branch -r --contains ${{ github.ref_name }} | grep -v 'HEAD' | head -n 1 | sed 's|.*origin/||' | xargs)
-          
+            
+          COMMIT=$(git rev-list -n 1 ${{ github.ref_name }})
+          BRANCH=$(git branch -r --contains $COMMIT | grep -v 'HEAD' | head -n 1 | sed 's|.*origin/||' | xargs)
+            
           if [ -z "$BRANCH" ]; then
           BRANCH="main"
           fi
-          
+            
+          echo "Pushing to branch: $BRANCH"
+            
+          git checkout $BRANCH
+          git pull origin $BRANCH
+            
           git add VERSION
           git commit -m "chore: bump VERSION to ${{ github.ref_name }}"
             
           git tag -f ${{ github.ref_name }}
-          
-          git push origin HEAD:refs/heads/$BRANCH
+            
+          git push origin $BRANCH
           git push origin ${{ github.ref_name }} --force
             
       - name: Extract changelog
