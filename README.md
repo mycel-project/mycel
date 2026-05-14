@@ -6,6 +6,8 @@
 - Clone this repo : `git clone https://github.com/mycel-project/mycel`
 - Depending on your OS, run setup.bat (windows, can be named just "setup") or setup.sh (linux/macOS). Don't forget to make the script executable if needed.
    
+Note: depending on your device's architecture, some dependencies may take a while to install (e.g. html-to-markdown on Raspberry Pi). If you run into issues, feel free to open an issue.
+
 ### Running the app
 
 After installation, use the provided launch scripts: 
