@@ -14,6 +14,7 @@ from src.event_bus import EventBus
 from src.core.scheduling_engine import SchedulingEngine
 from src.repositories import NodeRepository
 from src.services.cache.pending_review_cache import PendingReviewCache
+from src.services.cleanup_service import CleanupService
 from src.services.node_format_service import NodeFormatService
 from src.services.priority_service import PriorityService
 from src.sources.registry import SourceRegistry
@@ -29,6 +30,8 @@ from src.services.review_orchestrator import ReviewOrchestrator
 from src.services.user_service import UserService
 from src.services.node_view_builder import NodeViewBuilder
 import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Application():
@@ -73,6 +76,8 @@ class Application():
 
         node_orchestrator = NodeOrchestrator(node_service, fragment_service, spore_service, priority_service, ressource_service, create_node_from_url_usecase, node_view_builder)
         review_orchestrator = ReviewOrchestrator(user_service, node_service, review_service, node_view_builder)
+
+        self.cleanup_service = CleanupService(node_service, collection_service, user_service)
         
         services = {
             "user_service": user_service,
@@ -98,7 +103,17 @@ class Application():
     #     print(data)
 
     async def init_async(self):
+        asyncio.create_task(self.scheduled_loop(self.cleanup_service))
         await self.interface.init_interface()
+
+    async def scheduled_loop(self, cleanup_sevice: CleanupService):
+        await cleanup_sevice.clean_deleted_nodes()
+        while True:
+            await asyncio.sleep(3600)
+            try:
+                await cleanup_sevice.clean_deleted_nodes()
+            except Exception as e:
+                logger.error(f"Cleanup failed: {e}")
 
     def load_config(self):
         with open(self.config_file, "r") as f:

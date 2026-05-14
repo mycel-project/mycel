@@ -108,6 +108,9 @@ class NodeService:
             deleted_at=now_ms()
         ))
 
+    def get_expired_deleted(self, collection_id: int, cutoff_ms: int) -> list[Node]:
+        return self._repo.get_expired_deleted(collection_id, cutoff_ms)
+
     def soft_delete_subtree(self, node_id: int) -> list[int]:
         subtree = self.get_subtree(node_id)
         ids = [n.id for n in subtree]

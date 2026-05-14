@@ -7,6 +7,7 @@ import pytest
 import random
 import time
 
+from unittest.mock import MagicMock
 from src.models.node_content import NodeContent
 from src.repositories.node_repository import NodeRepository
 from src.services.collection_service import CollectionService

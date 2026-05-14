@@ -188,6 +188,17 @@ class NodeRepository:
 
         return [self._row_to_model(r) for r in rows]
 
+    def get_expired_deleted(self, collection_id: int, cutoff_ms: int) -> list[Node]:
+        rows = self.db.fetch_all(
+            """
+            SELECT * FROM nodes 
+            WHERE collection_id = ? 
+            AND deleted_at IS NOT NULL 
+            AND deleted_at < ?
+            """,
+            (collection_id, cutoff_ms),
+        )
+        return [self._row_to_model(r) for r in rows]
     
     # Priorisation. Exclude soft deleted nodes.
 
