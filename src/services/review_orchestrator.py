@@ -49,7 +49,7 @@ class ReviewOrchestrator:
             return None
 
     def undo_review(self, col_id: int) -> NodeView:
-        max_undo_age = self._user_service.get_undo_max_age_s(1)
+        max_undo_age = self._user_service.get_undo_max_age_min(1)
         last_review = self._review_service.undo_review(col_id, max_undo_age)
         try:
             node_from_undone_review = self._node_service.get_node(last_review.node_id)

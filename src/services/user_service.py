@@ -42,7 +42,7 @@ class UserService:
         user = self.get_user(user_id)
         return user.conf
 
-    def get_undo_max_age_s(
+    def get_undo_max_age_min(
         self,
         user_id: int
     ) -> int:

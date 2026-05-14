@@ -151,14 +151,15 @@ class ReviewService:
     def get_pending_node_id(self) -> int | None: 
         return self._pending_review_cache.get()
 
-    def undo_review(self, col_id: int, max_age_s: int | None = None) -> Review:
+    def undo_review(self, col_id: int, max_age_min: int | None = None) -> Review:
         last_review = self._repo.get_last_review_by_collection(col_id)
 
         if last_review is None:
             raise NoReviewToUndo()
 
-        if max_age_s is not None:
+        if max_age_min is not None:
             age = now_s() - (last_review.time // 1000)
+            max_age_s = max_age_min * 60
             if age > max_age_s:
                 raise ReviewUndoNotAllowedError(age, max_age_s)
 
