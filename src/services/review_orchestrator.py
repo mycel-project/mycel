@@ -38,7 +38,8 @@ class ReviewOrchestrator:
                 last_review=review.node_state_before.last_review,
                 due=review.node_state_before.due,
                 type_data=review.node_state_before.type_data,
-            )
+            ),
+            True
         )
 
     def get_next_review(self, col_id: int) -> NodeView | None:

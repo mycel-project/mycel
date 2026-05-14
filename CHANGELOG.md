@@ -5,6 +5,7 @@
 ### Fixed
 - Cloze regex was working in Mycel but was too Python-specific to be usable in the frontend. Changed that.
 - Fixed unit for undo review max age: it was saved in minutes but used as seconds
+- When undoing a review from a deleted node, apply undo but raise a warning
 
 ## v0.0.2
 ### Added 

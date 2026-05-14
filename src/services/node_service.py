@@ -208,8 +208,8 @@ class NodeService:
     def update_position(self, node_id: int, position: str):
         self.update(node_id, NodeUpdate(position=position))
 
-    def update(self, node_id: int, updates: NodeUpdate) -> Node:
-        node = self.get_node(node_id)
+    def update(self, node_id: int, updates: NodeUpdate, include_deleted = False) -> Node:
+        node = self.get_node(node_id, include_deleted)
         print("updates:", updates)
 
         for field, value in updates:
