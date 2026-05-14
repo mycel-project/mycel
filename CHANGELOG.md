@@ -2,6 +2,9 @@
 ### Added
 - Automatically hard-delete soft-deleted nodes after `delete_max_age` is reached. By default, deletion runs every hour and at startup.
 
+### Fixed
+- Cloze regex was working in Mycel but was too Python-specific to be usable in the frontend. Changed that.
+
 ## v0.0.2
 ### Added 
 - Add user config param: "add extract to nav"
