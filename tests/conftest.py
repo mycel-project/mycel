@@ -9,8 +9,10 @@ import time
 
 from unittest.mock import MagicMock
 from src.models.node_content import NodeContent
+from src.repositories import node_repository
 from src.repositories.node_repository import NodeRepository
 from src.services.collection_service import CollectionService
+from src.services.node_service import NodeService
 from src.services.review_service import ReviewService
 from src.types.node_type import NodeType
 
@@ -36,6 +38,13 @@ def review_service():
     return service
 
 @pytest.fixture
+def node_service():
+    repo = Mock()
+    service = NodeService(node_repository=repo)
+    service._repo = repo
+    return service
+
+@pytest.fixture
 def db():
     return Db(Path("file::memory:?cache=shared"))
 
@@ -43,10 +52,9 @@ def db():
 def col(db):
     service = CollectionService(db)
 
-    col = service.create_collection("pytest")
+    col = service.create_collection("pytest", 1)
 
     return col  
-
 
 @pytest.fixture
 def nodes(db, col):

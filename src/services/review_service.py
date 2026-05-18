@@ -21,6 +21,9 @@ from src.models.node import Node
 
 class ReviewService:
     # No caching at the moment
+    """
+    No date/datetime object
+    """
     def __init__(self, db: Db, scheduling_engine: SchedulingEngine, fsrs_service: FsrsService, node_service: NodeService, pending_review_cache: PendingReviewCache):
         self._repo = ReviewRepository(db)
         self._fsrs_service = fsrs_service

@@ -1,4 +1,7 @@
+from datetime import date
+
 from src.domain.domain_exceptions import NoNodeFound, NoPendingNodeError, NodeDeleted, PendingReviewMismatchError, ReviewUndoNodeInaccessible, UnknownReviewTypeError
+from src.models.day_review_overview import DayReviewOverview
 from src.models.review import Review
 from src.models.type_review_data import TypeReviewData
 from src.models.type_review_data.fragment_review_data import FragmentReviewData
@@ -9,6 +12,7 @@ from src.services.node_service import NodeService
 from src.services.node_view_builder import NodeViewBuilder
 from src.services.review_service import ReviewService
 from src.services.user_service import UserService
+from src.types.node_type import NodeType
 
 
 class ReviewOrchestrator:
@@ -63,3 +67,37 @@ class ReviewOrchestrator:
         self._review_service.set_pending_node_id(node_from_undone_review.id)
         node = self._node_service.get_node(node_from_undone_review.id)
         return self._node_view_builder.to_view(node)
+
+    def get_calendar(
+        self,
+        col_id,
+        due: bool = True,
+        done: bool = False,
+        start=None,
+        end=None,
+    ) -> list[DayReviewOverview]:
+        # Use review service to get done for that period
+        # Must determine which format to use to handle due/done. Timestamps ? iso ? What is cleaner for frontend ? maybe iso as we send back iso and it's only day specific ?
+
+        calendar: dict[date, DayReviewOverview] = {}
+
+        if due:
+            for row in self._node_service.get_due_count_by_type_and_day(col_id, start, end):
+
+                day = date.fromtimestamp(row.day_start_ms / 1000)
+
+                if day not in calendar:
+                    calendar[day] = DayReviewOverview(date=day.isoformat())
+
+                entry = calendar[day]
+
+                if row.type == NodeType.SPORE:
+                    entry.due_spores = row.count
+
+                elif row.type == NodeType.FRAGMENT:
+                    entry.due_fragments = row.count
+
+        return sorted(
+            calendar.values(),
+            key=lambda d: d.date
+        )

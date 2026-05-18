@@ -1,4 +1,3 @@
-import json
 import time
 from typing import Optional
 
@@ -104,6 +103,36 @@ class NodeRepository:
 
     def delete(self, id: int) -> None:
         self.db.execute("DELETE FROM nodes WHERE id = ?", (id,))
+
+    def due_count_by_type_and_day(
+        self,
+        collection_id: int,
+        start_ms: int,
+        to_ms: int
+    ) -> list[tuple[int, int, int]]:
+
+        rows = self.db.fetch_all(
+            """
+            SELECT
+                (due / 1000 / 86400) * 86400 * 1000 as day_ms,
+                type,
+                COUNT(*) as count
+            FROM nodes
+            WHERE collection_id = ?
+              AND due >= ?
+              AND due < ?
+              AND deleted_at IS NULL
+              AND NOT (type = 1 AND json_extract(type_data, '$.dismiss') = 1)
+            GROUP BY day_ms, type
+            ORDER BY day_ms
+            """,
+            (collection_id, start_ms, to_ms)
+        )
+        
+        return [
+            (row["day_ms"], row["type"], row["count"])
+            for row in rows
+        ]
 
     def get_by_collection(self, collection_id: int, limit: Optional[int] = None) -> list[Node]:
         if limit:

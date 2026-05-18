@@ -10,12 +10,15 @@ from src.schemas.node_view import NodeView
 from src.schemas.node_metrics import NodeMetrics
 from src.schemas.node_update import NodeUpdate
 from src.models.node_content import NodeContent
+from src.types.count_by_type_and_day import CountByTypeAndDay
 from src.types.node_type import NodeType
 from src.utils.time import overdue_ms, now_ms
 
 class NodeService:
     """
     Default behaviour is to filter nodes by aliveness (deleted_at field at None), excepted in get_node where we raise exception if node is deleted
+
+    No date/datetime object
     """
     def __init__(self, node_repository: NodeRepository):
         self._repo = node_repository
@@ -224,3 +227,27 @@ class NodeService:
         
     def get_due_nodes(self, collection_id: int) -> list[Node]:
         return self._keep_alive(self._repo.get_due(collection_id))
+
+    def get_due_count_by_type_and_day(
+        self,
+        collection_id: int,
+        start_ms: Optional[int] = None,
+        to_ms: Optional[int] = None
+    ) -> list[CountByTypeAndDay]:
+        # Note that countByTypeAndDay is not specifc do DUE nodes.
+
+        if start_ms is None:
+            start_ms = 0
+        if to_ms is None:
+            to_ms = 2**63 - 1
+
+        raw = self._repo.due_count_by_type_and_day(collection_id, start_ms, to_ms)
+
+        return [
+            CountByTypeAndDay(
+                day_start_ms=day,
+                type=NodeType(type),
+                count=count
+            )
+            for day, type, count in raw
+        ]

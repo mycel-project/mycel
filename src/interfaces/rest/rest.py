@@ -259,11 +259,17 @@ class Rest(BaseInterface):
             self.review_orchestrator.review(col_id, node_id, data.duration, data.type_review_data)
             return Response(status_code=204)
 
+        @self.app.get("/collections/{col_id}/reviews/calendar")
+        async def get_calendar(col_id: int):
+            # Goal : ?start=2025-01-01&end=2025-05-31&include=reviewed,due
+            calendar = self.review_orchestrator.get_calendar(col_id, done = False)
+            return {"calendar": calendar}
+
         @self.app.post("/collections/{col_id}/reviews/undo")
         async def undo_review(col_id: int):
             node_from_undone_review = self.review_orchestrator.undo_review(col_id)
             return {"node_review": node_from_undone_review}
-        
+
         @self.app.get("/collections/{col_id}/reviews/next")
         async def get_next_review(col_id: int):
             node = self.review_orchestrator.get_next_review(col_id)

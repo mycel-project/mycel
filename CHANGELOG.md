@@ -1,4 +1,6 @@
 ## Unreleased
+### Added
+- Start implementing calendar logic by counting due fragments/spores for each day.
 
 ## v0.0.3
 ### Added
