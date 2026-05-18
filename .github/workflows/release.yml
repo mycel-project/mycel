@@ -61,6 +61,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           prerelease: false
-          name: Release ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
           body: ${{ steps.changelog.outputs.notes }}
           token: ${{ secrets.GITHUB_TOKEN }}
