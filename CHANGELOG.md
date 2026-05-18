@@ -1,4 +1,6 @@
 ## Unreleased
+
+## v0.0.3
 ### Added
 - Automatically hard-delete soft-deleted nodes after `delete_max_age` is reached. By default, deletion runs every hour and at startup.
 
