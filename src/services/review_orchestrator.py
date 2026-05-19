@@ -48,8 +48,8 @@ class ReviewOrchestrator:
             True
         )
 
-    def get_next_review(self, col_id: int) -> NodeView | None:
-        node = self._review_service.get_next_review(col_id)
+    def get_next_review(self, col_id: int, tz_offset: int = 0) -> NodeView | None:
+        node = self._review_service.get_next_review(col_id, tz_offset)
         if node:
             return self._node_view_builder.to_view(node)
         else:

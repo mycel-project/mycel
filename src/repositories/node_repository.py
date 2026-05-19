@@ -35,7 +35,8 @@ class NodeRepository:
         content: NodeContent,
         data: Optional[NodeData],
         type: NodeType,
-        position: str,        
+        position: str,
+        due: Optional[int] = None,
         type_data: Optional[TypeData] = None,
         parent_id: Optional[int] = None,
     ) -> Node:
@@ -49,7 +50,7 @@ class NodeRepository:
             deleted_at=None,
             data=data or NodeData(),
             type_data=type_data or TYPE_DATA_MAP[type](),
-            due=now,
+            due=due if due is not None else now,
             content=content, 
             position=position,
             type=type

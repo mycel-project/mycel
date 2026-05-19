@@ -15,7 +15,7 @@ from src.services.spore_service import SporeService
 from src.services.priority_service import PriorityService
 from src.services.ressource_service import RessourceService
 from src.types.node_type import NodeType
-from src.utils.time import local_date_to_utc_ms
+from src.utils.time import local_date_to_utc_ms, start_of_local_tomorrow_ms
 
 
 logger = logging.getLogger(__name__)
@@ -38,9 +38,9 @@ class NodeOrchestrator:
         node = self._node_service.get_node(node_id)
         return self._node_view_builder.to_view(node)
         
-    def create_node(self, collection_id: int, data: NodeCreate) -> Node:
+    def create_node(self, collection_id: int, data: NodeCreate, tz_offset_min: int) -> Node:
         if isinstance(data, NodeCreateFromUrl):
-            return self._create_node_from_url_usecase.execute(collection_id, data.url)
+            return self._create_node_from_url_usecase.execute(collection_id, data.url, tz_offset_min)
         else:
             raise UnknownRessourceTypeError(type(data).__name__)
 
@@ -53,8 +53,8 @@ class NodeOrchestrator:
         else:
             raise NotAKnownType(node_id, node.type)
 
-    def create_node_to_view(self, collection_id: int, data: NodeCreate) -> NodeView:
-        return self._node_view_builder.to_view(self.create_node(collection_id, data))
+    def create_node_to_view(self, collection_id: int, data: NodeCreate, tz_offset_min: int) -> NodeView:
+        return self._node_view_builder.to_view(self.create_node(collection_id, data, tz_offset_min))
 
     def update_node_to_view(self, node_id: int, data: NodeUpdate) -> NodeView:
         return self._node_view_builder.to_view(self.update_node(node_id, data))
@@ -64,9 +64,11 @@ class NodeOrchestrator:
         node = self._node_service.get_node(node_id)
         return self._node_view_builder.to_view(node)
     
-    def create_extract(self, col_id: int, extract_type: int, source_node_id: int, text: str, field: int, start_index: int, end_index: int) -> ExtractResult:
+    def create_extract(self, col_id: int, extract_type: int, source_node_id: int, text: str, field: int, start_index: int, end_index: int, tz_offset_min: int) -> ExtractResult:
         source_node = self._node_service.get_node(source_node_id)
         rebuilt_text = source_node.content.fields[str(field)][start_index:end_index]
+
+        due = start_of_local_tomorrow_ms(tz_offset_min)
         
         if rebuilt_text != text: # We compare to avoid incoherences
             raise ExtractMismatchError(rebuilt_text, text)
@@ -76,10 +78,10 @@ class NodeOrchestrator:
             raise InvalidSourceNodeType(source_node_id, extract_type)
         
         if extract_type == NodeType.FRAGMENT:
-            extract = self._fragment_service.create_fragment(col_id, text, source_node_id)
+            extract = self._fragment_service.create_fragment(col_id, due, text, source_node_id)
         elif extract_type == NodeType.SPORE:
             source_content = next(iter(source_node.content.fields.values())) # temp, need simplification
-            spore = self._spore_service.create_spore(col_id, source_content, source_node_id)
+            spore = self._spore_service.create_spore(col_id, due, source_content, source_node_id)
             try: 
                 clozed_spore = self._spore_service.cloze_region(spore.id, text, str(field), start_index, end_index)
                 extract = self._spore_service.remove_extract_formatting(clozed_spore.id, str(field))

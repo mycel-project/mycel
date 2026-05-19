@@ -189,14 +189,15 @@ class Rest(BaseInterface):
             start_index: int
             end_index: int
             extract_type: NodeType
+            tz_offset: int = 0
         @self.app.post("/collections/{col_id}/nodes/{node_id}/extracts")
         async def create_node_extract(col_id: int, node_id: int, data: NodeExtract):
-            extract_result = self.node_orchestrator.create_extract(col_id, data.extract_type, node_id, data.text, data.field, data.start_index, data.end_index)
+            extract_result = self.node_orchestrator.create_extract(col_id, data.extract_type, node_id, data.text, data.field, data.start_index, data.end_index, data.tz_offset)
             return extract_result.model_dump()
             
         @self.app.post("/collections/{col_id}/nodes")
-        async def create_node(col_id: int, data: NodeCreate):
-            node = self.node_orchestrator.create_node_to_view(col_id, data) 
+        async def create_node(col_id: int, data: NodeCreate, tz_offset: int = 0):
+            node = self.node_orchestrator.create_node_to_view(col_id, data, tz_offset) 
             return {"node": node}
 
         class ReprioritiseNode(BaseModel):
@@ -283,8 +284,8 @@ class Rest(BaseInterface):
             return {"node": node_from_undone_review}
 
         @self.app.get("/collections/{col_id}/reviews/next")
-        async def get_next_review(col_id: int):
-            node = self.review_orchestrator.get_next_review(col_id)
+        async def get_next_review(col_id: int, tz_offset: int = 0):
+            node = self.review_orchestrator.get_next_review(col_id, tz_offset)
             return {"node": node}
 
         @self.app.get("/users/me")

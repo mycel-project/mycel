@@ -16,7 +16,7 @@ from src.services.cache.pending_review_cache import PendingReviewCache
 from src.services.fsrs_service import FsrsService
 from src.types.node_type import NodeType
 from .node_service import NodeService
-from src.utils.time import add_days_ms, datetime_to_ms, end_of_day_ms, ms_to_datetime, now_ms, now_s, start_of_day_ms
+from src.utils.time import MS_PER_DAY, add_days_ms, datetime_to_ms, now_ms, now_s, start_of_local_today_ms
 from src.models.node import Node
 
 class ReviewService:
@@ -114,15 +114,15 @@ class ReviewService:
     def get_encounter_count(self, node_id: int) -> int:
         return self._repo.get_encounter_count(node_id)
     
-    def get_reviews_for_today(self) -> list[Review]:
-        now = now_ms()
-        today_start = start_of_day_ms(now)
-        today_end = end_of_day_ms(now)
+
+    def get_reviews_for_today(self, tz_offset_minutes: int = 0) -> list[Review]:
+        today_start = start_of_local_today_ms(tz_offset_minutes)
+        today_end = today_start + MS_PER_DAY
         return self._repo.get_by_period(today_start, today_end)
 
-    def get_next_review_id(self, col_id: int) -> int | None:
+    def get_next_review_id(self, col_id: int, tz_offset: int = 0) -> int | None:
         nodes = self._node_service.get_nodes_scheduling_context(col_id)
-        today_reviews = self.get_reviews_for_today()
+        today_reviews = self.get_reviews_for_today(tz_offset)
         today_reviews_context = []
 
         for r in today_reviews:
@@ -138,10 +138,10 @@ class ReviewService:
                 )
             )
                                 
-        return self._scheduling_engine.get_next_node(nodes, today_reviews_context)
+        return self._scheduling_engine.get_next_node(nodes, today_reviews_context, tz_offset)
 
-    def get_next_review(self, col_id: int) -> Node | None:
-        next_node_id = self.get_next_review_id(col_id)
+    def get_next_review(self, col_id: int, tz_offset: int = 0) -> Node | None:
+        next_node_id = self.get_next_review_id(col_id, tz_offset)
         if not next_node_id:
             return None
         node = self._node_service.get_node(next_node_id)

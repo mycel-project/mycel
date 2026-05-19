@@ -2,7 +2,7 @@ from typing import cast, Optional
 from src.core.node_scheduling_context import NodeSchedulingContext
 from src.core.review_context import ReviewContext
 from src.types.node_type import NodeType
-from src.utils.time import MS_PER_DAY, ms_to_datetime, now_ms, start_of_day_ms
+from src.utils.time import MS_PER_DAY, ms_to_datetime, now_ms, start_of_local_day_ms
 
 from collections import Counter
 import logging
@@ -20,7 +20,12 @@ class SchedulingEngine:
         else:
             raise ValueError("No encounter count data for node.")
 
-    def get_next_node(self, nodes: list[NodeSchedulingContext], today_reviews: list[ReviewContext]) -> Optional[int]:
+    def get_next_node(
+        self,
+        nodes: list[NodeSchedulingContext],
+        today_reviews: list[ReviewContext],
+        tz_offset_minutes: int = 0,
+    ) -> Optional[int]:
         """
         nodes are already sorted by priority, and filtering by due day keep this priority
         
@@ -31,13 +36,13 @@ class SchedulingEngine:
             if n.due is not None
             and not (n.type == NodeType.FRAGMENT and getattr(n.type_data, 'dismiss', False))
         ]
-        
+
         if not due_nodes:
             return None
 
         earliest_due = min(due_nodes, key=lambda n: cast(int, n.due))
 
-        day_start = start_of_day_ms(cast(int, earliest_due.due))
+        day_start = start_of_local_day_ms(cast(int, earliest_due.due), tz_offset_minutes)
         if day_start > now_ms():
             # No more reviews
             return None

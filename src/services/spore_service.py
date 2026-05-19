@@ -21,12 +21,13 @@ class SporeService:
         self._node_format_service = node_format_service
         self._create_node = create_node_use_case
 
-    def create_spore(self, col_id: int, content: Union[str, dict], parent_id: Optional[int] = None) -> Node:
+    def create_spore(self, col_id: int, due: int, content: Union[str, dict], parent_id: Optional[int] = None) -> Node:
         return self._create_node.execute(
             collection_id=col_id,
             content=content,
             parent_id=parent_id,
-            type=NodeType.SPORE
+            type=NodeType.SPORE,
+            due=due,
         )
 
     def update_spore(self, node_id: int, data: NodeUpdate) -> Node:

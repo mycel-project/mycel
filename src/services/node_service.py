@@ -58,7 +58,8 @@ class NodeService:
         collection_id: int,
         type: NodeType,
         content: Union[str, dict, NodeContent],
-        position: str, 
+        position: str,
+        due: Optional[int] = None,
         data: Optional[NodeData] = None,
         type_data: Optional[TypeData] = None,
         parent_id: Optional[int] = None,
@@ -71,6 +72,7 @@ class NodeService:
             parent_id=parent_id,
             position=position,
             data=data,
+            due=due,
             type=type,
         )
 
