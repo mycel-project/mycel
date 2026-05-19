@@ -1,4 +1,6 @@
 ## Unreleased
+
+## v0.0.4
 ### Added
 - Start implementing calendar logic by counting due fragments/spores for each day.
 - Gather days in calendar/reviews using local timezone (given by frontend)
