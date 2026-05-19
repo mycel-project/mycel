@@ -2,6 +2,7 @@
 ### Added
 - Start implementing calendar logic by counting due fragments/spores for each day.
 - Gather days in calendar using local timezone (given by frontend)
+- Can now reschedule a node to a specific day using local timezone
 
 ## v0.0.3
 ### Added
