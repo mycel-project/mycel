@@ -1,4 +1,5 @@
 from datetime import date
+from datetime import timezone, timedelta, datetime
 
 from src.domain.domain_exceptions import NoNodeFound, NoPendingNodeError, NodeDeleted, PendingReviewMismatchError, ReviewUndoNodeInaccessible, UnknownReviewTypeError
 from src.models.day_review_overview import DayReviewOverview
@@ -75,6 +76,7 @@ class ReviewOrchestrator:
         done: bool = False,
         start=None,
         end=None,
+        tz_offset_minutes: int = 0,
     ) -> list[DayReviewOverview]:
         # Use review service to get done for that period
         # Must determine which format to use to handle due/done. Timestamps ? iso ? What is cleaner for frontend ? maybe iso as we send back iso and it's only day specific ?
@@ -82,9 +84,11 @@ class ReviewOrchestrator:
         calendar: dict[date, DayReviewOverview] = {}
 
         if due:
-            for row in self._node_service.get_due_count_by_type_and_day(col_id, start, end):
+            for row in self._node_service.get_due_count_by_type_and_day(col_id, start, end, tz_offset_minutes):
 
-                day = date.fromtimestamp(row.day_start_ms / 1000)
+                # directly return in local tz
+                tz = timezone(timedelta(minutes=tz_offset_minutes))
+                day = datetime.fromtimestamp(row.local_day_midnight_ms / 1000, tz=tz).date() 
 
                 if day not in calendar:
                     calendar[day] = DayReviewOverview(date=day.isoformat())

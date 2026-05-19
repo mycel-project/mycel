@@ -260,9 +260,13 @@ class Rest(BaseInterface):
             return Response(status_code=204)
 
         @self.app.get("/collections/{col_id}/reviews/calendar")
-        async def get_calendar(col_id: int):
+        async def get_calendar(col_id: int, tz_offset: int = 0):
             # Goal : ?start=2025-01-01&end=2025-05-31&include=reviewed,due
-            calendar = self.review_orchestrator.get_calendar(col_id, done = False)
+            calendar = self.review_orchestrator.get_calendar(
+                col_id,
+                tz_offset_minutes=tz_offset,
+                done = False
+            )
             return {"calendar": calendar}
 
         @self.app.post("/collections/{col_id}/reviews/undo")

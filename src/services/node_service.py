@@ -232,20 +232,19 @@ class NodeService:
         self,
         collection_id: int,
         start_ms: Optional[int] = None,
-        to_ms: Optional[int] = None
+        to_ms: Optional[int] = None,
+        tz_offset_minutes: int = 0,
     ) -> list[CountByTypeAndDay]:
         # Note that countByTypeAndDay is not specifc do DUE nodes.
-
+        
         if start_ms is None:
             start_ms = 0
         if to_ms is None:
             to_ms = 2**63 - 1
-
-        raw = self._repo.due_count_by_type_and_day(collection_id, start_ms, to_ms)
-
+        raw = self._repo.due_count_by_type_and_day(collection_id, start_ms, to_ms, tz_offset_minutes)
         return [
             CountByTypeAndDay(
-                day_start_ms=day,
+                local_day_midnight_ms=day,
                 type=NodeType(type),
                 count=count
             )

@@ -19,6 +19,6 @@ class Db:
         with get_connection(self.db_path) as con:
             return con.execute(query, params).fetchone()
 
-    def fetch_all(self, query: str, params: tuple = ()) -> list[Any]:
+    def fetch_all(self, query: str, params: tuple | dict = ()) -> list[Any]:
         with get_connection(self.db_path) as con:
             return con.execute(query, params).fetchall()

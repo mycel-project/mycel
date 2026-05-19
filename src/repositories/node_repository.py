@@ -108,29 +108,39 @@ class NodeRepository:
         self,
         collection_id: int,
         start_ms: int,
-        to_ms: int
+        to_ms: int,
+        tz_offset_minutes: int = 0,
     ) -> list[tuple[int, int, int]]:
-
+        """
+        day_start_ms is UTC midnight of the local day (i.e. local midnight expressed in UTC).
+        e.g. for UTC+1, May 20 local → 2026-05-19 23:00:00 UTC.
+        """
+        tz_offset_ms = tz_offset_minutes * 60_000
         rows = self.db.fetch_all(
             """
             SELECT
-                (due / 1000 / 86400) * 86400 * 1000 as day_ms,
+                ((due + :tz) / 86400000) * 86400000 - :tz AS day_start_ms,
                 type,
                 COUNT(*) as count
             FROM nodes
-            WHERE collection_id = ?
-              AND due >= ?
-              AND due < ?
+            WHERE collection_id = :col_id
+              AND due >= :start_ms
+              AND due < :to_ms
               AND deleted_at IS NULL
               AND NOT (type = 1 AND json_extract(type_data, '$.dismiss') = 1)
-            GROUP BY day_ms, type
-            ORDER BY day_ms
+            GROUP BY day_start_ms, type
+            ORDER BY day_start_ms
             """,
-            (collection_id, start_ms, to_ms)
+            {
+                "tz": tz_offset_ms,
+                "col_id": collection_id,
+                "start_ms": start_ms,
+                "to_ms": to_ms,
+            }
         )
-        
+
         return [
-            (row["day_ms"], row["type"], row["count"])
+            (row["day_start_ms"], row["type"], row["count"])
             for row in rows
         ]
 

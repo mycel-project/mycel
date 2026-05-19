@@ -49,6 +49,10 @@ def db():
     return Db(Path("file::memory:?cache=shared"))
 
 @pytest.fixture
+def node_repo(db):
+    return NodeRepository(db)
+
+@pytest.fixture
 def col(db):
     service = CollectionService(db)
 
