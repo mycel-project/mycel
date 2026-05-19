@@ -167,7 +167,7 @@ class Rest(BaseInterface):
             tz_offset: int  # minutes
         @self.app.post("/collections/{col_id}/nodes/{node_id}/reschedule")
         async def reschedule_node(col_id: int, node_id: int, data: RescheduleNodeRequest):
-            node = self.node_orchestrator.reschedule_node(col_id, node_id, data.date, data.tz_offset)
+            node = self.node_orchestrator.reschedule_node_to_view(col_id, node_id, data.date, data.tz_offset)
             return {"node": node}
 
         class RestoreNodeRequest(BaseModel):

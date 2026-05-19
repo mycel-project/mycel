@@ -129,7 +129,7 @@ class NodeOrchestrator:
     def get_priorities(self, col_id: int) -> dict[int, int]:
         return self._priority_service.get_priorities(col_id)
 
-    def reschedule_node(self, col_id: int, node_id: int, local_date_iso: str, tz_offset_min: int):
+    def reschedule_node_to_view(self, col_id: int, node_id: int, local_date_iso: str, tz_offset_min: int) -> NodeView:
         timestamp_ms = local_date_to_utc_ms(local_date_iso, tz_offset_min)
 
         tz = timezone(timedelta(minutes=tz_offset_min))
@@ -141,4 +141,5 @@ class NodeOrchestrator:
         if (scheduled_day - today_local).days > 365 * 100:
             raise ValueError("Cannot reschedule more than 100 years ahead")
 
-        return self._node_service.update(node_id, NodeUpdate(due=timestamp_ms))
+        node = self._node_service.update(node_id, NodeUpdate(due=timestamp_ms))
+        return self._node_view_builder.to_view(node)
