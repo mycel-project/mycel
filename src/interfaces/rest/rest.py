@@ -280,12 +280,12 @@ class Rest(BaseInterface):
         @self.app.post("/collections/{col_id}/reviews/undo")
         async def undo_review(col_id: int):
             node_from_undone_review = self.review_orchestrator.undo_review(col_id)
-            return {"node_review": node_from_undone_review}
+            return {"node": node_from_undone_review}
 
         @self.app.get("/collections/{col_id}/reviews/next")
         async def get_next_review(col_id: int):
             node = self.review_orchestrator.get_next_review(col_id)
-            return {"node_review": node}
+            return {"node": node}
 
         @self.app.get("/users/me")
         async def get_current_user():
