@@ -162,6 +162,14 @@ class Rest(BaseInterface):
             deleted_ids = self.node_service.soft_delete_subtree(node_id)
             return {"deleted_ids": deleted_ids}
 
+        class RescheduleNodeRequest(BaseModel):
+            date: str       # "2026-05-20"
+            tz_offset: int  # minutes
+        @self.app.post("/collections/{col_id}/nodes/{node_id}/reschedule")
+        async def reschedule_node(col_id: int, node_id: int, data: RescheduleNodeRequest):
+            node = self.node_orchestrator.reschedule_node(col_id, node_id, data.date, data.tz_offset)
+            return {"node": node}
+
         class RestoreNodeRequest(BaseModel):
             restore_ancestors: bool = False
             restore_descendants: bool = False

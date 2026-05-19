@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime, timedelta, timezone, date
 
 from src.domain.create_node_from_url_usecase import CreateNodeFromUrlUseCase
 from src.domain.domain_exceptions import ExtractError, ExtractMismatchError, InvalidSourceNodeType, NotAKnownType, UnknownRessourceTypeError
@@ -14,6 +15,7 @@ from src.services.spore_service import SporeService
 from src.services.priority_service import PriorityService
 from src.services.ressource_service import RessourceService
 from src.types.node_type import NodeType
+from src.utils.time import local_date_to_utc_ms
 
 
 logger = logging.getLogger(__name__)
@@ -126,3 +128,17 @@ class NodeOrchestrator:
 
     def get_priorities(self, col_id: int) -> dict[int, int]:
         return self._priority_service.get_priorities(col_id)
+
+    def reschedule_node(self, col_id: int, node_id: int, local_date_iso: str, tz_offset_min: int):
+        timestamp_ms = local_date_to_utc_ms(local_date_iso, tz_offset_min)
+
+        tz = timezone(timedelta(minutes=tz_offset_min))
+        today_local = datetime.now(tz).date()
+        scheduled_day = date.fromisoformat(local_date_iso)
+
+        if scheduled_day < today_local:
+            raise ValueError("Cannot reschedule to a past day")
+        if (scheduled_day - today_local).days > 365 * 100:
+            raise ValueError("Cannot reschedule more than 100 years ahead")
+
+        return self._node_service.update(node_id, NodeUpdate(due=timestamp_ms))

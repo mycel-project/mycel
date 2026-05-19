@@ -36,3 +36,12 @@ def end_of_day_ms(ms: int) -> int:
 
 def add_days_ms(now: int, days: int) -> int:
     return now + days * MS_PER_DAY
+
+def local_date_to_utc_ms(date_iso: str, tz_offset_minutes: int) -> int:
+    """
+    Converts a local date to the UTC timestamp (ms) of midnight on that day.
+    e.g. "2026-05-20" with tz_offset=60 (UTC+1) → 2026-05-19 23:00:00 UTC in ms (so 1779231600000).
+    """
+    tz = datetime.timezone(datetime.timedelta(minutes=tz_offset_minutes))
+    dt = datetime.datetime.strptime(date_iso, "%Y-%m-%d").replace(tzinfo=tz)
+    return int(dt.timestamp() * 1000)
