@@ -259,13 +259,13 @@ class Rest(BaseInterface):
             type_review_data: TypeReviewData # data specific to node type
         @self.app.post("/collections/{col_id}/nodes/{node_id}/spore-review")
         async def review_spore(col_id: int, node_id: int, data: ReviewData):
-            self.review_orchestrator.review(col_id, node_id, data.duration, data.type_review_data)
-            return Response(status_code=204)
+            node = self.review_orchestrator.review_to_view(col_id, node_id, data.duration, data.type_review_data)
+            return {"node": node}
 
         @self.app.post("/collections/{col_id}/nodes/{node_id}/fragment-review")
         async def review_fragment(col_id: int, node_id: int, data: ReviewData):
-            self.review_orchestrator.review(col_id, node_id, data.duration, data.type_review_data)
-            return Response(status_code=204)
+            node = self.review_orchestrator.review_to_view(col_id, node_id, data.duration, data.type_review_data)
+            return {"node": node}
 
         @self.app.get("/collections/{col_id}/reviews/calendar")
         async def get_calendar(col_id: int, tz_offset: int = 0):

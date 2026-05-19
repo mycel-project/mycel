@@ -44,7 +44,7 @@ class ReviewService:
             node_id: int,
             duration: int,
             data: SporeReviewData,
-    ) -> None:
+    ) -> Node:
         node = self._node_service.get_node(node_id)
         if not node.type == NodeType.SPORE:
             raise NotASpore(node_id)
@@ -65,7 +65,7 @@ class ReviewService:
             now=now,
             node_state_before=node_state_before
         )
-        self._node_service.update(
+        return self._node_service.update(
             node_id,
             NodeUpdate(
                 type_data=type_data,
@@ -80,7 +80,7 @@ class ReviewService:
             node_id: int,
             duration: int,
             data: FragmentReviewData,
-    ) -> None:
+    ) -> Node:
         node = self._node_service.get_node(node_id)
         if not node.type == NodeType.FRAGMENT:
             raise NotAFragment(node_id)
@@ -102,7 +102,7 @@ class ReviewService:
             now=now,
             node_state_before=node_state_before
         )
-        self._node_service.update(
+        return self._node_service.update(
             node.id,
             NodeUpdate(
                 type_data=FragmentData(),
