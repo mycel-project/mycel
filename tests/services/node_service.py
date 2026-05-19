@@ -16,8 +16,8 @@ class TestNodeService:
             result = node_service.get_due_count_by_type_and_day(1)
 
             assert result == [
-                CountByTypeAndDay(day_start_ms=ts, type=NodeType.SPORE, count=3),
-                CountByTypeAndDay(day_start_ms=ts, type=NodeType.FRAGMENT, count=7),
+                CountByTypeAndDay(local_day_midnight_ms=ts, type=NodeType.SPORE, count=3),
+                CountByTypeAndDay(local_day_midnight_ms=ts, type=NodeType.FRAGMENT, count=7),
             ]
 
         def test_only_spores(self, node_service):
@@ -30,7 +30,7 @@ class TestNodeService:
             result = node_service.get_due_count_by_type_and_day(1)
 
             assert result == [
-                CountByTypeAndDay(day_start_ms=ts, type=NodeType.SPORE, count=5),
+                CountByTypeAndDay(local_day_midnight_ms=ts, type=NodeType.SPORE, count=5),
             ]
 
         def test_only_fragments(self, node_service):
@@ -43,7 +43,7 @@ class TestNodeService:
             result = node_service.get_due_count_by_type_and_day(1)
 
             assert result == [
-                CountByTypeAndDay(day_start_ms=ts, type=NodeType.FRAGMENT, count=9),
+                CountByTypeAndDay(local_day_midnight_ms=ts, type=NodeType.FRAGMENT, count=9),
             ]
 
         def test_multiple_days(self, node_service):
@@ -59,9 +59,9 @@ class TestNodeService:
             result = node_service.get_due_count_by_type_and_day(1)
 
             assert result == [
-                CountByTypeAndDay(day_start_ms=ts1, type=NodeType.SPORE, count=2),
-                CountByTypeAndDay(day_start_ms=ts2, type=NodeType.FRAGMENT, count=4),
-                CountByTypeAndDay(day_start_ms=ts2, type=NodeType.SPORE, count=1),
+                CountByTypeAndDay(local_day_midnight_ms=ts1, type=NodeType.SPORE, count=2),
+                CountByTypeAndDay(local_day_midnight_ms=ts2, type=NodeType.FRAGMENT, count=4),
+                CountByTypeAndDay(local_day_midnight_ms=ts2, type=NodeType.SPORE, count=1),
             ]
 
         def test_empty(self, node_service):

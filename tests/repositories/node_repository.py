@@ -1,22 +1,11 @@
 from src.repositories.node_repository import NodeRepository
 from src.models.node import NodeType, NodeContent, NodeData
+from src.utils.time import local_date_to_utc_ms
 
 def _due_ms(iso_utc: str) -> int:
     from datetime import datetime, timezone
     dt = datetime.strptime(iso_utc, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
     return int(dt.timestamp() * 1000)
-
-def _local_midnight_as_utc_ms(iso_date: str, tz_offset_minutes: int) -> int:
-    """
-    Retourne le timestamp UTC (ms) correspondant à minuit heure locale
-    pour la date et l'offset donnés.
-    C'est ce que retourne le SQL après re-soustraction de l'offset.
-    """
-    from datetime import datetime, timezone, timedelta
-    d = datetime.strptime(iso_date, "%Y-%m-%d")
-    local_midnight = d.replace(tzinfo=timezone(timedelta(minutes=tz_offset_minutes)))
-    return int(local_midnight.timestamp() * 1000)
-
 
 def _insert_node(repo: NodeRepository, col_id: int, due_ms: int, node_type: NodeType) -> None:
     """Insert a minimal node with a specific due timestamp."""
@@ -70,7 +59,7 @@ class TestNodeRepository:
             results_plus1 = node_repo.due_count_by_type_and_day(col.id, 0, 2**63 - 1, tz_offset_minutes=60)
             assert len(results_plus1) == 1
             day_ms_plus1 = results_plus1[0][0]
-            assert day_ms_plus1 == _local_midnight_as_utc_ms("2026-05-20", tz_offset_minutes=60)
+            assert day_ms_plus1 == local_date_to_utc_ms("2026-05-20", tz_offset_minutes=60)
 
         def test_negative_tz_offset(self, node_repo, col):
             """
@@ -86,7 +75,7 @@ class TestNodeRepository:
 
             # UTC-2 → May 19
             results_minus2 = node_repo.due_count_by_type_and_day(col.id, 0, 2**63 - 1, tz_offset_minutes=-120)
-            assert results_minus2[0][0] == _local_midnight_as_utc_ms("2026-05-19", tz_offset_minutes=-120)
+            assert results_minus2[0][0] == local_date_to_utc_ms("2026-05-19", tz_offset_minutes=-120)
 
         def test_large_positive_offset(self, node_repo, col):
             """UTC+10 edge case: node at 2026-05-19 23:00 UTC = May 20 locally."""
@@ -95,7 +84,7 @@ class TestNodeRepository:
 
             results = node_repo.due_count_by_type_and_day(col.id, 0, 2**63 - 1, tz_offset_minutes=600)
             assert len(results) == 1
-            assert results[0][0] == _local_midnight_as_utc_ms("2026-05-20", tz_offset_minutes=600)
+            assert results[0][0] == local_date_to_utc_ms("2026-05-20", tz_offset_minutes=600)
 
         def test_groups_by_type(self, node_repo, col):
             """Spores and fragments on the same day are returned as separate rows."""
