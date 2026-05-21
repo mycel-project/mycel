@@ -52,6 +52,7 @@ class SporeService:
             raise ValueError("No cloze regex detected")
 
     def has_cloze(self, content: str) -> bool:
+        return True
         return CLOZE_PATTERN.search(content) is not None
 
     def cloze_region(self, node_id: int, text: str, field: str, start: int, end: int) -> Node:

@@ -1,5 +1,9 @@
 ## Unreleased
 
+## v0.0.5
+### Fix 
+- Removed the minimum cloze field check during spore validation as it conflicted with the autosave logic. Temporary fix until a more appropriate spore editing system is implemented.
+
 ## v0.0.4
 ### Added
 - Start implementing calendar logic by counting due fragments/spores for each day.
