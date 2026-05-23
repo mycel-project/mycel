@@ -122,7 +122,7 @@ class Rest(BaseInterface):
 
         @self.app.get("/collections/{col_id}/nodes")
         async def get_nodes(col_id: int):
-            nodes = self.node_orchestrator.get_nodes_view(col_id, 100)
+            nodes = self.node_orchestrator.get_nodes_view(col_id, 10000)
             return {"nodes": nodes}
 
         @self.app.get("/collections/{col_id}/nodes/priorities")
@@ -201,7 +201,7 @@ class Rest(BaseInterface):
             return {"node": node}
 
         class ReprioritiseNode(BaseModel):
-            priority: int 
+            priority: float 
         @self.app.post("/collections/{col_id}/nodes/{node_id}/reprioritise")
         async def reprioritise_node(col_id: int, node_id: int, data: ReprioritiseNode):
             node = self.node_orchestrator.reprioritise_node_to_view(

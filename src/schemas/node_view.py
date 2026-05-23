@@ -15,7 +15,7 @@ class NodeView(BaseModel):
     parent_id: Optional[int] = None
     type: int
     content: Optional[NodeContent] = None
-    priority: int
+    priority: float
     due: int
     deleted_at: Optional[int] = None
     data: Optional[NodeData] = None

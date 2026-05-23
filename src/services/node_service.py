@@ -154,7 +154,7 @@ class NodeService:
             for i, n in enumerate(nodes)
         ]
 
-    def node_to_view(self, node: Node, priority: int) -> NodeView:
+    def node_to_view(self, node: Node, priority: float) -> NodeView:
         return NodeView(
             id=node.id,
             collection_id=node.collection_id,

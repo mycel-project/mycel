@@ -258,7 +258,7 @@ class NodeRepository:
 
     def count_before_position(self, collection_id: int, position: str) -> int:
         row = self.db.fetch_one(
-            "SELECT COUNT(*) FROM nodes WHERE collection_id = ? AND position < ? AND deleted_at IS NULL",
+            "SELECT COUNT(*) FROM nodes WHERE collection_id = ? AND position < ? AND deleted_at IS NULL ",
             (collection_id, position),
         )
         return row[0] if row else 0

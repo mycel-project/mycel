@@ -59,8 +59,8 @@ class NodeOrchestrator:
     def update_node_to_view(self, node_id: int, data: NodeUpdate) -> NodeView:
         return self._node_view_builder.to_view(self.update_node(node_id, data))
 
-    def reprioritise_node_to_view(self, collection_id: int, node_id: int, target_node_id: int) -> NodeView:
-        self._priority_service.reprioritise_node(collection_id, node_id, target_node_id)
+    def reprioritise_node_to_view(self, collection_id: int, node_id: int, target_node_priority: float) -> NodeView:
+        self._priority_service.reprioritise_node(collection_id, node_id, target_node_priority)
         node = self._node_service.get_node(node_id)
         return self._node_view_builder.to_view(node)
     
@@ -127,7 +127,7 @@ class NodeOrchestrator:
         root_node = self._node_service.get_root_node(node_id)
         return self._node_view_builder.to_view(root_node)
 
-    def get_priorities(self, col_id: int) -> dict[int, int]:
+    def get_priorities(self, col_id: int) -> dict[int, float]:
         return self._priority_service.get_priorities(col_id)
 
     def reschedule_node_to_view(self, col_id: int, node_id: int, local_date_iso: str, tz_offset_min: int) -> NodeView:

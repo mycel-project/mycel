@@ -9,7 +9,7 @@ class PriorityService:
         self._repo = node_repository
         self._lexical_order = lexical_order
  
-    def get_priority(self, collection_id: int, node_id: int) -> int:
+    def get_priority(self, collection_id: int, node_id: int) -> float:
         position = self._repo.get_position(node_id)
         if position is None:
             raise ValueError(f"Node {node_id} not found or has no position")
@@ -19,18 +19,18 @@ class PriorityService:
  
         if total <= 1:
             return 0
- 
-        return round((rank / (total - 1)) * 100)
 
-    def get_priorities(self, collection_id: int) -> dict[int, int]:
+        return (rank / (total - 1)) * 100
+
+    def get_priorities(self, collection_id: int) -> dict[int, float]:
         total = self._repo.count_by_collection(collection_id)
         if total <= 1:
             return {}
         positions = self._repo.get_all_positions(collection_id)
         return {
-            node_id: round((rank / (total - 1)) * 100)
+            node_id: (rank / (total - 1)) * 100
             for rank, (node_id, _) in enumerate(positions)
-    }
+        }
     
     def get_position_for_priority(self, collection_id: int, percentage: float) -> str:
         if not 0 <= percentage <= 100:
@@ -83,7 +83,7 @@ class PriorityService:
         max_pct = min_pct + percentage_range
         return self.prioritise_random_between_percentage(collection_id, min_pct, max_pct)
     
-    def reprioritise_node(self, collection_id: int, node_id: int, priority: int) -> None:
+    def reprioritise_node(self, collection_id: int, node_id: int, priority: float) -> None:
         new_position = self.get_position_for_priority(collection_id, priority)
         self._repo.update_position(node_id, new_position)
 
