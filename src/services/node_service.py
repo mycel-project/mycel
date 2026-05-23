@@ -167,6 +167,16 @@ class NodeService:
             type_data=node.type_data if node.type == NodeType.FRAGMENT else None # Can be made more specific if needed, to select specific data depending on the node type. At the moment, only fragment type_data is used by frontend.
         )
 
+    def get_depth(self, node_id: int) -> int:
+        depth = 0
+        current_id = node_id
+        while True:
+            node = self.get_node(current_id)
+            if node.parent_id is None:
+                return depth
+            current_id = node.parent_id
+            depth += 1
+
     def get_children_recursive(self, node_id: int) -> list[Node]: # Rename to descendants?
         self.get_node(node_id)  # To check node validity
         return self._repo.get_children_recursive(node_id)

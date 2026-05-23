@@ -7,6 +7,7 @@ from src.converters.html_to_md.registry import HtmlToMdRegistry
 from src.core.app_infos import AppInfos
 from src.core.lexical_order import LexicalOrder
 from src.db import Db
+from src.domain.create_fragment_usecase import CreateFragmentUseCase
 from src.domain.create_node_from_url_usecase import CreateNodeFromUrlUseCase
 from src.domain.create_node_usecase import CreateNodeUseCase
 from src.interfaces.interface import Interface
@@ -56,23 +57,25 @@ class Application():
         priority_service = PriorityService(node_repository, lexical_order)
         node_service = NodeService(node_repository)
 
-        create_node_usecase = CreateNodeUseCase(node_service, priority_service)
+        scheduling_engine = SchedulingEngine()
 
-        fragment_service = FragmentService(node_service, node_format_service, create_node_usecase)
+        create_node_usecase = CreateNodeUseCase(node_service, priority_service)
+        create_fragment_usecase = CreateFragmentUseCase(node_service, scheduling_engine, create_node_usecase)
+
+        fragment_service = FragmentService(node_service, node_format_service, create_fragment_usecase)
         spore_service = SporeService(node_service, node_format_service, create_node_usecase)
 
         user_service = UserService(self.db)
 
         collection_service = CollectionService(self.db)
         fsrs_service = FsrsService(collection_service, node_service)
-        scheduling_engine = SchedulingEngine()
 
         node_view_builder = NodeViewBuilder(node_service, priority_service)
 
         pending_review_cache = PendingReviewCache()
         review_service = ReviewService(self.db, scheduling_engine, fsrs_service, node_service, pending_review_cache)
 
-        create_node_from_url_usecase = CreateNodeFromUrlUseCase(create_node_usecase, ressource_service)
+        create_node_from_url_usecase = CreateNodeFromUrlUseCase(create_fragment_usecase, ressource_service)
 
         node_orchestrator = NodeOrchestrator(node_service, fragment_service, spore_service, priority_service, ressource_service, create_node_from_url_usecase, node_view_builder)
         review_orchestrator = ReviewOrchestrator(user_service, node_service, review_service, node_view_builder)

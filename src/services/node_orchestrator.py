@@ -67,8 +67,6 @@ class NodeOrchestrator:
     def create_extract(self, col_id: int, extract_type: int, source_node_id: int, text: str, field: int, start_index: int, end_index: int, tz_offset_min: int) -> ExtractResult:
         source_node = self._node_service.get_node(source_node_id)
         rebuilt_text = source_node.content.fields[str(field)][start_index:end_index]
-
-        due = start_of_local_tomorrow_ms(tz_offset_min)
         
         if rebuilt_text != text: # We compare to avoid incoherences
             raise ExtractMismatchError(rebuilt_text, text)
@@ -78,8 +76,9 @@ class NodeOrchestrator:
             raise InvalidSourceNodeType(source_node_id, extract_type)
         
         if extract_type == NodeType.FRAGMENT:
-            extract = self._fragment_service.create_fragment(col_id, due, text, source_node_id)
+            extract = self._fragment_service.create_fragment(col_id, text, source_node_id, tz_offset_min)
         elif extract_type == NodeType.SPORE:
+            due = start_of_local_tomorrow_ms(tz_offset_min)
             source_content = next(iter(source_node.content.fields.values())) # temp, need simplification
             spore = self._spore_service.create_spore(col_id, due, source_content, source_node_id)
             try: 

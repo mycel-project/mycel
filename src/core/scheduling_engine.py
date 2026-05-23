@@ -1,3 +1,5 @@
+import math
+
 from typing import cast, Optional
 from src.core.node_scheduling_context import NodeSchedulingContext
 from src.core.review_context import ReviewContext
@@ -12,7 +14,35 @@ logger = logging.getLogger(__name__)
 
 class SchedulingEngine:
     def __init__(self):
+        # Need instanciation from user config
         self.fragment_vs_spore_proportion = 1/4
+        self.fragment_rep_mult = 1.5
+        self.fragment_depth_midpoint = 4.0
+
+    def compute_fragment_next_interval(self, depth, rep_index) -> int:
+        """
+        Computes the interval in days before the next review of a fragment.
+
+        Deeper fragments grow faster toward long intervals (exponential growth),
+        while shallow fragments stay closer to a linear, regular review pace.
+        The transition between linear and exponential behavior is controlled by depth_midpoint.
+
+        depth: depth in the node tree (0 = root, 1 = first child, ...)
+        rep_index: repetition index (0 = creation, 1 = first review, ...)
+        fragment_rep_mult: how aggressively intervals grow for deep fragments
+        fragment_depth_midpoint: nesting level at which growth is halfway between linear and exponential
+
+        returns interval in days (capped at 365).
+        """
+        initial = 1 + depth
+        exp_weight = 1 - math.exp(-depth / self.fragment_depth_midpoint)
+        interval = initial
+        for _ in range(rep_index):
+            additive_step = initial
+            multiplicative_step = interval * (self.fragment_rep_mult - 1)
+            step = additive_step * (1 - exp_weight) + multiplicative_step * exp_weight
+            interval = int(min(interval + step, 365))
+        return interval
 
     def next_linear_interval(self, node: NodeSchedulingContext) -> int:
         if node.encounter_count is not None:

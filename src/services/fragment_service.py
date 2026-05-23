@@ -1,7 +1,6 @@
 from typing import Optional, Union
 
-from _pytest.nodes import NodeMeta
-from src.domain.create_node_usecase import CreateNodeUseCase
+from src.domain.create_fragment_usecase import CreateFragmentUseCase
 from src.domain.domain_exceptions import NotAFragment, NotAKnownType
 from src.models.node import Node
 from src.schemas.node_update import NodeUpdate
@@ -15,24 +14,23 @@ class FragmentService:
         self,
         node_service: NodeService,
         node_format_service: NodeFormatService,
-        create_node_use_case: CreateNodeUseCase,
+        create_fragment_use_case: CreateFragmentUseCase,
     ):
         self._node_service = node_service
         self._node_format_service = node_format_service
-        self._create_node = create_node_use_case
+        self._create_fragment = create_fragment_use_case
         self._emphasis_handlers = {
             NodeType.FRAGMENT: self._node_format_service.blockquote_region,
             NodeType.SPORE: self._node_format_service.inline_region,
         }
         
-    def create_fragment(self, col_id: int, due: int, content: Union[str, dict], parent_id: Optional[int] = None) -> Node:
-        return self._create_node.execute(
+    def create_fragment(self, col_id: int, content: Union[str, dict], parent_id: Optional[int] = None, tz_offset: int = 0) -> Node:
+        return self._create_fragment.execute(
             collection_id=col_id,
             content=content,
             parent_id=parent_id,
-            type=NodeType.FRAGMENT,
-            due=due,
-        )
+            tz_offset=tz_offset,
+        )        
 
     def update_fragment(self, node_id: int, data: NodeUpdate) -> Node:
         node = self._node_service.get_node(node_id)
