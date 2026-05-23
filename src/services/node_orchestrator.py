@@ -9,6 +9,7 @@ from src.models.node_create import NodeCreate, NodeCreateFromUrl
 from src.schemas.node_update import NodeUpdate
 from src.schemas.node_view import NodeView
 from src.services.fragment_service import FragmentService
+from src.services.node_format_service import NodeFormatService
 from src.services.node_service import NodeService
 from src.services.node_view_builder import NodeViewBuilder
 from src.services.spore_service import SporeService
@@ -21,7 +22,7 @@ from src.utils.time import local_date_to_utc_ms, start_of_local_tomorrow_ms
 logger = logging.getLogger(__name__)
 
 class NodeOrchestrator:
-    def __init__(self, node_service: NodeService, fragment_service: FragmentService, spore_service: SporeService, priority_service: PriorityService, ressource_service: RessourceService, create_node_from_url_usecase: CreateNodeFromUrlUseCase, node_view_builder: NodeViewBuilder):
+    def __init__(self, node_service: NodeService, fragment_service: FragmentService, spore_service: SporeService, priority_service: PriorityService, ressource_service: RessourceService, create_node_from_url_usecase: CreateNodeFromUrlUseCase, node_view_builder: NodeViewBuilder, node_format_service: NodeFormatService):
         self._node_service = node_service
         self._fragment_service = fragment_service
         self._spore_service = spore_service
@@ -29,6 +30,12 @@ class NodeOrchestrator:
         self._ressource_service = ressource_service
         self._create_node_from_url_usecase = create_node_from_url_usecase
         self._node_view_builder = node_view_builder
+        self._node_format_service = node_format_service
+
+    def _check_text_match(self, node: Node, field: int, start_index: int, end_index: int, text: str) -> None:
+        rebuilt_text = node.content.fields[str(field)][start_index:end_index]
+        if rebuilt_text != text:
+            raise ExtractMismatchError(rebuilt_text, text)
 
     def get_nodes_view(self, collection_id: int, limit: int = 1000) -> list[NodeView]:
         nodes = self._node_service.get_nodes(collection_id, limit)
@@ -66,10 +73,9 @@ class NodeOrchestrator:
     
     def create_extract(self, col_id: int, extract_type: int, source_node_id: int, text: str, field: int, start_index: int, end_index: int, tz_offset_min: int) -> ExtractResult:
         source_node = self._node_service.get_node(source_node_id)
-        rebuilt_text = source_node.content.fields[str(field)][start_index:end_index]
         
-        if rebuilt_text != text: # We compare to avoid incoherences
-            raise ExtractMismatchError(rebuilt_text, text)
+        self._check_text_match(source_node, field, start_index, end_index, text)
+        
         if "\n" in text and extract_type == NodeType.SPORE: # I forgot why
             raise ExtractError("EXTRACT_ERROR", "Spore can't include new lines")            
         if source_node.type != NodeType.FRAGMENT:
@@ -144,3 +150,10 @@ class NodeOrchestrator:
 
         node = self._node_service.update(node_id, NodeUpdate(due=timestamp_ms))
         return self._node_view_builder.to_view(node)
+
+    def remove_links_to_view(self, col_id: int, node_id: int, text: str, field: int, start_index: int, end_index: int) -> NodeView:
+        node = self._node_service.get_node(node_id)
+        self._check_text_match(node, field, start_index, end_index, text)
+        node = self._node_format_service.remove_links(node, str(field), start_index, end_index, text)
+        updated = self._node_service.update(node_id, NodeUpdate(content=node.content))
+        return self._node_view_builder.to_view(updated)

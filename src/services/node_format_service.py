@@ -181,3 +181,35 @@ class NodeFormatService:
     
     def remove_inline_code_formatting(self, text: str) -> str:
         return text.replace("`", "")
+
+    def remove_links(self, node: Node, field: str, start: int, end: int, expected_text: str) -> Node:
+        # Not using regex as it does not handle nested (). Maybe check how markdown-mycel-fork handle this?
+        segment = self.get_content_portions(node.content, field, start, end, expected_text)
+        cleaned = self._strip_links(segment.target)
+        node.content.fields[field] = segment.before + cleaned + segment.after
+        return node
+
+    def _strip_links(self, text: str) -> str:
+        result = []
+        i = 0
+        while i < len(text):
+            if text[i] == '[':
+                j = text.find('](', i)
+                if j == -1:
+                    result.append(text[i:])
+                    break
+                link_text = text[i+1:j]
+                k = j + 2
+                depth = 1
+                while k < len(text) and depth > 0:
+                    if text[k] == '(':
+                        depth += 1
+                    elif text[k] == ')':
+                        depth -= 1
+                    k += 1
+                result.append(link_text)
+                i = k
+            else:
+                result.append(text[i])
+                i += 1
+        return ''.join(result)

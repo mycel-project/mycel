@@ -1,5 +1,8 @@
 ## Unreleased
 
+### Added
+- Remove markdown links formatting from selection
+
 ### Fixed
 - Node query is no longer stuck to 100 nodes 
 - Use float priority instead of int (which caused duplicate values)

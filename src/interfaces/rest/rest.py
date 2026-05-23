@@ -218,6 +218,16 @@ class Rest(BaseInterface):
             )
             return {"node": updated_node}
 
+        class SelectionData(BaseModel):
+            text: str
+            field: int
+            start_index: int
+            end_index: int
+        @self.app.post("/collections/{col_id}/nodes/{node_id}/remove-links")
+        async def remove_links(col_id: int, node_id: int, data: SelectionData):
+            node = self.node_orchestrator.remove_links_to_view(col_id, node_id, data.text, data.field, data.start_index, data.end_index)
+            return {"node": node}
+
         @self.app.get("/collections")
         async def get_collections():
             collections = self.collection_service.get_collections(1)
