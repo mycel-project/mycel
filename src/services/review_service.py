@@ -16,7 +16,7 @@ from src.services.cache.pending_review_cache import PendingReviewCache
 from src.services.fsrs_service import FsrsService
 from src.types.node_type import NodeType
 from .node_service import NodeService
-from src.utils.time import MS_PER_DAY, add_days_ms, datetime_to_ms, now_ms, now_s, start_of_local_today_ms
+from src.utils.time import MS_PER_DAY, datetime_to_ms, now_ms, now_s, start_of_local_day_ms, start_of_local_today_ms
 from src.models.node import Node
 
 class ReviewService:
@@ -44,7 +44,11 @@ class ReviewService:
             node_id: int,
             duration: int,
             data: SporeReviewData,
+            tz_offset: int = 0, 
     ) -> Node:
+        """
+        FSRS doesn't need tz
+        """
         node = self._node_service.get_node(node_id)
         if not node.type == NodeType.SPORE:
             raise NotASpore(node_id)
@@ -80,18 +84,14 @@ class ReviewService:
             node_id: int,
             duration: int,
             data: FragmentReviewData,
+            tz_offset: int = 0,
     ) -> Node:
         node = self._node_service.get_node(node_id)
         if not node.type == NodeType.FRAGMENT:
             raise NotAFragment(node_id)
-        encounter_count = self.get_encounter_count(node_id)
-        context = NodeSchedulingContext(
-            id=node.id,
-            type=node.type,
-            encounter_count=encounter_count,
-            due=node.due,
-        )
-        next_interval = self._scheduling_engine.next_linear_interval(context)
+        rep_index = self.get_encounter_count(node_id) + 1
+        depth = self._node_service.get_depth(node_id)
+        next_interval = self._scheduling_engine.compute_fragment_next_interval(depth, rep_index)
         now = now_ms()
         node_state_before = self._build_node_state_before(node)
         self._repo.create(
@@ -106,14 +106,13 @@ class ReviewService:
             node.id,
             NodeUpdate(
                 type_data=FragmentData(),
-                due=add_days_ms(now, next_interval),
+                due=start_of_local_day_ms(now + next_interval * MS_PER_DAY, tz_offset),
                 last_review=now
             )
         )
 
     def get_encounter_count(self, node_id: int) -> int:
         return self._repo.get_encounter_count(node_id)
-    
 
     def get_reviews_for_today(self, tz_offset_minutes: int = 0) -> list[Review]:
         today_start = start_of_local_today_ms(tz_offset_minutes)

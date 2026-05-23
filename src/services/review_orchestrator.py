@@ -23,7 +23,7 @@ class ReviewOrchestrator:
         self._review_service = review_service
         self._node_view_builder = node_view_builder
 
-    def review_to_view(self, col_id: int, node_id: int, duration: int, data: TypeReviewData) -> NodeView:
+    def review_to_view(self, col_id: int, node_id: int, duration: int, data: TypeReviewData, tz_offset_min: int = 0) -> NodeView:
         pending_review_id = self._review_service.get_pending_node_id()
         if pending_review_id is None:
             raise NoPendingNodeError(node_id)
@@ -32,7 +32,7 @@ class ReviewOrchestrator:
         if isinstance(data, SporeReviewData):
             node = self._review_service.review_spore(col_id, node_id, duration, data)
         elif isinstance(data, FragmentReviewData):
-            node = self._review_service.review_fragment(col_id, node_id, duration, data)
+            node = self._review_service.review_fragment(col_id, node_id, duration, data, tz_offset_min)
         else:
             raise UnknownReviewTypeError(data.__class__.__name__)
         return self._node_view_builder.to_view(node)

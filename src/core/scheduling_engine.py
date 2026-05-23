@@ -34,7 +34,7 @@ class SchedulingEngine:
 
         returns interval in days (capped at 365).
         """
-        initial = 1 + depth
+        initial = min(1 + depth * 2, 15) # initial value at creation clamped 
         exp_weight = 1 - math.exp(-depth / self.fragment_depth_midpoint)
         interval = initial
         for _ in range(rep_index):

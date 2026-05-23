@@ -1,5 +1,12 @@
 ## Unreleased
 
+## v0.1.0
+### Added
+- Depth-based fragment scheduling algorithm: deeper fragments grow toward longer intervals faster, while shallow fragments follow a near-linear review pace. (applied both at creation and review)
+
+### Fixed
+- Fragment review now takes timezone into account when computing the next due date.
+
 ## v0.0.5
 ### Fix 
 - Removed the minimum cloze field check during spore validation as it conflicted with the autosave logic. Temporary fix until a more appropriate spore editing system is implemented.

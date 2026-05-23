@@ -15,6 +15,7 @@ from src.types.node_type import NodeType
 from src.utils.time import overdue_ms, now_ms
 
 class NodeService:
+    # Need to pass col_id (and user ?) systematically
     """
     Default behaviour is to filter nodes by aliveness (deleted_at field at None), excepted in get_node where we raise exception if node is deleted
 

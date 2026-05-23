@@ -258,14 +258,15 @@ class Rest(BaseInterface):
         class ReviewData(BaseModel):
             duration: int # generic data for all reviews no matter the node type
             type_review_data: TypeReviewData # data specific to node type
+            tz_offset: int = 0
         @self.app.post("/collections/{col_id}/nodes/{node_id}/spore-review")
         async def review_spore(col_id: int, node_id: int, data: ReviewData):
-            node = self.review_orchestrator.review_to_view(col_id, node_id, data.duration, data.type_review_data)
+            node = self.review_orchestrator.review_to_view(col_id, node_id, data.duration, data.type_review_data, tz_offset_min=data.tz_offset)
             return {"node": node}
 
         @self.app.post("/collections/{col_id}/nodes/{node_id}/fragment-review")
         async def review_fragment(col_id: int, node_id: int, data: ReviewData):
-            node = self.review_orchestrator.review_to_view(col_id, node_id, data.duration, data.type_review_data)
+            node = self.review_orchestrator.review_to_view(col_id, node_id, data.duration, data.type_review_data, tz_offset_min=data.tz_offset)
             return {"node": node}
 
         @self.app.get("/collections/{col_id}/reviews/calendar")
