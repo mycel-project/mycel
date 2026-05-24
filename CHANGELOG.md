@@ -1,7 +1,9 @@
 ## Unreleased
 
+## v0.1.1-alpha
 ### Added
 - Remove markdown links formatting from selection
+- Handle prereleases versions
 
 ### Fixed
 - Node query is no longer stuck to 100 nodes 

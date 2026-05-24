@@ -1,14 +1,30 @@
 name: Release Backend
+
 on:
   push:
     tags:
       - 'v*'
-      
+
 permissions:
   contents: write
-  
+
 jobs:
+  check-prerelease:
+    runs-on: ubuntu-latest
+    outputs:
+      is_prerelease: ${{ steps.check.outputs.is_prerelease }}
+    steps:
+      - name: Check prerelease
+        id: check
+        run: |
+          if [[ "${{ github.ref_name }}" == *"-beta"* ]] || [[ "${{ github.ref_name }}" == *"-rc"* ]] || [[ "${{ github.ref_name }}" == *"-alpha"* ]]; then
+            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+          fi
+
   release:
+    needs: [check-prerelease]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -21,29 +37,29 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-            
+
           git fetch origin
-            
+
           COMMIT=$(git rev-list -n 1 ${{ github.ref_name }})
           BRANCH=$(git branch -r --contains $COMMIT | grep -v 'HEAD' | head -n 1 | sed 's|.*origin/||' | xargs)
-            
+
           if [ -z "$BRANCH" ]; then
-          BRANCH="main"
+            BRANCH="main"
           fi
-            
+
           echo "Pushing to branch: $BRANCH"
-            
+
           git checkout $BRANCH
           git pull origin $BRANCH
-            
+
           git add VERSION
           git commit -m "chore: bump VERSION to ${{ github.ref_name }}"
-            
+
           git tag -f ${{ github.ref_name }}
-            
+
           git push origin $BRANCH
           git push origin ${{ github.ref_name }} --force
-            
+
       - name: Extract changelog
         id: changelog
         run: |
@@ -60,7 +76,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          prerelease: false
+          prerelease: ${{ needs.check-prerelease.outputs.is_prerelease }}
           name: ${{ github.ref_name }}
           body: ${{ steps.changelog.outputs.notes }}
           token: ${{ secrets.GITHUB_TOKEN }}
