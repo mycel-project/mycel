@@ -20,6 +20,8 @@ Run `git pull` to get the last stable release of Mycel.
 
 *Note*: Some updates may introduce new configuration options. If so, you might need to manually update your config.json file by referring to the config.example.json template.
 
+If you want to always be on the latest prerelease, follow the dev branch. Note that these versions may be less stable than official releases. You may also encounter compatibility warnings on startup, as prerelease versions move fast, using a prerelease build of Mycelium alongside should reduce these. Either way, compatibility warnings are generally not blocking.
+
 ## On the safety of your learning data
 All your learning data is saved in a SQLite file (default: mycel.db) at the root of your Mycel folder. Updating Mycel with a standard git pull will not erase or modify it.
 
