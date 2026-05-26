@@ -44,11 +44,7 @@ class ReviewService:
             node_id: int,
             duration: int,
             data: SporeReviewData,
-            tz_offset: int = 0, 
     ) -> Node:
-        """
-        FSRS doesn't need tz
-        """
         node = self._node_service.get_node(node_id)
         if not node.type == NodeType.SPORE:
             raise NotASpore(node_id)

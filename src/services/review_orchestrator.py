@@ -30,7 +30,7 @@ class ReviewOrchestrator:
         if pending_review_id != node_id:
             raise PendingReviewMismatchError(node_id, pending_review_id)
         if isinstance(data, SporeReviewData):
-            node = self._review_service.review_spore(col_id, node_id, duration, data)
+            node = self._review_service.review_spore(col_id, node_id, duration, data) # FSRS does not need tz
         elif isinstance(data, FragmentReviewData):
             node = self._review_service.review_fragment(col_id, node_id, duration, data, tz_offset_min)
         else:
