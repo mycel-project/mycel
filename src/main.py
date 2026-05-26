@@ -10,6 +10,7 @@ from src.db import Db
 from src.domain.create_fragment_usecase import CreateFragmentUseCase
 from src.domain.create_node_from_url_usecase import CreateNodeFromUrlUseCase
 from src.domain.create_node_usecase import CreateNodeUseCase
+from src.domain.reschedule_node_usecase import RescheduleNodeUseCase
 from src.interfaces.interface import Interface
 from src.event_bus import EventBus
 from src.core.scheduling_engine import SchedulingEngine
@@ -77,7 +78,10 @@ class Application():
 
         create_node_from_url_usecase = CreateNodeFromUrlUseCase(create_fragment_usecase, ressource_service)
 
-        node_orchestrator = NodeOrchestrator(node_service, fragment_service, spore_service, priority_service, ressource_service, create_node_from_url_usecase, node_view_builder, node_format_service)
+        reschedule_node_usecase = RescheduleNodeUseCase(node_service, pending_review_cache)
+
+        node_orchestrator = NodeOrchestrator(node_service, fragment_service, spore_service, priority_service, ressource_service, node_view_builder, node_format_service, create_node_from_url_usecase, reschedule_node_usecase)
+        
         review_orchestrator = ReviewOrchestrator(user_service, node_service, review_service, node_view_builder)
 
         self.cleanup_service = CleanupService(node_service, collection_service, user_service)

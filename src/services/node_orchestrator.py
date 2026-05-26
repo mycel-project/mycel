@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone, date
 
 from src.domain.create_node_from_url_usecase import CreateNodeFromUrlUseCase
 from src.domain.domain_exceptions import ExtractError, ExtractMismatchError, InvalidSourceNodeType, NotAKnownType, UnknownRessourceTypeError
+from src.domain.reschedule_node_usecase import RescheduleNodeUseCase
 from src.models.extract_result import ExtractResult
 from src.models.node import Node
 from src.models.node_create import NodeCreate, NodeCreateFromUrl
@@ -22,7 +23,17 @@ from src.utils.time import local_date_to_utc_ms, start_of_local_tomorrow_ms
 logger = logging.getLogger(__name__)
 
 class NodeOrchestrator:
-    def __init__(self, node_service: NodeService, fragment_service: FragmentService, spore_service: SporeService, priority_service: PriorityService, ressource_service: RessourceService, create_node_from_url_usecase: CreateNodeFromUrlUseCase, node_view_builder: NodeViewBuilder, node_format_service: NodeFormatService):
+    def __init__(self,
+        node_service: NodeService,
+        fragment_service: FragmentService,
+        spore_service: SporeService,
+        priority_service: PriorityService,
+        ressource_service: RessourceService,
+        node_view_builder: NodeViewBuilder,
+        node_format_service: NodeFormatService,
+        create_node_from_url_usecase: CreateNodeFromUrlUseCase,
+        reschedule_node_usecase: RescheduleNodeUseCase,
+    ):
         self._node_service = node_service
         self._fragment_service = fragment_service
         self._spore_service = spore_service
@@ -31,6 +42,7 @@ class NodeOrchestrator:
         self._create_node_from_url_usecase = create_node_from_url_usecase
         self._node_view_builder = node_view_builder
         self._node_format_service = node_format_service
+        self._reschedule_node_usecase = reschedule_node_usecase
 
     def _check_text_match(self, node: Node, field: int, start_index: int, end_index: int, text: str) -> None:
         rebuilt_text = node.content.fields[str(field)][start_index:end_index]
@@ -137,18 +149,7 @@ class NodeOrchestrator:
         return self._priority_service.get_priorities(col_id)
 
     def reschedule_node_to_view(self, col_id: int, node_id: int, local_date_iso: str, tz_offset_min: int) -> NodeView:
-        timestamp_ms = local_date_to_utc_ms(local_date_iso, tz_offset_min)
-
-        tz = timezone(timedelta(minutes=tz_offset_min))
-        today_local = datetime.now(tz).date()
-        scheduled_day = date.fromisoformat(local_date_iso)
-
-        if scheduled_day < today_local:
-            raise ValueError("Cannot reschedule to a past day")
-        if (scheduled_day - today_local).days > 365 * 100:
-            raise ValueError("Cannot reschedule more than 100 years ahead")
-
-        node = self._node_service.update(node_id, NodeUpdate(due=timestamp_ms))
+        node = self._reschedule_node_usecase.execute(col_id, node_id, local_date_iso, tz_offset_min)
         return self._node_view_builder.to_view(node)
 
     def remove_links_to_view(self, col_id: int, node_id: int, text: str, field: int, start_index: int, end_index: int) -> NodeView:
