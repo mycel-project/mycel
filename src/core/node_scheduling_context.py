@@ -9,10 +9,10 @@ class NodeSchedulingContext(BaseModel):
     All of data concerning nodes used to process review time
     """
     id: int
+    due: int
     type: Optional[int] = None
     last_review: Optional[int] = None
     type_data: Optional[TypeData] = None
-    due: Optional[int] = None
     parent_id: Optional[int] = None
     position: Optional[str] = None
     overdue: Optional[int] = None

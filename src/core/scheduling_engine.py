@@ -58,6 +58,8 @@ class SchedulingEngine:
     ) -> Optional[int]:
         """
         nodes are already sorted by priority, and filtering by due day keep this priority
+
+        Nodes are filtered to those due today (in the user's local timezone), then split into ready (due timestamp already passed) and not_yet. Not_yet nodes only surface when nothing ready remains: this prevents a freshly-reviewed spore fromreappearing immediately just because it falls within the current day. The spore/fragment ratio is then applied to balance the session.
         
         return node id
         """
@@ -82,6 +84,12 @@ class SchedulingEngine:
         if not nodes_due_that_day:
             return None
 
+        now = now_ms()
+        ready = [n for n in nodes_due_that_day if n.due <= now]
+        not_yet = [n for n in nodes_due_that_day if n.due > now]
+
+        pool = ready or not_yet
+
         ratio = self.fragment_spore_ratio(today_reviews)
 
         requested_type = (
@@ -91,11 +99,11 @@ class SchedulingEngine:
         )
 
         requested_nodes = [
-            n for n in nodes_due_that_day
+            n for n in pool
             if n.type == requested_type.value
         ]
 
-        return (requested_nodes or nodes_due_that_day)[0].id
+        return (requested_nodes or pool)[0].id
     
 
     def fragment_spore_ratio(self, reviews) -> float:
