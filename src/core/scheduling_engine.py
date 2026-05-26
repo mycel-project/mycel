@@ -3,6 +3,7 @@ import math
 from typing import cast, Optional
 from src.core.node_scheduling_context import NodeSchedulingContext
 from src.core.review_context import ReviewContext
+from src.services.user_service import UserService
 from src.types.node_type import NodeType
 from src.utils.time import MS_PER_DAY, ms_to_datetime, now_ms, start_of_local_day_ms
 
@@ -13,11 +14,12 @@ logger = logging.getLogger(__name__)
 
 
 class SchedulingEngine:
-    def __init__(self):
+    def __init__(self, user_service: UserService):
         # Need instanciation from user config
         self.fragment_vs_spore_proportion = 1/4
         self.fragment_rep_mult = 1.5
         self.fragment_depth_midpoint = 4.0
+        self.user_service = user_service
 
     def compute_fragment_next_interval(self, depth, rep_index) -> int:
         """
@@ -85,10 +87,11 @@ class SchedulingEngine:
             return None
 
         now = now_ms()
-        ready = [n for n in nodes_due_that_day if n.due <= now]
-        not_yet = [n for n in nodes_due_that_day if n.due > now]
-
-        pool = ready or not_yet
+        if self.user_service.get_wait_for_due_time(1):
+            ready = [n for n in nodes_due_that_day if n.due <= now]
+            pool = ready or nodes_due_that_day
+        else:
+            pool = nodes_due_that_day
 
         ratio = self.fragment_spore_ratio(today_reviews)
 

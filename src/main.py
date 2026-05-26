@@ -57,15 +57,15 @@ class Application():
         priority_service = PriorityService(node_repository, lexical_order)
         node_service = NodeService(node_repository)
 
-        scheduling_engine = SchedulingEngine()
+        user_service = UserService(self.db)
+
+        scheduling_engine = SchedulingEngine(user_service)
 
         create_node_usecase = CreateNodeUseCase(node_service, priority_service)
         create_fragment_usecase = CreateFragmentUseCase(node_service, scheduling_engine, create_node_usecase)
 
         fragment_service = FragmentService(node_service, node_format_service, create_fragment_usecase)
         spore_service = SporeService(node_service, node_format_service, create_node_usecase)
-
-        user_service = UserService(self.db)
 
         collection_service = CollectionService(self.db)
         fsrs_service = FsrsService(collection_service, node_service)

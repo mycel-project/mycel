@@ -49,6 +49,12 @@ class UserService:
         minutes = self.get_config(user_id).undo_review_max_age
         return minutes
 
+    def get_wait_for_due_time(
+        self,
+        user_id: int
+    ) -> int:
+        return self.get_config(user_id).wait_for_due_time
+
     def delete_user(self, user_id: int) -> None:
         self.get_user(user_id)
         self._repo.delete(user_id)

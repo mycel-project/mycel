@@ -34,6 +34,13 @@ class UserConf(BaseModel):
             "category": "review",
         }
     )
+    wait_for_due_time: bool = Field(
+        default=False,
+        description="If enabled, nodes due later in the day are never surfaced early, only nodes whose due time has already passed are reviewed.",
+        json_schema_extra={
+            "category": "review",
+        }
+    )
     ping_frequency: int = Field(
         default=3,
         ge=1,

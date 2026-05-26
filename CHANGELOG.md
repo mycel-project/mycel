@@ -1,6 +1,6 @@
 ## Unreleased
 ### Added
-- Spores scheduled for today but not yet due (e.g. due at 11am but reviewed at 9am) are deprioritized, surfacing only when no ready nodes remain.
+- Spores scheduled for today but not yet due (e.g. due at 11am but reviewed at 9am) are deprioritized, surfacing only when no ready nodes remain. (togglable in config)
 
 ## v0.1.1-alpha
 ### Added
