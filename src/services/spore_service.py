@@ -1,6 +1,6 @@
 from typing import Optional, Union
 
-from src.core.cloze import CLOZE_PATTERN
+from src.core.regex import CLOZE_PATTERN
 from src.domain.create_node_usecase import CreateNodeUseCase
 from src.domain.domain_exceptions import ClozeValidationError, InvalidNodeUpdate, NotASpore
 from src.models.node_content import NodeContent

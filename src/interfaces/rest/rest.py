@@ -10,7 +10,7 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.core.app_infos import AppInfos
-from src.core.cloze import CLOZE_REGEX
+from src.core.regex import CLOZE_REGEX
 from src.domain.domain_exceptions import DomainException
 from src.event_bus import EventBus
 from src.interfaces.base_interface import BaseInterface

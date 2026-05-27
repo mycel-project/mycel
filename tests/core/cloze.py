@@ -1,6 +1,6 @@
 import pytest
 
-from src.core.cloze import CLOZE_PATTERN, CLOZE_REGEX
+from src.core.regex import CLOZE_PATTERN, CLOZE_REGEX
 
 REGEX = CLOZE_REGEX
 PATTERN = CLOZE_PATTERN
