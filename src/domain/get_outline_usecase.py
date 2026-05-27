@@ -1,4 +1,4 @@
-from src.core.regex import HEADING_PATTERN
+from src.core.regex import BLOCKQUOTE_PATTERN, HEADING_PATTERN
 from src.models.node import Node
 from src.models.outline import Outline, OutlineEntry
 
@@ -9,7 +9,8 @@ class GetOutlineUseCase:
         entries = []
         offset = 0
         for line in text.splitlines(keepends=True):
-            match = HEADING_PATTERN.match(line)
+            stripped = BLOCKQUOTE_PATTERN.sub('', line).lstrip()
+            match = HEADING_PATTERN.match(stripped)
             if match:
                 entries.append(OutlineEntry(
                     level=len(match.group(1)),

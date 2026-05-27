@@ -68,3 +68,31 @@ def test_offset_accounts_for_newlines(usecase):
     node = make_node(text)
     result = usecase.execute(node)
     assert result.entries[0].offset == len("Some text\n")
+
+def test_blockquote_heading(usecase):
+    node = make_node("> # Hello")
+    result = usecase.execute(node)
+    assert len(result.entries) == 1
+    assert result.entries[0].level == 1
+    assert result.entries[0].title == "Hello"
+
+def test_blockquote_heading_with_space(usecase):
+    node = make_node(">  ## Section")
+    result = usecase.execute(node)
+    assert len(result.entries) == 1
+    assert result.entries[0].level == 2
+
+def test_blockquote_heading_offset(usecase):
+    text = "Some text\n> # Heading"
+    node = make_node(text)
+    result = usecase.execute(node)
+    assert result.entries[0].offset == len("Some text\n")
+
+def test_mixed_blockquote_and_normal_headings(usecase):
+    text = "# Title\n> ## Quoted\n### Normal"
+    node = make_node(text)
+    result = usecase.execute(node)
+    assert len(result.entries) == 3
+    assert result.entries[0].level == 1
+    assert result.entries[1].level == 2
+    assert result.entries[2].level == 3

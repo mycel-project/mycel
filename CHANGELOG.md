@@ -2,7 +2,7 @@
 ### Added
 - Spores scheduled for today but not yet due (e.g. due at 11am but reviewed at 9am) are deprioritized, surfacing only when no ready nodes remain. (togglable in config)
 - Rescheduling a node that is in pending_review_cache now automatically clears its review state.
-- Added /outline endpoint to extract heading structure from a node's content.
+- Added /outline endpoint to extract heading structure from a node's content (also handle headings when they are in blockquote)
 
 ## v0.1.1-alpha
 ### Added
