@@ -14,7 +14,7 @@ class GetOutlineUseCase:
             if match:
                 entries.append(OutlineEntry(
                     level=len(match.group(1)),
-                    title=match.group(2).strip(),
+                    title=match.group(2).strip() if match.group(2) else "",
                     offset=offset,
                 ))
             offset += len(line)
