@@ -1,12 +1,13 @@
 import logging
-from datetime import datetime, timedelta, timezone, date
 
 from src.domain.create_node_from_url_usecase import CreateNodeFromUrlUseCase
 from src.domain.domain_exceptions import ExtractError, ExtractMismatchError, InvalidSourceNodeType, NotAKnownType, UnknownRessourceTypeError
+from src.domain.get_outline_usecase import GetOutlineUseCase
 from src.domain.reschedule_node_usecase import RescheduleNodeUseCase
 from src.models.extract_result import ExtractResult
 from src.models.node import Node
 from src.models.node_create import NodeCreate, NodeCreateFromUrl
+from src.models.outline import Outline
 from src.schemas.node_update import NodeUpdate
 from src.schemas.node_view import NodeView
 from src.services.fragment_service import FragmentService
@@ -17,7 +18,7 @@ from src.services.spore_service import SporeService
 from src.services.priority_service import PriorityService
 from src.services.ressource_service import RessourceService
 from src.types.node_type import NodeType
-from src.utils.time import local_date_to_utc_ms, start_of_local_tomorrow_ms
+from src.utils.time import start_of_local_tomorrow_ms
 
 
 logger = logging.getLogger(__name__)
@@ -33,6 +34,7 @@ class NodeOrchestrator:
         node_format_service: NodeFormatService,
         create_node_from_url_usecase: CreateNodeFromUrlUseCase,
         reschedule_node_usecase: RescheduleNodeUseCase,
+        get_outline_usecase: GetOutlineUseCase,
     ):
         self._node_service = node_service
         self._fragment_service = fragment_service
@@ -43,6 +45,7 @@ class NodeOrchestrator:
         self._node_view_builder = node_view_builder
         self._node_format_service = node_format_service
         self._reschedule_node_usecase = reschedule_node_usecase
+        self._get_outline_usecase = get_outline_usecase
 
     def _check_text_match(self, node: Node, field: int, start_index: int, end_index: int, text: str) -> None:
         rebuilt_text = node.content.fields[str(field)][start_index:end_index]
@@ -158,3 +161,8 @@ class NodeOrchestrator:
         node = self._node_format_service.remove_links(node, str(field), start_index, end_index, text)
         updated = self._node_service.update(node_id, NodeUpdate(content=node.content))
         return self._node_view_builder.to_view(updated)
+
+    def get_outline_for_node(self, col_id: int, node_id: int) -> Outline:
+        node = self._node_service.get_node(node_id)
+        return self._get_outline_usecase.execute(node)
+        

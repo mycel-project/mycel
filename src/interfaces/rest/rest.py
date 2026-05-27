@@ -151,6 +151,11 @@ class Rest(BaseInterface):
             """
             node = self.node_orchestrator.get_root_node(node_id)
             return {"node": node}
+        
+        @self.app.get("/collections/{col_id}/nodes/{node_id}/outline")
+        async def get_outline_node(col_id: int, node_id: int):
+            outline = self.node_orchestrator.get_outline_for_node(col_id, node_id)
+            return {"outline": outline}
  
         @self.app.get("/collections/{col_id}/nodes/{node_id}")
         async def get_node_metrics(col_id: int, node_id: int):
