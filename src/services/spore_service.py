@@ -2,7 +2,7 @@ from typing import Optional, Union
 
 from src.core.regex import CLOZE_PATTERN
 from src.domain.create_node_usecase import CreateNodeUseCase
-from src.domain.domain_exceptions import ClozeValidationError, InvalidNodeUpdate, NotASpore
+from src.domain.domain_exceptions import ClozeValidationError, InvalidNodeUpdate, NoClozeFieldError, NotASpore
 from src.models.node_content import NodeContent
 from src.schemas.node_update import NodeUpdate
 from src.services.node_format_service import NodeFormatService
@@ -39,7 +39,7 @@ class SporeService:
             try:
                 self.validate_spore_content(content)
             except ValueError as e:
-                raise InvalidNodeUpdate(node_id, node.type, content, str(e)) from ClozeValidationError(str(content))
+                raise InvalidNodeUpdate(node_id, node.type, content, str(e)) from ClozeValidationError()
         return self._node_service.update(node_id, data)
 
     def validate_spore_content(self, content: NodeContent):
@@ -49,10 +49,9 @@ class SporeService:
             raise ValueError("Content is empty")
 
         if not self.has_cloze(field):
-            raise ValueError("No cloze regex detected")
+            raise NoClozeFieldError(field)
 
     def has_cloze(self, content: str) -> bool:
-        return True
         return CLOZE_PATTERN.search(content) is not None
 
     def cloze_region(self, node_id: int, text: str, field: str, start: int, end: int) -> Node:
@@ -61,7 +60,7 @@ class SporeService:
         clozed_node = self._node_format_service.cloze_region(node, field, start, end, text)
         content = clozed_node.content.fields[field]
         if not self.has_cloze(content):
-            raise ClozeValidationError(content)
+            raise NoClozeFieldError(content)
         return self._node_service.update(
             node_id,
             NodeUpdate(content=node.content)

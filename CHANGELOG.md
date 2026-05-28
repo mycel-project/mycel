@@ -1,4 +1,6 @@
 ## Unreleased
+### Added
+- Re-enabled minimum cloze field validation on spore save. Invalid spore states are now rejected and the last valid state is preserved. (see Mycel v0.0.5)
 
 ## v0.1.1
 ### Added

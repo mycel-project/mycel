@@ -232,9 +232,17 @@ class ReviewUndoNotAllowedError(ReviewUndoError):
 # Other 
 
 class ClozeValidationError(DomainException):
+    def __init__(self, code: str = "CLOZE_VALIDATION_ERROR", message: str = "", status_code: int = 422):
+        super().__init__(
+            code=code,
+            message=message,
+            status_code=status_code,
+        )
+
+class NoClozeFieldError(ClozeValidationError):
     def __init__(self, text: str):
         super().__init__(
-            code="CLOZE_VALIDATION_ERROR",
+            code="NO_CLOZE_FIELD_ERROR",
             message=f"No cloze field found in {text[:200]}",
-            status_code=400
+            status_code=422
         )
