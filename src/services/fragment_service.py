@@ -3,6 +3,7 @@ from typing import Optional, Union
 from src.domain.create_fragment_usecase import CreateFragmentUseCase
 from src.domain.domain_exceptions import NotAFragment, NotAKnownType
 from src.models.node import Node
+from src.models.type_data.fragment_data import FragmentData
 from src.schemas.node_update import NodeUpdate
 from src.services.node_format_service import NodeFormatService
 from src.services.node_service import NodeService
@@ -38,7 +39,10 @@ class FragmentService:
             raise NotAFragment(node_id)
         return self._node_service.update(node_id, data)
         
-    def emphasize_region(self, node_id: int, node_region_type: int, text: str, field: str, start: int, end: int) -> Node:
+    def emphasize_region(self, node_id: int, node_region_type: int, field: str, start: int, end: int, text: str | None = None) -> Node:
+        """
+        Text is used to see if rebuild text is similar to what is passed in text (it should be)
+        """
         node = self._node_service.get_node(node_id)
 
         handler = self._emphasis_handlers.get(NodeType(node_region_type))
@@ -52,4 +56,11 @@ class FragmentService:
             NodeUpdate(content=node.content)
         )
 
-        
+    def dismiss(self, node_id: int) -> Node:
+        return self._node_service.update(node_id,
+            NodeUpdate(
+                type_data=FragmentData(
+                    dismiss=True
+                )
+            )
+        )

@@ -1,9 +1,10 @@
 import logging
 
 from src.domain.create_node_from_url_usecase import CreateNodeFromUrlUseCase
-from src.domain.domain_exceptions import ExtractError, ExtractMismatchError, InvalidSourceNodeType, NotAKnownType, UnknownRessourceTypeError
+from src.domain.domain_exceptions import EmptyField, ExtractError, ExtractMismatchError, InvalidSourceNodeType, NotAKnownType, UnknownRessourceTypeError
 from src.domain.get_outline_usecase import GetOutlineUseCase
 from src.domain.reschedule_node_usecase import RescheduleNodeUseCase
+from src.domain.split_node_usecase import SplitNodeUseCase
 from src.models.extract_result import ExtractResult
 from src.models.node import Node
 from src.models.node_create import NodeCreate, NodeCreateFromUrl
@@ -35,6 +36,7 @@ class NodeOrchestrator:
         create_node_from_url_usecase: CreateNodeFromUrlUseCase,
         reschedule_node_usecase: RescheduleNodeUseCase,
         get_outline_usecase: GetOutlineUseCase,
+        split_node_usecase: SplitNodeUseCase,
     ):
         self._node_service = node_service
         self._fragment_service = fragment_service
@@ -46,6 +48,7 @@ class NodeOrchestrator:
         self._node_format_service = node_format_service
         self._reschedule_node_usecase = reschedule_node_usecase
         self._get_outline_usecase = get_outline_usecase
+        self._split_node = split_node_usecase
 
     def _check_text_match(self, node: Node, field: int, start_index: int, end_index: int, text: str) -> None:
         rebuilt_text = node.content.fields[str(field)][start_index:end_index]
@@ -113,7 +116,7 @@ class NodeOrchestrator:
         
         source = source_node
         try:
-            source = self._fragment_service.emphasize_region(source_node_id, extract_type, text, str(field), start_index, end_index)
+            source = self._fragment_service.emphasize_region(source_node_id, extract_type, str(field), start_index, end_index, text)
         except Exception as e:
             logger.warning(f"Failed to emphasize region in parent (id {source_node_id}), but extract is valid: {e}")
         
@@ -165,4 +168,14 @@ class NodeOrchestrator:
     def get_outline_for_node(self, col_id: int, node_id: int) -> Outline:
         node = self._node_service.get_node(node_id)
         return self._get_outline_usecase.execute(node)
-        
+
+    def split_node_to_views(self, col_id: int, node_id: int, tz_offset_min: int, level: int) -> list[NodeView]:
+        node = self._node_service.get_node(node_id)
+        content = node.content.get_first_field()
+        if content is None:
+            raise EmptyField(node_id, "0")
+        children = self._split_node.execute(col_id, node_id, tz_offset_min, level)
+        self._fragment_service.emphasize_region(node_id, NodeType.FRAGMENT, "0", 0, len(content))
+        source_node = self._fragment_service.dismiss(node_id)
+        nodes = children + [source_node]
+        return self._node_view_builder.to_views(nodes)

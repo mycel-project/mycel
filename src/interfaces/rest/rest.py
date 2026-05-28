@@ -152,6 +152,11 @@ class Rest(BaseInterface):
             node = self.node_orchestrator.get_root_node(node_id)
             return {"node": node}
         
+        @self.app.post("/collections/{col_id}/nodes/{node_id}/split")
+        async def split_node(col_id: int, node_id: int, level: int, tz_offset: int = 0):
+            nodes = self.node_orchestrator.split_node_to_views(col_id, node_id, tz_offset, level)
+            return {"nodes": nodes}
+
         @self.app.get("/collections/{col_id}/nodes/{node_id}/outline")
         async def get_outline_node(col_id: int, node_id: int):
             outline = self.node_orchestrator.get_outline_for_node(col_id, node_id)

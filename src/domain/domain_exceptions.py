@@ -87,6 +87,14 @@ class NodeDeleted(Exception):
         super().__init__(f"Node {node_id} exists but has been deleted")
 
         
+class EmptyField(DomainException):
+    def __init__(self, node_id: int, field: str):
+        super().__init__(
+            code="EMPTY_FIELD",
+            message=f"Node with id {node_id} has no content for field {field}",
+            status_code=400
+        )
+        
 # Extract errors
 
 class ExtractError(DomainException):
