@@ -1,6 +1,7 @@
 ## Unreleased
 ### Added
 - Re-enabled minimum cloze field validation on spore save. Invalid spore states are now rejected and the last valid state is preserved. (see Mycel v0.0.5)
+- Split node endpoint: decompose a node into fragments by heading level. The operation may be rejected if the selected level does not produce enough fragments to be worth splitting. 
 
 ## v0.1.1
 ### Added

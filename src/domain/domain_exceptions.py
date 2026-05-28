@@ -254,3 +254,11 @@ class NoClozeFieldError(ClozeValidationError):
             message=f"No cloze field found in {text[:200]}",
             status_code=422
         )
+
+class NoHeadingToSplit(DomainException):
+    def __init__(self, node_id: int, level: int):
+        super().__init__(
+            code="NO_HEADING_TO_SPLIT",
+            message=f"No heading of level <= {level} found in node {node_id}",
+            status_code=422
+        )

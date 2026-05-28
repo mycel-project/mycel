@@ -1,6 +1,9 @@
 from unittest.mock import MagicMock
+import pytest
 
+from src.domain.domain_exceptions import NoHeadingToSplit
 from src.domain.split_node_usecase import SplitNodeUseCase
+
 
 def make_node(node_id: int, text: str):
     from src.models.node import Node
@@ -35,19 +38,17 @@ def make_use_case(node_text: str, node_id: int = 1):
 
 
 def get_content(cf, index: int) -> str:
-    """Get the content arg (2nd positional) from the nth call."""
     return cf.call_args_list[index][0][1]
+
 
 class TestSplitNodeUseCase:
 
-    def test_single_h1_no_intro(self):
+    def test_single_h1_no_intro_raises(self):
+        """Single heading with no intro = 1 fragment = should raise."""
         text = "# Title\nSome content under h1.\n"
         uc, cf = make_use_case(text)
-        results = uc.execute(1, 1, 0, level=1)
-        assert len(results) == 1
-        content = get_content(cf, 0)
-        assert "# Title" in content
-        assert "Some content under h1." in content
+        with pytest.raises(NoHeadingToSplit):
+            uc.execute(1, 1, 0, level=1)
 
     def test_intro_before_first_heading_is_captured(self):
         text = "Intro paragraph.\n\n# Title\nContent.\n"
@@ -66,15 +67,21 @@ class TestSplitNodeUseCase:
         assert any("# Second" in c and "Content B." in c for c in contents)
         assert any("# Third" in c and "Content C." in c for c in contents)
 
-    def test_level_1_ignores_h2(self):
-        """Splitting at level 1 should not split on H2 boundaries."""
+    def test_level_1_ignores_h2_raises(self):
+        """Single H1 containing H2s = 1 fragment at level=1 = should raise."""
         text = "# Title\n## Sub\nContent.\n"
         uc, cf = make_use_case(text)
+        with pytest.raises(NoHeadingToSplit):
+            uc.execute(1, 1, 0, level=1)
+
+    def test_level_1_with_multiple_h1s_ignores_h2(self):
+        """Multiple H1s: H2s should be included in their parent H1 fragment."""
+        text = "# Title A\n## Sub\nContent.\n# Title B\nMore.\n"
+        uc, cf = make_use_case(text)
         results = uc.execute(1, 1, 0, level=1)
-        assert len(results) == 1
-        content = get_content(cf, 0)
-        assert "## Sub" in content
-        assert "Content." in content
+        assert len(results) == 2
+        contents = [get_content(cf, i) for i in range(len(cf.call_args_list))]
+        assert any("## Sub" in c and "Content." in c for c in contents)
 
     def test_level_2_splits_on_h2(self):
         text = "# Title\nIntro.\n## Sub A\nContent A.\n## Sub B\nContent B.\n"
@@ -85,24 +92,20 @@ class TestSplitNodeUseCase:
         assert any("## Sub A" in c for c in contents)
         assert any("## Sub B" in c for c in contents)
 
-    def test_split_by_h1_when_only_h2_exist(self):
-        """If level=1 but document only has H2s, entire text is treated as intro."""
+    def test_split_by_h1_when_only_h2_exist_raises(self):
+        """level=1 but only H2s → no entries → should raise."""
         text = "## Sub A\nContent A.\n## Sub B\nContent B.\n"
         uc, cf = make_use_case(text)
-        results = uc.execute(1, 1, 0, level=1)
-        assert len(results) == 1
-        content = get_content(cf, 0)
-        assert "## Sub A" in content
-        assert "## Sub B" in content
+        with pytest.raises(NoHeadingToSplit):
+            uc.execute(1, 1, 0, level=1)
 
-    def test_empty_content_produces_no_fragments(self):
+    def test_empty_content_raises(self):
         text = ""
         uc, cf = make_use_case(text)
-        results = uc.execute(1, 1, 0, level=3)
-        assert results == []
-        cf.assert_not_called()
+        with pytest.raises(NoHeadingToSplit):
+            uc.execute(1, 1, 0, level=3)
 
-    def test_no_content_field(self):
+    def test_no_content_field_raises(self):
         node_service = MagicMock()
         node = MagicMock()
         node.id = 1
@@ -112,9 +115,8 @@ class TestSplitNodeUseCase:
         from src.domain.get_outline_usecase import GetOutlineUseCase
         create_fragment = MagicMock()
         uc = SplitNodeUseCase(node_service, create_fragment, GetOutlineUseCase())
-        results = uc.execute(1, 1, 0, level=2)
-        assert results == []
-        create_fragment.assert_not_called()
+        with pytest.raises(NoHeadingToSplit):
+            uc.execute(1, 1, 0, level=2)
 
     def test_content_fully_preserved(self):
         """All sections of the original text end up in fragments."""
@@ -126,14 +128,14 @@ class TestSplitNodeUseCase:
             assert chunk in combined
 
     def test_parent_id_passed_correctly(self):
-        text = "# A\nContent.\n"
+        text = "# A\nContent.\n# B\nMore.\n"
         uc, cf = make_use_case(text, node_id=42)
         uc.execute(1, 42, 0, level=1)
         for c in cf.call_args_list:
             assert c[1]["parent_id"] == 42
 
     def test_tz_offset_passed_correctly(self):
-        text = "# A\nContent.\n"
+        text = "# A\nContent.\n# B\nMore.\n"
         uc, cf = make_use_case(text)
         uc.execute(1, 1, tz_offset=120, level=1)
         for c in cf.call_args_list:

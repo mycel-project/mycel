@@ -1,4 +1,5 @@
 from src.domain.create_fragment_usecase import CreateFragmentUseCase
+from src.domain.domain_exceptions import NoHeadingToSplit
 from src.domain.get_outline_usecase import GetOutlineUseCase
 from src.models.node import Node
 from src.services.node_service import NodeService
@@ -20,8 +21,17 @@ class SplitNodeUseCase:
         text = node.content.get_first_field() or "" if node.content else ""
         outline = self._get_outline.execute(node)
         entries = [e for e in outline.entries if e.level <= level]
+        
+        if not entries:
+            raise NoHeadingToSplit(node_id, level)
         results = []
-        intro = text[:entries[0].offset].strip() if entries else text.strip()
+
+        intro = text[:entries[0].offset].strip() if entries else ""
+        fragment_count = len(entries) + (1 if intro else 0)
+        if fragment_count <= 1:
+            # if there is only one heading but content above (intro), proceed. Else cancel.
+            raise NoHeadingToSplit(node_id, level)
+        
         if intro:
             node_result = self._create_fragment.execute(
                 collection_id, intro, parent_id=node.id, tz_offset=tz_offset
