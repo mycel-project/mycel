@@ -3,6 +3,7 @@ from src.domain.domain_exceptions import NoHeadingToSplit
 from src.domain.get_outline_usecase import GetOutlineUseCase
 from src.models.node import Node
 from src.services.node_service import NodeService
+from src.utils.time import start_of_local_tomorrow_ms
 
 
 class SplitNodeUseCase:
@@ -31,19 +32,23 @@ class SplitNodeUseCase:
         if fragment_count <= 1:
             # if there is only one heading but content above (intro), proceed. Else cancel.
             raise NoHeadingToSplit(node_id, level)
-        
+
         if intro:
             node_result = self._create_fragment.execute(
                 collection_id, intro, parent_id=node.id, tz_offset=tz_offset
             )
             results.append(node_result)
+
+        due = start_of_local_tomorrow_ms(tz_offset)
+        
         for i, entry in enumerate(entries):
             start = entry.offset
             end = entries[i + 1].offset if i + 1 < len(entries) else len(text)
             content = text[start:end].strip()
             if content:
                 node_result = self._create_fragment.execute(
-                    collection_id, content, parent_id=node.id, tz_offset=tz_offset
+                    collection_id, content, parent_id=node.id, tz_offset=tz_offset, due=due,
                 )
                 results.append(node_result)
+                
         return results

@@ -26,6 +26,7 @@ class CreateFragmentUseCase:
         type_data: Optional[TypeData] = None,
         parent_id: Optional[int] = None,
         tz_offset: int = 0,
+        due: int | None = None,
     ) -> Node:
 
         if parent_id != None:
@@ -34,8 +35,9 @@ class CreateFragmentUseCase:
         else:
             depth = 0
 
-        interval = self._scheduling_engine.compute_fragment_next_interval(depth, 0)
-        due = start_of_local_day_ms(now_ms() + interval * MS_PER_DAY, tz_offset)
+        if due is None:
+            interval = self._scheduling_engine.compute_fragment_next_interval(depth, 0)
+            due = start_of_local_day_ms(now_ms() + interval * MS_PER_DAY, tz_offset)
             
         return self._create_node.execute(
             collection_id=collection_id,
