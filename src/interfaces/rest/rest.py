@@ -96,19 +96,19 @@ class Rest(BaseInterface):
                     "message": exc.message,
                 },
             )
-        
-        @self.app.get("/")
-        async def root():
-            return {"message": "Hello World"}
-
+ 
         @self.app.get("/health")
         async def check_reachability():
             return {"status": "ok"}
 
+        class VersionResponse(BaseModel):
+            version: str
         @self.app.get("/version")
-        async def version():
-            version = self.app_infos.version
-            return {"version": version}
+        async def version() -> VersionResponse:
+            """
+            Get the current Mycel version.
+            """
+            return VersionResponse(version=self.app_infos.version)
 
         @self.app.get("/config/node-types")
         async def get_node_types():
