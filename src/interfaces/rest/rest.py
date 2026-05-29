@@ -96,37 +96,75 @@ class Rest(BaseInterface):
                     "message": exc.message,
                 },
             )
- 
-        @self.app.get("/health")
+
+
+        # SYSTEM
+        
+        @self.app.get("/health", tags=["system"])
         async def check_reachability():
+            """
+            Checks that Mycel is reachable and running.
+            """
             return {"status": "ok"}
 
         class VersionResponse(BaseModel):
             version: str
-        @self.app.get("/version")
+        @self.app.get("/version", tags=["system"])
         async def version() -> VersionResponse:
             """
             Get the current Mycel version.
             """
             return VersionResponse(version=self.app_infos.version)
 
-        @self.app.get("/config/node-types")
-        async def get_node_types():
-            return {
-                "types": [
-                    {"label": t.name, "value": t.value}
-                    for t in NodeType
-                ]
-            }
+        class ClozeRegex(BaseModel):
+            regex: str
+        @self.app.get("/constants/cloze-regex", tags=["system"])
+        async def get_cloze_regex() -> ClozeRegex:
+            """
+            Get cloze regex used to manipulate cloze field of spores.
+            """
+            return ClozeRegex(regex=CLOZE_REGEX)
 
-        @self.app.get("/config/cloze-regex")
-        async def get_cloze_regex():
-            return {"regex": CLOZE_REGEX}
+        # COLLECTIONS
+        
+        @self.app.get("/collections", tags=["collections"])
+        async def list_collections():
+            collections = self.collection_service.get_collections(1)
+            return {"collections": collections}
 
-        @self.app.get("/collections/{col_id}/nodes")
+        @self.app.get("/collections/{colId}", tags=["collections"])
+        async def get_collection_details(colId: int):
+            data = self.collection_service.get_collection_detailed(colId)
+            return {"details": data}
+
+        class CollectionCreate(BaseModel):
+            name: str
+        @self.app.post("/collections", tags=["collections"])
+        async def create_collection(data: CollectionCreate):
+            collection = self.collection_service.create_collection(data.name, 1)
+            return {"collection": CollectionListView.model_validate(collection)}
+
+        @self.app.delete("/collections/{collection_id}", status_code = 204, tags=["collections"])
+        async def delete_collection(collection_id: int):
+            self.collection_service.delete_collection(collection_id)
+
+        class CollectionUpdate(BaseModel):
+            newName: str | None = None
+            config: ConfigUpdate | None = None # We could be more precise here with a schema
+        @self.app.patch("/collections/{col_id}", tags=["collections"])
+        async def update_collections(col_id: int,  data: CollectionUpdate):
+            if data.newName is not None:
+                self.collection_service.rename_collection(col_id, data.newName)
+            if data.config is not None:
+                self.collection_service.update_configs(col_id, data.config)
+            return {"status": "ok"}
+
+        @self.app.get("/collections/{col_id}/nodes", tags=["collections"])
         async def get_nodes(col_id: int):
             nodes = self.node_orchestrator.get_nodes_view(col_id, 10000)
             return {"nodes": nodes}
+
+        
 
         @self.app.get("/collections/{col_id}/nodes/priorities")
         async def get_priorities(col_id: int):
@@ -242,37 +280,6 @@ class Rest(BaseInterface):
             node = self.node_orchestrator.remove_links_to_view(col_id, node_id, data.text, data.field, data.start_index, data.end_index)
             return {"node": node}
 
-        @self.app.get("/collections")
-        async def get_collections():
-            collections = self.collection_service.get_collections(1)
-            return {"collections": collections}
-
-        @self.app.get("/collections/{colId}")
-        async def get_collection_details(colId: int):
-            data = self.collection_service.get_collection_detailed(colId)
-            return {"details": data}
-
-        class CollectionCreate(BaseModel):
-            name: str
-        @self.app.post("/collections")
-        async def create_collection(data: CollectionCreate):
-            collection = self.collection_service.create_collection(data.name, 1)
-            return {"collection": CollectionListView.model_validate(collection)}
-
-        @self.app.delete("/collections/{collection_id}", status_code = 204)
-        async def delete_collection(collection_id: int):
-            self.collection_service.delete_collection(collection_id)
-
-        class CollectionUpdate(BaseModel):
-            newName: str | None = None
-            config: ConfigUpdate | None = None # We could be more precise here with a schema
-        @self.app.patch("/collections/{col_id}")
-        async def update_collections(col_id: int,  data: CollectionUpdate):
-            if data.newName is not None:
-                self.collection_service.rename_collection(col_id, data.newName)
-            if data.config is not None:
-                self.collection_service.update_configs(col_id, data.config)
-            return {"status": "ok"}
         
         # @self.app.post("/collections/{col_id}/reindex")
         # async def reindex(col_id: int):
