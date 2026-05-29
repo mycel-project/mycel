@@ -167,6 +167,7 @@ class Rest(BaseInterface):
             deleted_ids = self.node_service.soft_delete_subtree(node_id)
             return {"deleted_ids": deleted_ids}
 
+        
         class RescheduleNodeRequest(BaseModel):
             date: str       # "2026-05-20"
             tz_offset: int  # minutes
