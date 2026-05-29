@@ -10,4 +10,5 @@ class MycelConfig(BaseModel):
     network_user_agent: str
     db_path: str
     log_level: str
+    deployment_mode: DeploymentMode = DeploymentMode.SELF_HOSTED
 
