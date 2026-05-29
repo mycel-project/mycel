@@ -37,8 +37,12 @@ from src.types.node_type import NodeType
 logger = logging.getLogger(__name__)
 
 class Rest(BaseInterface):
-    def __init__(self):
-        self.app = FastAPI()
+    def __init__(self, app_infos):
+        self.app_infos: AppInfos = app_infos
+        self.app = FastAPI(
+            title="Mycel API",
+            version=self.app_infos.version,
+        )
         self.app.add_middleware(
             CORSMiddleware,
             allow_origins=["*"],
@@ -47,11 +51,10 @@ class Rest(BaseInterface):
         )
         self._register_routes()
 
-    async def init(self, config, bus, app_infos, services, orchestrators):
+    async def init(self, config, bus, services, orchestrators):
         # Would be better if interfaces only had access to orchestrators?
         self.config = config
         self.bus: EventBus = bus
-        self.app_infos: AppInfos = app_infos
         self.user_service: UserService = services["user_service"]
         self.node_service: NodeService = services["node_service"]
         self.collection_service: CollectionService = services["collection_service"]
@@ -93,19 +96,19 @@ class Rest(BaseInterface):
                     "message": exc.message,
                 },
             )
-        
-        @self.app.get("/")
-        async def root():
-            return {"message": "Hello World"}
-
+ 
         @self.app.get("/health")
         async def check_reachability():
             return {"status": "ok"}
 
+        class VersionResponse(BaseModel):
+            version: str
         @self.app.get("/version")
-        async def version():
-            version = self.app_infos.version
-            return {"version": version}
+        async def version() -> VersionResponse:
+            """
+            Get the current Mycel version.
+            """
+            return VersionResponse(version=self.app_infos.version)
 
         @self.app.get("/config/node-types")
         async def get_node_types():
@@ -172,6 +175,7 @@ class Rest(BaseInterface):
             deleted_ids = self.node_service.soft_delete_subtree(node_id)
             return {"deleted_ids": deleted_ids}
 
+        
         class RescheduleNodeRequest(BaseModel):
             date: str       # "2026-05-20"
             tz_offset: int  # minutes

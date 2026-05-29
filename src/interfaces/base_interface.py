@@ -6,8 +6,11 @@ class BaseInterface(ABC):
     """
     Classe abstraire servant de base pour structurer les interfaces
     """
+    def __init__(self, app_infos: AppInfos):
+        self.app_infos = app_infos
+        
     @abstractmethod
-    async def init(self, config: dict, bus, app_infos: AppInfos, services, orchestrators):
+    async def init(self, config: dict, bus, services, orchestrators):
         pass
 
     @abstractmethod

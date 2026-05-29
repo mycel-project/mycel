@@ -19,5 +19,5 @@ class Interface():
         else:
             print("No interface set in config")
             return
-        self.interface = InterfaceFactory.create(self.interface_name)
-        await self.interface.init(self.config, self.bus, self.app_infos, self.services, self.orchestrators)
+        self.interface = InterfaceFactory.create(self.interface_name, self.app_infos)
+        await self.interface.init(self.config, self.bus, self.services, self.orchestrators)

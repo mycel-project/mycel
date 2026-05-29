@@ -9,7 +9,7 @@ class Cli(BaseInterface):
     def __init__(self):
         self.cli_group = None
     
-    async def init(self, config, bus, services):
+    async def init(self, config, bus, services, orchestrators):
         self.config = config
         self.bus = bus
         self.node_service = services["node_service"]
