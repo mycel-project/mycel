@@ -26,8 +26,10 @@ jobs:
           python -c "
           import json
           from src.interfaces.rest.rest import Rest
+          from src.core.app_infos import AppInfos
 
-          rest = Rest()
+          app_infos=AppInfos()
+          rest = Rest(app_infos=app_infos)
 
           with open('openapi.json', 'w') as f:
             json.dump(rest.app.openapi(), f, indent=2)

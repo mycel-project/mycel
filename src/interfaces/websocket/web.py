@@ -6,7 +6,7 @@ class Web(BaseInterface):
     def __init__(self, host="0.0.0.0", port=8000):
         pass
     
-    async def init(self, config, bus):
+    async def init(self, config, bus, services, orchestrators):
         self.config = config
         self.bus = bus
         self.uvicorn = UvicornServer()

@@ -37,8 +37,12 @@ from src.types.node_type import NodeType
 logger = logging.getLogger(__name__)
 
 class Rest(BaseInterface):
-    def __init__(self):
-        self.app = FastAPI()
+    def __init__(self, app_infos):
+        self.app_infos: AppInfos = app_infos
+        self.app = FastAPI(
+            title="Mycel API",
+            version=self.app_infos.version,
+        )
         self.app.add_middleware(
             CORSMiddleware,
             allow_origins=["*"],
@@ -47,11 +51,10 @@ class Rest(BaseInterface):
         )
         self._register_routes()
 
-    async def init(self, config, bus, app_infos, services, orchestrators):
+    async def init(self, config, bus, services, orchestrators):
         # Would be better if interfaces only had access to orchestrators?
         self.config = config
         self.bus: EventBus = bus
-        self.app_infos: AppInfos = app_infos
         self.user_service: UserService = services["user_service"]
         self.node_service: NodeService = services["node_service"]
         self.collection_service: CollectionService = services["collection_service"]
