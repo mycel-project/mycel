@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
 from src.core.app_infos import AppInfos
+from src.core.config import MycelConfig
 
 class BaseInterface(ABC):
     """
@@ -10,7 +11,7 @@ class BaseInterface(ABC):
         self.app_infos = app_infos
         
     @abstractmethod
-    async def init(self, config: dict, bus, services, orchestrators):
+    async def init(self, config: MycelConfig, bus, services, orchestrators):
         pass
 
     @abstractmethod

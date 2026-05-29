@@ -10,6 +10,7 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.core.app_infos import AppInfos
+from src.core.config import MycelConfig, DeploymentMode
 from src.core.regex import CLOZE_REGEX
 from src.domain.domain_exceptions import DomainException
 from src.event_bus import EventBus
@@ -51,7 +52,7 @@ class Rest(BaseInterface):
         )
         self._register_routes()
 
-    async def init(self, config, bus, services, orchestrators):
+    async def init(self, config: MycelConfig, bus, services, orchestrators):
         # Would be better if interfaces only had access to orchestrators?
         self.config = config
         self.bus: EventBus = bus

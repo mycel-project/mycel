@@ -5,6 +5,7 @@ from pathlib import Path
 
 from src.converters.html_to_md.registry import HtmlToMdRegistry
 from src.core.app_infos import AppInfos
+from src.core.config import MycelConfig
 from src.core.lexical_order import LexicalOrder
 from src.db import Db
 from src.domain.create_fragment_usecase import CreateFragmentUseCase
@@ -42,14 +43,14 @@ class Application():
     def __init__(self):
         self.config_file = "config.json"
         self.config = self.load_config()
-        setup_logging(self.config.get("log_level"))
+        setup_logging(self.config.log_level)
         self.bus = EventBus()
-        self.db = Db(Path(self.config["db_path"]))
+        self.db = Db(Path(self.config.db_path))
         self.app_infos = AppInfos()
 
         print(f"Running Mycel {self.app_infos.version}")
 
-        source_registry = SourceRegistry(self.config["network_user_agent"])
+        source_registry = SourceRegistry(self.config.network_user_agent)
         html_to_markdown_registry = HtmlToMdRegistry()
 
         node_repository = NodeRepository(self.db)
@@ -129,12 +130,10 @@ class Application():
 
     def load_config(self):
         with open(self.config_file, "r") as f:
-            self.config = json.load(f)
-        return self.config
+            config_dict = json.load(f)
     
-    def save_config(self):
-        with open(self.config_file, "w") as f:
-            json.dump(self.config, f, indent=4)
+        self.config = MycelConfig(**config_dict)
+        return self.config
 
 def setup_logging(level_str):
     LOG_LEVELS = {

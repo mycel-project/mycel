@@ -12,7 +12,7 @@ class Interface():
         self.orchestrators = orchestrators
         
     async def init_interface(self):
-        self.interface_name = self.config.get("interface")
+        self.interface_name = self.config.interface
         if self.interface_name:
             print("Interface:", self.interface_name)
             
