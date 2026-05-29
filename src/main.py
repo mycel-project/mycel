@@ -18,6 +18,7 @@ from src.interfaces.interface import Interface
 from src.event_bus import EventBus
 from src.core.scheduling_engine import SchedulingEngine
 from src.repositories import NodeRepository
+from src.services.auth.auth_service import AuthService
 from src.services.cache.pending_review_cache import PendingReviewCache
 from src.services.cleanup_service import CleanupService
 from src.services.node_format_service import NodeFormatService
@@ -40,7 +41,7 @@ logger = logging.getLogger(__name__)
 
 
 class Application():
-    def __init__(self):
+    def __init__(self, auth_service: AuthService | None = None):
         self.config_file = "config.json"
         self.config = self.load_config()
         setup_logging(self.config.log_level)
@@ -101,6 +102,7 @@ class Application():
             "fragment_service": fragment_service,
             "spore_service": spore_service,
             "priority_service": priority_service,
+            "auth_service": auth_service,
         }
 
         orchestrators = {

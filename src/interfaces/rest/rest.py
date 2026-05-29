@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.core.app_infos import AppInfos
 from src.core.config import MycelConfig, DeploymentMode
 from src.core.regex import CLOZE_REGEX
-from src.domain.domain_exceptions import DomainException
+from src.domain.domain_exceptions import DomainException, Unauthorized
 from src.event_bus import EventBus
 from src.interfaces.base_interface import BaseInterface
 from src.interfaces.uvicorn import UvicornServer
@@ -24,6 +24,7 @@ from src.models.user_conf_update import UserConfUpdate
 from src.schemas.collection_list_view import CollectionListView
 from src.schemas.config_update import ConfigUpdate
 from src.schemas.node_update import NodeUpdate
+from src.services.auth.auth_service import AuthService
 from src.services.collection_service import CollectionService
 from src.services.fragment_service import FragmentService
 from src.services.node_orchestrator import NodeOrchestrator
@@ -63,6 +64,7 @@ class Rest(BaseInterface):
         self.priority_service: PriorityService = services["priority_service"]
         self.node_orchestrator: NodeOrchestrator = orchestrators["node_orchestrator"]
         self.review_orchestrator: ReviewOrchestrator = orchestrators["review_orchestrator"]
+        self.auth_service: AuthService | None = services["auth_service"]
         self.uvicorn = UvicornServer()
         await self.start()
         
@@ -321,6 +323,17 @@ class Rest(BaseInterface):
             node = self.review_orchestrator.get_next_review(col_id, tz_offset)
             return {"node": node}
 
+        @self.app.get("/users", tags=["users"])
+        async def list_users(request: Request):
+            
+            if self.config.deployment_mode == DeploymentMode.CLOUD:
+                assert self.auth_service != None
+                users = await self.auth_service.get_authenticated_users(request)
+            else:
+                users = self.user_service.get_users()
+                
+            return {"users": users}
+        
         @self.app.get("/users/me")
         async def get_current_user():
             user = self.user_service.get_user(1)

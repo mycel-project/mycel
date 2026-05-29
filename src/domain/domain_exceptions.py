@@ -262,3 +262,31 @@ class NoHeadingToSplit(DomainException):
             message=f"No heading of level <= {level} found in node {node_id}",
             status_code=422
         )
+
+# Authentication
+
+class AuthenticationError(DomainException):
+    """Base authentication error"""
+    def __init__(self, code: str = "AUTHENTICATION_ERROR", message: str = "", status_code: int = 422):
+        super().__init__(
+            code=code,
+            message=message,
+            status_code=status_code,
+        )
+
+class Unauthorized(AuthenticationError):
+    """User is not authorized"""
+    def __init__(self, code: str = "UNAUTHORIZED", message: str = "", status_code: int = 401):
+        super().__init__(
+            code=code,
+            message=message,
+            status_code=status_code,
+        )
+
+class InvalidToken(Unauthorized):
+    """Provided token is invalid or expired"""
+    def __init__(self, code: str = "INVALID_TOKEN", message: str = "Token is invalid or expired"):
+        super().__init__(
+            code=code,
+            message=message,
+        )
