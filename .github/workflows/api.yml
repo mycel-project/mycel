@@ -1,0 +1,42 @@
+name: Sync OpenAPI to Docs
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/interfaces/rest/rest.py'  
+
+jobs:
+  sync-openapi:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout mycel
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Generate openapi.json
+        run: python -c "
+          import json
+          from src.main import app
+          with open('openapi.json', 'w') as f:
+              json.dump(app.openapi(), f, indent=2)
+          "
+
+      - name: Push to docs repo
+        uses: dmnemec/copy_file_to_another_repo_action@main
+        env:
+          API_TOKEN_GITHUB: ${{ secrets.DOCS_DEPLOY_TOKEN }}
+        with:
+          source_file: 'openapi.json'
+          destination_repo: 'mycel-project/mycel-project.github.io'
+          destination_folder: 'mycel-docs/docs/api'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+          user_name: 'github-actions[bot]'
+          commit_message: 'chore: sync openapi.json from mycel'
