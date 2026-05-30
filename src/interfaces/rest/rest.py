@@ -2,7 +2,7 @@ from typing import Optional, Union, Any, Annotated
 import logging
 from pydantic import Field
 
-from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from fastapi.exceptions import RequestValidationError
@@ -74,6 +74,13 @@ class Rest(BaseInterface):
     async def stop(self):
         if self.uvicorn.active:
             await self.uvicorn.stop()
+
+    async def get_current_user_id(self, request: Request) -> str:
+        if self.config.deployment_mode == DeploymentMode.CLOUD:
+            assert self.auth_service != None
+            return await self.auth_service.get_user_id(request.headers.get("Authorization", "")) # For now MycelCloud is single user.
+        else:
+            return "1" # Defaut User for self-hosting
 
     def _register_routes(self):
         @self.app.exception_handler(RequestValidationError)
@@ -335,9 +342,8 @@ class Rest(BaseInterface):
             return {"users": users}
         
         @self.app.get("/users/me")
-        async def get_current_user():
-            user = self.user_service.get_user(1)
-            return {"user": user}
+        async def get_current_user(user_id: str = Depends(self.get_current_user_id)):
+            return {"user": user_id}
 
         @self.app.patch("/users/me/settings")
         async def update_user_conf(data: UserConfUpdate):

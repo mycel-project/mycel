@@ -1,10 +1,6 @@
 from abc import ABC, abstractmethod
 
-from fastapi import Request
-
-from src.models.user import User
-
 class AuthService(ABC):
     @abstractmethod
-    async def get_authenticated_users(self, request: Request) -> list[User]:
+    async def get_user_id(self, authorization: str) -> str:
         pass
