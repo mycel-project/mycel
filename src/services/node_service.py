@@ -230,7 +230,7 @@ class NodeService:
         print("update: ", updates)
         
         # Fields explicitly provided in updates (even if set to None) will overwrite existing values (due to model_fiels_set).
-        # To prevent setting a field to None,y do not include it in the update payload.
+        # To prevent setting a field to None, do not include it in the update payload.
         for field in updates.model_fields_set: 
             value = getattr(updates, field)
             setattr(node, field, value)

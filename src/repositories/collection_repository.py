@@ -74,33 +74,25 @@ class CollectionRepository:
         return self._row_to_model(row) if row else None
 
     def update_timestamp(self, id: int) -> None:
-        """Met à jour uniquement le champ updated_at"""
         now = int(time.time() * 1000)
         self.db.execute(
             "UPDATE collections SET updated_at = ? WHERE id = ?",
             (now, id),
         )
 
-    def update(
-            self,
-            id: int,
-            name: Optional[str] = None,
-            conf: Optional[CollectionConf] = None,
-            fsrsconf: Optional[FsrsConf] = None
-    ) -> None:
+    def update(self, collection: Collection) -> None:
         now = int(time.time() * 1000)
-        
-        existing = self.get(id)
-        if not existing:
-            raise ValueError(f"Collection {id} not found")
-        
-        name = name if name is not None else existing.name
-        conf = conf if conf is not None else existing.conf
-        fsrsconf = fsrsconf if fsrsconf is not None else existing.fsrsconf
-        
         self.db.execute(
-            "UPDATE collections SET name = ?, conf = ?, fsrsconf = ?, updated_at = ? WHERE id = ?",
-            (name, json.dumps(conf.model_dump()), json.dumps(fsrsconf.model_dump()), now, id),
+            """UPDATE collections SET
+               name=?, conf=?, fsrsconf=?, updated_at=?
+               WHERE id=?""",
+            (
+                collection.name,
+                json.dumps(collection.conf.model_dump()),
+                json.dumps(collection.fsrsconf.model_dump()),
+                now,
+                collection.id,
+            ),
         )
 
     def delete(self, id: int) -> None:

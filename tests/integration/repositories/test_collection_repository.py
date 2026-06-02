@@ -28,25 +28,23 @@ def test_collection_create_and_get(db_fixture, default_user):
 
 def test_collection_partial_update(db_fixture, default_user):
     repo = CollectionRepository(db=db_fixture)
-    conf = CollectionConf()
-    fsrsconf = FsrsConf()
     
     created = repo.create(
         user_id=default_user,
         name="Old Name",
-        conf=conf,
-        fsrsconf=fsrsconf
+        conf=CollectionConf(),
+        fsrsconf=FsrsConf()
     )
-
-    repo.update(id=created.id, name="New Name")
-
+    
+    created.name = "New Name"
+    repo.update(created)
+    
     updated = repo.get(created.id)
-
     assert updated is not None
     assert updated.name == "New Name"
     assert updated.conf is not None
     assert updated.fsrsconf is not None
-
+    
 def test_collection_delete(db_fixture, default_user):
     repo = CollectionRepository(db=db_fixture)
     conf = CollectionConf()

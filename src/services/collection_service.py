@@ -4,6 +4,7 @@ from dataclasses import  asdict
 from src.domain.domain_exceptions import NoCollectionFound
 from src.models.collection import Collection
 from src.repositories.collection_repository import CollectionRepository
+from src.schemas.collection_update import CollectionUpdate
 from src.schemas.collection_view import CollectionView
 from src.models.collection_conf import CollectionConf
 from src.models.fsrs_conf import FsrsConf
@@ -50,58 +51,11 @@ class CollectionService:
     def delete_collection(self, collection_id: int) -> None:
         self._repo.delete(collection_id)
 
-    def update_collection_conf(self, collection_id: int, update: CollectionConfUpdate):
-        collection = self._repo.get(collection_id)
-        if not collection:
-            raise ValueError("Collection not found")
-
-        for key, value in asdict(update).items():
-            if value is not None:
-                setattr(collection.conf, key, value)
-
-        self._repo.update(
-            id=collection_id,
-            conf=collection.conf
-        )
-    
-    def update_fsrs_conf(self, collection_id: int, update: FsrsConfUpdate):
-        collection = self._repo.get(collection_id)
-        if not collection:
-            raise ValueError("Collection not found")
-
-        for key, value in update.model_dump(exclude_none=True).items():
-            setattr(collection.fsrsconf, key, value)
-
-        self._repo.update(
-            id=collection_id,
-            fsrsconf=collection.fsrsconf
-        )
-
     def get_fsrs_conf(self, collection_id: int) -> FsrsConf:
         collection = self._repo.get(collection_id)
         if not collection:
             raise ValueError("Collection not found")
         return collection.fsrsconf
-
-    def rename_collection(self, collection_id: int, new_name: str) -> None:
-        collection = self._repo.get(collection_id)
-        if not collection:
-            raise ValueError("Collection not found")
-
-        self._repo.update(
-            id=collection_id,
-            name=new_name,
-        )
-
-    def update_configs(self, col_id: int, new_config: ConfigUpdate) -> None:
-
-        if new_config.collection is not None:
-            data = CollectionConfUpdate(**new_config.collection)
-            self.update_collection_conf(col_id, data)
-
-        if new_config.fsrs is not None:
-            data = FsrsConfUpdate(**new_config.fsrs)
-            self.update_fsrs_conf(col_id, data)
 
     def to_view(self, collection: Collection) -> CollectionView:
         return CollectionView(
@@ -111,3 +65,15 @@ class CollectionService:
 
     def to_views(self, collections: list[Collection]) -> list[CollectionView]:
         return [self.to_view(c) for c in collections]
+
+    def update(self, collection_id: int, updates: CollectionUpdate) -> Collection:
+        collection = self.get_collection(collection_id)
+        
+        # Fields explicitly provided in updates (even if set to None) will overwrite existing values (due to model_fiels_set).
+        # To prevent setting a field to None, do not include it in the update payload.
+        for field in updates.model_fields_set: 
+            value = getattr(updates, field)
+            setattr(collection, field, value)
+
+        self._repo.update(collection)
+        return collection
