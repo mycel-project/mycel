@@ -5,7 +5,7 @@ from src.db import Db
 from src.domain.domain_exceptions import NoCollectionFound
 from src.models.collection import Collection
 from src.repositories.collection_repository import CollectionRepository
-from src.schemas.collection_list_view import CollectionListView
+from src.schemas.collection_view import CollectionView
 from src.models.collection_conf import CollectionConf
 from src.models.fsrs_conf import FsrsConf
 from src.schemas import FsrsConfUpdate, CollectionConfUpdate
@@ -91,10 +91,10 @@ class CollectionService:
             raise ValueError("Collection not found")
         return collection.fsrsconf
 
-    def get_collections(self, user_id) -> list[CollectionListView]:
+    def get_collections(self, user_id) -> list[CollectionView]:
         collections = self._repo.list(user_id)
         return [
-            CollectionListView(
+            CollectionView(
                 id=c.id,
                 name=c.name
             )
@@ -111,7 +111,7 @@ class CollectionService:
             name=new_name,
         )
 
-    def get_collection_details(self, col_id: int) -> Optional[Collection]:
+    def get_collection_details(self, col_id: int) -> Collection:
         collection = self._repo.get(col_id)
         return collection
 
@@ -124,3 +124,12 @@ class CollectionService:
         if new_config.fsrs is not None:
             data = FsrsConfUpdate(**new_config.fsrs)
             self.update_fsrs_conf(col_id, data)
+
+    def to_view(self, collection: Collection) -> CollectionView:
+        return CollectionView(
+            id=collection.id,
+            name=collection.name,
+        )
+
+    def to_views(self, collections: list[Collection]) -> list[CollectionView]:
+        return [self.to_view(c) for c in collections]

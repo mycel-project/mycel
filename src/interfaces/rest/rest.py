@@ -17,14 +17,16 @@ from src.event_bus import EventBus
 from src.interfaces.base_interface import BaseInterface
 from src.interfaces.uvicorn import UvicornServer
 from src.models.node_create import NodeCreate
+from src.models.collection import Collection
 from src.models.type_review_data import TypeReviewData
 from src.models.type_review_data.fragment_review_data import FragmentReviewData
 from src.models.type_review_data.spore_review_data import SporeReviewData
 from src.models.user_conf_update import UserConfUpdate
-from src.schemas.collection_list_view import CollectionListView
+from src.schemas.collection_view import CollectionView
 from src.schemas.config_update import ConfigUpdate
 from src.schemas.node_update import NodeUpdate
 from src.services.auth.auth_service import AuthService
+from src.services.collection_orchestrator import CollectionOrchestrator
 from src.services.collection_service import CollectionService
 from src.services.fragment_service import FragmentService
 from src.services.node_orchestrator import NodeOrchestrator
@@ -63,6 +65,7 @@ class Rest(BaseInterface):
         self.collection_service: CollectionService = services["collection_service"]
         self.review_service: ReviewService = services["review_service"]
         self.priority_service: PriorityService = services["priority_service"]
+        self.collection_orchestrator: CollectionOrchestrator = orchestrators["collection_orchestrator"]
         self.node_orchestrator: NodeOrchestrator = orchestrators["node_orchestrator"]
         self.review_orchestrator: ReviewOrchestrator = orchestrators["review_orchestrator"]
         self.auth_service: AuthService | None = services["auth_service"]

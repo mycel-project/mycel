@@ -1,8 +1,7 @@
 from pydantic import BaseModel, ConfigDict
 
 
-
-class CollectionListView(BaseModel):
+class CollectionView(BaseModel):
     id: int
     name: str
     

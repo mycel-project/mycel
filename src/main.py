@@ -23,6 +23,7 @@ from src.repositories import NodeRepository, CollectionRepository
 from src.services.auth.auth_service import AuthService
 from src.services.cache.pending_review_cache import PendingReviewCache
 from src.services.cleanup_service import CleanupService
+from src.services.collection_orchestrator import CollectionOrchestrator
 from src.services.node_format_service import NodeFormatService
 from src.services.priority_service import PriorityService
 from src.sources.registry import SourceRegistry
@@ -94,6 +95,8 @@ class Application():
 
         get_outline_usecase = GetOutlineUseCase()
         split_node_usecase = SplitNodeUseCase(node_service, create_fragment_usecase, get_outline_usecase)
+
+        collection_orchestrator = CollectionOrchestrator(collection_service)
         
         node_orchestrator = NodeOrchestrator(node_service, fragment_service, spore_service, priority_service, ressource_service, node_view_builder, node_format_service, create_node_from_url_usecase, reschedule_node_usecase, get_outline_usecase, split_node_usecase)
         
@@ -114,8 +117,9 @@ class Application():
         }
 
         self.orchestrators = {
+            "collection_orchestrator": collection_orchestrator,
             "node_orchestrator": node_orchestrator,
-            "review_orchestrator": review_orchestrator
+            "review_orchestrator": review_orchestrator,
         }
 
         self.interface = Interface(config = self.config, bus = self.bus, app_infos = self.app_infos, services = self.services, orchestrators = self.orchestrators)
