@@ -24,7 +24,7 @@ class CollectionRepository:
                 if isinstance(row["conf"], str)
                 else row["conf"]
             ),
-            fsrsconf=FsrsConf.from_dict(
+            fsrsconf=FsrsConf.model_validate(
                 json.loads(row["fsrsconf"])
                 if isinstance(row["fsrsconf"], str)
                 else row["fsrsconf"]
@@ -56,7 +56,7 @@ class CollectionRepository:
                 now,
                 now,
                 json.dumps(conf.model_dump()),
-                json.dumps(fsrsconf.to_dict()),
+                json.dumps(fsrsconf.model_dump()),
             ),
         )
 
@@ -100,7 +100,7 @@ class CollectionRepository:
         
         self.db.execute(
             "UPDATE collections SET name = ?, conf = ?, fsrsconf = ?, updated_at = ? WHERE id = ?",
-            (name, json.dumps(conf.model_dump()), json.dumps(fsrsconf.to_dict()), now, id),
+            (name, json.dumps(conf.model_dump()), json.dumps(fsrsconf.model_dump()), now, id),
         )
 
     def delete(self, id: int) -> None:

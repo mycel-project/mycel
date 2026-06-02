@@ -12,3 +12,7 @@ class CollectionOrchestrator:
     def create_collection(self, name: str, user_id: int) -> CollectionView:
         collection = self._collection_service.create_collection(name=name, user_id=user_id)
         return self._collection_service.to_view(collection)
+
+    def get_collections(self, user_id: int) -> list[CollectionView]:
+        collections = self._collection_service.get_collections(user_id)
+        return self._collection_service.to_views(collections)

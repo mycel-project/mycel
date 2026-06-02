@@ -1,7 +1,6 @@
 from typing import Optional
 from dataclasses import  asdict
 
-from src.db import Db
 from src.domain.domain_exceptions import NoCollectionFound
 from src.models.collection import Collection
 from src.repositories.collection_repository import CollectionRepository
@@ -31,13 +30,11 @@ class CollectionService:
         id: Optional[int] = None,
 
     ) -> Collection:
-        conf = self.create_default_collection_conf() # Can juste do conf = CollectionConf() if it has default values in model
-        fsrsconf = self.create_default_fsrs_conf() # //
         return self._repo.create(
             user_id=user_id,
             name=name,
-            conf=conf,
-            fsrsconf=fsrsconf,
+            conf=CollectionConf(),
+            fsrsconf=FsrsConf(),
             id=id,
         )
 
@@ -47,13 +44,11 @@ class CollectionService:
             raise NoCollectionFound(collection_id)
         return collection
 
+    def get_collections(self, user_id) -> list[Collection]:
+        return self._repo.list(user_id)
+
     def delete_collection(self, collection_id: int) -> None:
         self._repo.delete(collection_id)
-
-    def create_default_collection_conf(self) -> CollectionConf:
-        return CollectionConf(
-            theme="light"
-        )
 
     def update_collection_conf(self, collection_id: int, update: CollectionConfUpdate):
         collection = self._repo.get(collection_id)
@@ -68,9 +63,6 @@ class CollectionService:
             id=collection_id,
             conf=collection.conf
         )
-
-    def create_default_fsrs_conf(self) -> FsrsConf:
-        return FsrsConf()
     
     def update_fsrs_conf(self, collection_id: int, update: FsrsConfUpdate):
         collection = self._repo.get(collection_id)
@@ -91,16 +83,6 @@ class CollectionService:
             raise ValueError("Collection not found")
         return collection.fsrsconf
 
-    def get_collections(self, user_id) -> list[CollectionView]:
-        collections = self._repo.list(user_id)
-        return [
-            CollectionView(
-                id=c.id,
-                name=c.name
-            )
-            for c in collections
-        ]
-
     def rename_collection(self, collection_id: int, new_name: str) -> None:
         collection = self._repo.get(collection_id)
         if not collection:
@@ -110,10 +92,6 @@ class CollectionService:
             id=collection_id,
             name=new_name,
         )
-
-    def get_collection_details(self, col_id: int) -> Collection:
-        collection = self._repo.get(col_id)
-        return collection
 
     def update_configs(self, col_id: int, new_config: ConfigUpdate) -> None:
 
