@@ -9,6 +9,7 @@ from src.models.extract_result import ExtractResult
 from src.models.node import Node
 from src.models.node_create import NodeCreate, NodeCreateFromUrl
 from src.models.outline import Outline
+from src.schemas.node_detail_view import NodeDetailView
 from src.schemas.node_update import NodeUpdate
 from src.schemas.node_view import NodeView
 from src.services.fragment_service import FragmentService
@@ -59,9 +60,9 @@ class NodeOrchestrator:
         nodes = self._node_service.get_nodes(collection_id, limit)
         return self._node_view_builder.to_views(nodes)
 
-    def get_node_view(self, node_id: int) -> NodeView:
+    def get_node_detail_view(self, node_id: int) -> NodeDetailView:
         node = self._node_service.get_node(node_id)
-        return self._node_view_builder.to_view(node)
+        return self._node_view_builder.to_detail_view(node)
         
     def create_node(self, collection_id: int, data: NodeCreate, tz_offset_min: int) -> Node:
         if isinstance(data, NodeCreateFromUrl):
@@ -78,11 +79,11 @@ class NodeOrchestrator:
         else:
             raise NotAKnownType(node_id, node.type)
 
-    def create_node_to_view(self, collection_id: int, data: NodeCreate, tz_offset_min: int) -> NodeView:
-        return self._node_view_builder.to_view(self.create_node(collection_id, data, tz_offset_min))
+    def create_node_to_detail_view(self, collection_id: int, data: NodeCreate, tz_offset_min: int) -> NodeDetailView:
+        return self._node_view_builder.to_detail_view(self.create_node(collection_id, data, tz_offset_min))
 
-    def update_node_to_view(self, node_id: int, data: NodeUpdate) -> NodeView:
-        return self._node_view_builder.to_view(self.update_node(node_id, data))
+    def update_node_to_detail_view(self, node_id: int, data: NodeUpdate) -> NodeDetailView:
+        return self._node_view_builder.to_detail_view(self.update_node(node_id, data))
 
     def reprioritise_node_to_view(self, collection_id: int, node_id: int, target_node_priority: float) -> NodeView:
         self._priority_service.reprioritise_node(collection_id, node_id, target_node_priority)
@@ -178,4 +179,11 @@ class NodeOrchestrator:
         self._fragment_service.emphasize_region(node_id, NodeType.FRAGMENT, "0", 0, len(content))
         source_node = self._fragment_service.dismiss(node_id)
         nodes = children + [source_node]
+        return self._node_view_builder.to_views(nodes)
+
+    def get_deleted_nodes_view(
+        self,
+        collection_id: int,
+    ) -> list[NodeView]:
+        nodes = self._node_service.get_nodes(collection_id, include_alive=False, include_deleted=True)
         return self._node_view_builder.to_views(nodes)

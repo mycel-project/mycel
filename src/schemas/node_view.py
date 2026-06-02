@@ -8,17 +8,18 @@ from src.models.type_data import TypeData
 
 class NodeView(BaseModel):
     """
-    DTO containing data used by the frontend
+    Lightweight DTO for list display. Contains a short content preview.
+    For full content rendering, use NodeDetailView.
     """
     id: int
     collection_id: int
     parent_id: Optional[int] = None
     type: int
-    content: Optional[NodeContent] = None
     priority: float
     due: int
     deleted_at: Optional[int] = None
     data: Optional[NodeData] = None
     type_data: Optional[TypeData] = None
+    content_preview: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)

@@ -144,22 +144,12 @@ class NodeService:
             for n in nodes
         ]
     
-    def get_deleted_nodes_view(
-        self,
-        collection_id: int,
-    ) -> list[NodeView]:
-        nodes = self.get_nodes(collection_id, include_alive=False, include_deleted=True)
-        return [
-            self.node_to_view(n, i)
-            for i, n in enumerate(nodes)
-        ]
-
-    def node_to_view(self, node: Node, priority: float) -> NodeView:
+    def node_to_view(self, node: Node, priority: float, content_preview: str) -> NodeView:
         return NodeView(
             id=node.id,
             collection_id=node.collection_id,
             type=node.type,
-            content=node.content,
+            content_preview=content_preview,
             priority=priority,
             parent_id=node.parent_id,
             due=node.due,
@@ -207,19 +197,6 @@ class NodeService:
                 return node.id
 
             current_id = node.parent_id
-
-    def get_node_metrics(self, node_id: int) -> Optional[NodeMetrics]:
-        node = self.get_node(node_id)
-        return NodeMetrics(
-            id=node.id,
-            last_review=node.last_review,
-            type_data=node.type_data
-        )
-
-    def get_node_extanded(self, node_id: int) -> dict:
-        node_view = self.get_node(node_id)
-        node_metrics = self.get_node_metrics(node_id)
-        return {"view": node_view, "metrics": node_metrics}
 
     def update_position(self, node_id: int, position: str):
         self.update(node_id, NodeUpdate(position=position))

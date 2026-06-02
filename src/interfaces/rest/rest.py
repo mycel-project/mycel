@@ -25,6 +25,8 @@ from src.models.type_review_data.fragment_review_data import FragmentReviewData
 from src.models.type_review_data.spore_review_data import SporeReviewData
 from src.models.user import User
 from src.models.user_conf import UserConf
+from src.schemas.node_detail_view import NodeDetailView
+from src.schemas.node_view import NodeView
 from src.schemas.user_update import UserUpdate
 from src.schemas.collection_update import CollectionUpdate
 from src.schemas.collection_view import CollectionView
@@ -195,16 +197,39 @@ class Rest(BaseInterface):
             self.collection_service.delete_collection(collection_id)
 
         @self.app.patch("/collections/{col_id}", tags=["collections"])
-        async def update_collection(col_id: int, data: CollectionUpdate, user_id = Depends(self.get_user)) -> ApiResponse[CollectionView]:
+        async def update_collection(col_id: int, data: CollectionUpdate, user_id = Depends(self.get_user)):
             collection = self.collection_orchestrator.update_collection(col_id, data)
             return ApiResponse(data=collection)
 
         # NODES
 
-        @self.app.get("/collections/{col_id}/nodes")
-        async def get_nodes(col_id: int, user_id = Depends(self.get_user)):
+        @self.app.get("/collections/{col_id}/nodes", tags=["nodes"])
+        async def list_nodes(col_id: int, user_id = Depends(self.get_user)) -> ApiResponse[list[NodeView]]:
             nodes = self.node_orchestrator.get_nodes_view(col_id, 10000)
-            return {"nodes": nodes}
+            return ApiResponse(data=nodes)
+        
+        @self.app.get("/collections/{col_id}/nodes/{node_id}", tags=["nodes"])
+        async def get_node(col_id: int, node_id: int, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
+            node = self.node_orchestrator.get_node_detail_view(node_id)
+            return ApiResponse(data=node)
+
+        @self.app.delete("/collections/{col_id}/nodes/{node_id}", tags=["nodes"])
+        async def delete_node(col_id: int, node_id: int, user_id = Depends(self.get_user)):
+            """Deletes the node and its entire subtree."""
+            deleted_ids = self.node_service.soft_delete_subtree(node_id)
+            return ApiResponse(data={"deleted_ids": deleted_ids})
+
+        @self.app.patch("/collections/{col_id}/nodes/{node_id}", tags=["nodes"])
+        async def update_node(col_id: int, node_id: int, data: NodeUpdate, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
+            updated_node = self.node_orchestrator.update_node_to_detail_view(node_id, data)
+            return ApiResponse(data=updated_node)
+
+        @self.app.post("/collections/{col_id}/nodes", tags=["nodes"])
+        async def create_node(col_id: int, data: NodeCreate, tz_offset: int = 0, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
+            node = self.node_orchestrator.create_node_to_detail_view(col_id, data, tz_offset)
+            return ApiResponse(data=node)
+
+        
 
         @self.app.get("/collections/{col_id}/nodes/priorities")
         async def get_priorities(col_id: int, user_id = Depends(self.get_user)):
@@ -214,13 +239,8 @@ class Rest(BaseInterface):
 
         @self.app.get("/collections/{col_id}/nodes/deleted")
         async def get_deleted_nodes(col_id: int, user_id = Depends(self.get_user)):
-            nodes = self.node_service.get_deleted_nodes_view(col_id)
+            nodes = self.node_orchestrator.get_deleted_nodes_view(col_id)
             return {"nodes": nodes}
-
-        @self.app.get("/collections/{col_id}/nodes/{node_id}")
-        async def get_node(col_id: int, node_id: int, user_id = Depends(self.get_user)):
-            node = self.node_orchestrator.get_node_view(node_id)
-            return {"node": node}
 
         @self.app.get("/collections/{col_id}/nodes/{node_id}/root")
         async def get_root_node(col_id: int, node_id: int, user_id = Depends(self.get_user)):
@@ -242,16 +262,7 @@ class Rest(BaseInterface):
         async def get_outline_node(col_id: int, node_id: int, user_id = Depends(self.get_user)):
             outline = self.node_orchestrator.get_outline_for_node(col_id, node_id)
             return {"outline": outline}
- 
-        @self.app.get("/collections/{col_id}/nodes/{node_id}")
-        async def get_node_metrics(col_id: int, node_id: int, user_id = Depends(self.get_user)):
-            return self.node_service.get_node_metrics(node_id)
 
-        @self.app.delete("/collections/{col_id}/nodes/{node_id}")
-        async def delete_node(col_id: int, node_id: int, user_id = Depends(self.get_user)):
-            """Deletes the node and its entire subtree."""
-            deleted_ids = self.node_service.soft_delete_subtree(node_id)
-            return {"deleted_ids": deleted_ids}
 
         
         class RescheduleNodeRequest(BaseModel):
@@ -286,11 +297,7 @@ class Rest(BaseInterface):
         async def create_node_extract(col_id: int, node_id: int, data: NodeExtract, user_id = Depends(self.get_user)):
             extract_result = self.node_orchestrator.create_extract(col_id, data.extract_type, node_id, data.text, data.field, data.start_index, data.end_index, data.tz_offset)
             return extract_result.model_dump()
-            
-        @self.app.post("/collections/{col_id}/nodes")
-        async def create_node(col_id: int, data: NodeCreate, tz_offset: int = 0, user_id = Depends(self.get_user)):
-            node = self.node_orchestrator.create_node_to_view(col_id, data, tz_offset) 
-            return {"node": node}
+
 
         class ReprioritiseNode(BaseModel):
             priority: float 
@@ -302,13 +309,6 @@ class Rest(BaseInterface):
                 data.priority)
             return {"node": node}
 
-        @self.app.patch("/collections/{col_id}/nodes/{node_id}")
-        async def update_node(col_id: int, node_id: int, data: NodeUpdate, user_id = Depends(self.get_user)):
-            updated_node = self.node_orchestrator.update_node_to_view(
-                node_id,
-                data
-            )
-            return {"node": updated_node}
 
         class SelectionData(BaseModel):
             text: str
@@ -319,6 +319,11 @@ class Rest(BaseInterface):
         async def remove_links(col_id: int, node_id: int, data: SelectionData, user_id = Depends(self.get_user)):
             node = self.node_orchestrator.remove_links_to_view(col_id, node_id, data.text, data.field, data.start_index, data.end_index)
             return {"node": node}
+
+
+
+
+
 
         
         # @self.app.post("/collections/{col_id}/reindex")
