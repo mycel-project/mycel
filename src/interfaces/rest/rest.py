@@ -35,6 +35,7 @@ from src.services.review_service import ReviewService
 from src.services.spore_service import SporeService
 from src.services.user_service import UserService
 from src.types.node_type import NodeType
+from src.utils.env import is_testing
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +67,8 @@ class Rest(BaseInterface):
         self.review_orchestrator: ReviewOrchestrator = orchestrators["review_orchestrator"]
         self.auth_service: AuthService | None = services["auth_service"]
         self.uvicorn = UvicornServer()
-        await self.start()
+        if not is_testing():
+            await self.start()
         
     async def start(self):
         await self.uvicorn.start(self.app)

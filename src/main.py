@@ -19,7 +19,7 @@ from src.domain.split_node_usecase import SplitNodeUseCase
 from src.interfaces.interface import Interface
 from src.event_bus import EventBus
 from src.core.scheduling_engine import SchedulingEngine
-from src.repositories import NodeRepository
+from src.repositories import NodeRepository, CollectionRepository
 from src.services.auth.auth_service import AuthService
 from src.services.cache.pending_review_cache import PendingReviewCache
 from src.services.cleanup_service import CleanupService
@@ -44,12 +44,15 @@ if isinstance(sys.stdout, TextIOWrapper):
     sys.stdout.reconfigure(line_buffering=True)
 
 class Application():
-    def __init__(self, auth_service: AuthService | None = None):
+    def __init__(self, auth_service: AuthService | None = None, db_path: str | None = None):
         self.config_file = "config.json"
         self.config = self.load_config()
         setup_logging(self.config.log_level)
         self.bus = EventBus()
-        self.db = Db(Path(self.config.db_path))
+        if db_path: # to overwrite path during tests
+            self.db = Db(Path(db_path))
+        else:
+            self.db = Db(Path(self.config.db_path))
         self.app_infos = AppInfos()
 
         print(f"Running Mycel {self.app_infos.version}")
@@ -75,7 +78,9 @@ class Application():
         fragment_service = FragmentService(node_service, node_format_service, create_fragment_usecase)
         spore_service = SporeService(node_service, node_format_service, create_node_usecase)
 
-        collection_service = CollectionService(self.db)
+        collection_repository = CollectionRepository(self.db)
+        
+        collection_service = CollectionService(collection_repository)
         fsrs_service = FsrsService(collection_service, node_service)
 
         node_view_builder = NodeViewBuilder(node_service, priority_service)
@@ -96,7 +101,7 @@ class Application():
 
         self.cleanup_service = CleanupService(node_service, collection_service, user_service)
         
-        services = {
+        self.services = {
             "user_service": user_service,
             "node_service": node_service,
             "collection_service": collection_service,
@@ -108,12 +113,12 @@ class Application():
             "auth_service": auth_service,
         }
 
-        orchestrators = {
+        self.orchestrators = {
             "node_orchestrator": node_orchestrator,
             "review_orchestrator": review_orchestrator
         }
 
-        self.interface = Interface(config = self.config, bus = self.bus, app_infos = self.app_infos, services = services, orchestrators = orchestrators)
+        self.interface = Interface(config = self.config, bus = self.bus, app_infos = self.app_infos, services = self.services, orchestrators = self.orchestrators)
         
     # self.bus.subscribe("say_hello", self.say_hello)
 
