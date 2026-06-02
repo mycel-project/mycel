@@ -1,4 +1,6 @@
 from typing import Optional, Union, Any, Annotated
+from scalar_fastapi import get_scalar_api_reference
+
 import logging
 from pydantic import Field
 
@@ -350,3 +352,8 @@ class Rest(BaseInterface):
         async def update_user_conf(data: UserConfUpdate, user_id = Depends(self.get_user)):
             user = self.user_service.update_user_conf(user_id, data)
             return {"user": user}
+
+
+        @self.app.get("/scalar", include_in_schema=False)
+        async def scalar_html():
+            return get_scalar_api_reference(openapi_url="/openapi.json", title="Mon API")
