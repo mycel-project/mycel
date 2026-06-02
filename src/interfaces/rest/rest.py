@@ -144,11 +144,10 @@ class Rest(BaseInterface):
             collections = self.collection_service.get_collections(user_id)
             return {"collections": collections}
 
-        @self.app.get("/collections/{colId}", tags=["collections"])
-        async def get_collection_details(colId: int):
-            data = self.collection_service.get_collection_detailed(colId)
-            return {"details": data}
-        async def get_collection_details(colId: int, user_id = Depends(self.get_user)):
+        @self.app.get("/collections/{col_id}", tags=["collections"])
+        async def get_collection_details(col_id: int, user_id = Depends(self.get_user)):
+            data = self.collection_service.get_collection_details(col_id)
+            return {"collection_details": data}
 
         class CollectionCreate(BaseModel):
             name: str

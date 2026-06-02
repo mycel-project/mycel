@@ -111,7 +111,7 @@ class CollectionService:
             name=new_name,
         )
 
-    def get_collection_detailed(self, col_id: int) -> Optional[Collection]:
+    def get_collection_details(self, col_id: int) -> Optional[Collection]:
         collection = self._repo.get(col_id)
         return collection
 
