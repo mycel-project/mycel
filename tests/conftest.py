@@ -1,13 +1,19 @@
+import sqlite3
+from typing import cast
 from unittest.mock import Mock
 from fractional_indexing import generate_n_keys_between
 from src.db import Db
 from pathlib import Path
 import pytest
+import os
 
 import random
 import time
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 from unittest.mock import MagicMock
+from src.db.schema import init_schema
 from src.models.node_content import NodeContent
 from src.repositories import node_repository
 from src.repositories.node_repository import NodeRepository
@@ -45,15 +51,58 @@ def node_service():
     return service
 
 @pytest.fixture
-def db():
-    return Db(Path("file::memory:?cache=shared"))
+def db_fixture(tmp_path: Path) -> Db:
+    db_path = tmp_path / "test.db"
+    return Db(db_path)
+
+@pytest.fixture
+def default_user(db_fixture: Db) -> int:
+    user_id = 1
+    db_fixture.execute(
+        "INSERT OR IGNORE INTO users (id, name, created_at) VALUES (?, 'default_user', 0)",
+        (user_id,)
+    )
+    return user_id
+
+# @pytest.fixture
+# def db_fixture(tmp_path):
+#     test_db_url = os.getenv("TEST_DATABASE_URL")
+#     
+#     if test_db_url:
+#         engine = create_engine(test_db_url)
+#     else:
+#         db_path = tmp_path / "test_db.sqlite"
+#         engine = create_engine(
+#             f"sqlite:///{db_path}",
+#             connect_args={"check_same_thread": False}
+#         )
+#
+#     Base.metadata.create_all(bind=engine)
+#     TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+#     session = TestingSessionLocal()
+#     
+#     yield session
+#     
+#     session.close()
+#     Base.metadata.drop_all(bind=engine)
+
+# @pytest.fixture(autouse=True)
+# def default_user(db_fixture) -> int:
+#     from src.models.user_orm import UserORM
+#     
+#     user_id = 1
+#     db_fixture.add(UserORM(id=user_id, name="default_user", created_at=0))
+#     db_fixture.commit()
+#         
+#     return user_id
+    
 
 @pytest.fixture
 def node_repo(db):
     return NodeRepository(db)
 
 @pytest.fixture
-def col(db):
+def col(db): 
     service = CollectionService(db)
 
     col = service.create_collection("pytest", 1)
