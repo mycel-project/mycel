@@ -1,6 +1,4 @@
-from dataclasses import dataclass
+from pydantic import BaseModel, Field
 
-@dataclass
-class CollectionConfUpdate:
-    theme: str | None = None
-
+class CollectionConfUpdate(BaseModel):
+    theme: str | None = Field(default=None)
