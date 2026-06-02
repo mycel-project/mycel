@@ -26,6 +26,7 @@ from src.services.cleanup_service import CleanupService
 from src.services.collection_orchestrator import CollectionOrchestrator
 from src.services.node_format_service import NodeFormatService
 from src.services.priority_service import PriorityService
+from src.services.user_orchestrator import UserOrchestrator
 from src.sources.registry import SourceRegistry
 from src.services.node_service import NodeService
 from src.services.fsrs_service import FsrsService
@@ -70,6 +71,7 @@ class Application():
         node_service = NodeService(node_repository)
 
         user_service = UserService(self.db)
+        user_orchestrator = UserOrchestrator(user_service)
 
         scheduling_engine = SchedulingEngine(user_service)
 
@@ -117,6 +119,7 @@ class Application():
         }
 
         self.orchestrators = {
+            "user_orchestrator": user_orchestrator,
             "collection_orchestrator": collection_orchestrator,
             "node_orchestrator": node_orchestrator,
             "review_orchestrator": review_orchestrator,

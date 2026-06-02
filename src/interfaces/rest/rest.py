@@ -23,11 +23,14 @@ from src.models.collection import Collection
 from src.models.type_review_data import TypeReviewData
 from src.models.type_review_data.fragment_review_data import FragmentReviewData
 from src.models.type_review_data.spore_review_data import SporeReviewData
-from src.models.user_conf_update import UserConfUpdate
+from src.models.user import User
+from src.models.user_conf import UserConf
+from src.schemas.user_update import UserUpdate
 from src.schemas.collection_update import CollectionUpdate
 from src.schemas.collection_view import CollectionView
 from src.schemas.config_update import ConfigUpdate
 from src.schemas.node_update import NodeUpdate
+from src.schemas.user_view import UserView
 from src.services.auth.auth_service import AuthService
 from src.services.collection_orchestrator import CollectionOrchestrator
 from src.services.collection_service import CollectionService
@@ -38,6 +41,7 @@ from src.services.priority_service import PriorityService
 from src.services.review_orchestrator import ReviewOrchestrator
 from src.services.review_service import ReviewService
 from src.services.spore_service import SporeService
+from src.services.user_orchestrator import UserOrchestrator
 from src.services.user_service import UserService
 from src.types.node_type import NodeType
 from src.utils.env import is_testing
@@ -74,6 +78,7 @@ class Rest(BaseInterface):
         self.collection_service: CollectionService = services["collection_service"]
         self.review_service: ReviewService = services["review_service"]
         self.priority_service: PriorityService = services["priority_service"]
+        self.user_orchestrator: UserOrchestrator = orchestrators["user_orchestrator"]
         self.collection_orchestrator: CollectionOrchestrator = orchestrators["collection_orchestrator"]
         self.node_orchestrator: NodeOrchestrator = orchestrators["node_orchestrator"]
         self.review_orchestrator: ReviewOrchestrator = orchestrators["review_orchestrator"]
@@ -148,11 +153,29 @@ class Rest(BaseInterface):
             Get cloze regex used to manipulate cloze field of spores.
             """
             return ClozeRegex(regex=CLOZE_REGEX)
+
+        @self.app.get("/schemas/user-settings", tags=["system"])
+        async def get_user_settings_schema() -> ApiResponse[dict]:
+            return ApiResponse(data=UserConf.model_json_schema())
         
-        @self.app.get("/users/settings/schema")
-        async def user_config_schema():
-            schema = self.user_service.get_user_config_schema()
-            return {"schema": schema}        
+        # USERS
+
+        class UserCreateRequest(BaseModel):
+            name: str
+        @self.app.post("/users", tags=["users"])
+        async def create_user(data: UserCreateRequest) -> ApiResponse[UserView]:
+            user = self.user_orchestrator.create_user(data.name)
+            return ApiResponse(data=user)
+
+        @self.app.get("/users/{user_id}", tags=["users"])
+        async def get_user_details(user_id: int, _ = Depends(self.get_user)) -> ApiResponse[User]:
+            return ApiResponse(data=self.user_service.get_user(user_id))
+
+        @self.app.patch("/users/{user_id}", tags=["users"])
+        async def update_user(user_id: int, data: UserUpdate, _ = Depends(self.get_user)) -> ApiResponse[UserView]:
+            user = self.user_orchestrator.update_user(user_id, data)
+            return ApiResponse(data=user)
+
 
         # COLLECTIONS
 
@@ -342,20 +365,6 @@ class Rest(BaseInterface):
         async def get_next_review(col_id: int, tz_offset: int = 0, user_id = Depends(self.get_user)):
             node = self.review_orchestrator.get_next_review(col_id, tz_offset)
             return {"node": node}
-
-        @self.app.get("/users", tags=["users"])
-        async def list_users(request: Request, user_id = Depends(self.get_user)):               
-            return {"users": users}
-        
-        @self.app.get("/users/me")
-        async def get_current_user(user_id = Depends(self.get_user)):
-            return {"user": user_id}
-
-        @self.app.patch("/users/me/settings")
-        async def update_user_conf(data: UserConfUpdate, user_id = Depends(self.get_user)):
-            user = self.user_service.update_user_conf(user_id, data)
-            return {"user": user}
-
 
         @self.app.get("/scalar", include_in_schema=False)
         async def scalar_html():

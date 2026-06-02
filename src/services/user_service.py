@@ -5,9 +5,10 @@ from src.db import Db
 from src.domain.domain_exceptions import NoUserFound
 from src.models.user import User
 from src.models.user_conf import UserConf
-from src.models.user_conf_update import UserConfUpdate
-from src.models.user_update import UserUpdate
+from src.schemas.user_conf_update import UserConfUpdate
+from src.schemas.user_update import UserUpdate
 from src.repositories.user_repository import UserRepository
+from src.schemas.user_view import UserView
 
 
 class UserService:
@@ -62,32 +63,22 @@ class UserService:
         self.get_user(user_id)
         self._repo.delete(user_id)
 
-    def update_user_conf(self, user_id: int, conf_update: UserConfUpdate) -> User:
-        user = self.get_user(user_id)
-        updated_data = user.conf.model_dump()
-        for field, value in conf_update:
-            if value is not None:
-                updated_data[field] = value
-        user.conf = UserConf(**updated_data)
-        self._repo.update(user)
-        return user
-    
-    def rename_user(self, user_id: int, new_name: str) -> User:
-        return self.update_user(
-            user_id,
-            UserUpdate(
-                name=new_name
-            )
+    def to_view(self, user: User) -> UserView:
+        return UserView(
+            id=user.id,
+            name=user.name,
+            conf=user.conf
         )
 
-    def update_user(self, user_id: int, updates: UserUpdate) -> User:
+    def to_views(self, users: list[User]) -> list[UserView]:
+        return [self.to_view(c) for c in users]
+
+    def update(self, user_id: int, updates: UserUpdate) -> User:
         user = self.get_user(user_id)
-        for field, value in updates:
-            if value is not None:
-                setattr(user, field, value)
+
+        for field in updates.model_fields_set: 
+            value = getattr(updates, field)
+            setattr(user, field, value)
+            
         self._repo.update(user)
         return user
-
-    def get_user_config_schema(self):
-        return UserConf.model_json_schema()
-        
