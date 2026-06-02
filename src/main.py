@@ -1,5 +1,7 @@
 import asyncio
 import json
+import sys
+from io import TextIOWrapper
 
 from pathlib import Path
 
@@ -38,7 +40,8 @@ from src.services.node_view_builder import NodeViewBuilder
 import logging
 
 logger = logging.getLogger(__name__)
-
+if isinstance(sys.stdout, TextIOWrapper):
+    sys.stdout.reconfigure(line_buffering=True)
 
 class Application():
     def __init__(self, auth_service: AuthService | None = None):
