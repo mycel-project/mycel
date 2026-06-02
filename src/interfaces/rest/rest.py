@@ -24,6 +24,7 @@ from src.models.type_review_data import TypeReviewData
 from src.models.type_review_data.fragment_review_data import FragmentReviewData
 from src.models.type_review_data.spore_review_data import SporeReviewData
 from src.models.user_conf_update import UserConfUpdate
+from src.schemas.collection_update import CollectionUpdate
 from src.schemas.collection_view import CollectionView
 from src.schemas.config_update import ConfigUpdate
 from src.schemas.node_update import NodeUpdate
@@ -40,6 +41,12 @@ from src.services.spore_service import SporeService
 from src.services.user_service import UserService
 from src.types.node_type import NodeType
 from src.utils.env import is_testing
+
+from typing import Generic, TypeVar
+T = TypeVar("T")
+
+class ApiResponse(BaseModel, Generic[T]):
+    data: T
 
 logger = logging.getLogger(__name__)
 
@@ -148,40 +155,36 @@ class Rest(BaseInterface):
             return {"schema": schema}        
 
         # COLLECTIONS
-        
+
         @self.app.get("/collections", tags=["collections"])
-        async def list_collections(user_id = Depends(self.get_user)):
-            collections = self.collection_service.get_collections(user_id)
-            return {"collections": collections}
+        async def list_collections(user_id = Depends(self.get_user)) -> ApiResponse[list[CollectionView]]:
+            collections = self.collection_orchestrator.get_collections(user_id)
+            return ApiResponse(data=collections)
 
         @self.app.get("/collections/{col_id}", tags=["collections"])
-        async def get_collection_details(col_id: int, user_id = Depends(self.get_user)):
-            data = self.collection_service.get_collection_details(col_id)
-            return {"collection_details": data}
+        async def get_collection_details(col_id: int, user_id = Depends(self.get_user)) -> ApiResponse[Collection]:
+            collection = self.collection_service.get_collection(col_id)
+            return ApiResponse(data=collection)
 
-        class CollectionCreate(BaseModel):
+        class CollectionCreateRequest(BaseModel):
             name: str
         @self.app.post("/collections", tags=["collections"])
-        async def create_collection(data: CollectionCreate, user_id = Depends(self.get_user)):
-            collection = self.collection_service.create_collection(data.name, user_id)
-            return {"collection": CollectionListView.model_validate(collection)}
+        async def create_collection(data: CollectionCreateRequest, user_id = Depends(self.get_user)) -> ApiResponse[CollectionView]:
+            collection = self.collection_orchestrator.create_collection(data.name, user_id)
+            return ApiResponse(data=collection)
 
         @self.app.delete("/collections/{collection_id}", status_code = 204, tags=["collections"])
         async def delete_collection(collection_id: int, user_id = Depends(self.get_user)):
             self.collection_service.delete_collection(collection_id)
 
-        class CollectionUpdate(BaseModel):
-            newName: str | None = None
-            config: ConfigUpdate | None = None # We could be more precise here with a schema
         @self.app.patch("/collections/{col_id}", tags=["collections"])
-        async def update_collections(col_id: int,  data: CollectionUpdate, user_id = Depends(self.get_user)):
-            if data.newName is not None:
-                self.collection_service.rename_collection(col_id, data.newName)
-            if data.config is not None:
-                self.collection_service.update_configs(col_id, data.config)
-            return {"status": "ok"}
+        async def update_collection(col_id: int, data: CollectionUpdate, user_id = Depends(self.get_user)) -> ApiResponse[CollectionView]:
+            collection = self.collection_orchestrator.update_collection(col_id, data)
+            return ApiResponse(data=collection)
 
-        @self.app.get("/collections/{col_id}/nodes", tags=["collections"])
+        # NODES
+
+        @self.app.get("/collections/{col_id}/nodes")
         async def get_nodes(col_id: int, user_id = Depends(self.get_user)):
             nodes = self.node_orchestrator.get_nodes_view(col_id, 10000)
             return {"nodes": nodes}
