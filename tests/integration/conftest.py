@@ -4,6 +4,7 @@ import tempfile
 import pytest
 
 from src.main import Application
+from src.types.node_type import NodeType
 
 def generate_token():
     return 1
@@ -65,3 +66,22 @@ def create_col(col_service):
     def _create_col(name="TestCol", user_id=1):
         return col_service.create_collection(user_id=user_id, name=name)
     return _create_col
+
+@pytest.fixture()
+def node_service(app):
+    return app.services["node_service"]
+
+@pytest.fixture()
+def create_node_use_case(app):
+    return app.create_node_usecase
+
+@pytest.fixture
+def create_node(create_node_use_case):
+    def _create_node(col_id, type=NodeType.FRAGMENT, content="Test content", parent_id=None):
+        return create_node_use_case.execute(
+            collection_id=col_id,
+            type=type,
+            content=content,
+            parent_id=parent_id,
+        )
+    return _create_node

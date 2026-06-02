@@ -75,11 +75,11 @@ class Application():
 
         scheduling_engine = SchedulingEngine(user_service)
 
-        create_node_usecase = CreateNodeUseCase(node_service, priority_service)
-        create_fragment_usecase = CreateFragmentUseCase(node_service, scheduling_engine, create_node_usecase)
+        self.create_node_usecase = CreateNodeUseCase(node_service, priority_service)
+        create_fragment_usecase = CreateFragmentUseCase(node_service, scheduling_engine, self.create_node_usecase)
 
         fragment_service = FragmentService(node_service, node_format_service, create_fragment_usecase)
-        spore_service = SporeService(node_service, node_format_service, create_node_usecase)
+        spore_service = SporeService(node_service, node_format_service, self.create_node_usecase)
 
         collection_repository = CollectionRepository(self.db)
         

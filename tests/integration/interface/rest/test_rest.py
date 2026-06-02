@@ -18,6 +18,7 @@ class TestUser:
         assert response.status_code == 200
         assert response.json()["data"]["name"] == "new name"
 
+        
 class TestCollection:
     def test_list_collections(self, api, create_user, create_col):
         user = create_user()
@@ -50,3 +51,46 @@ class TestCollection:
         col = create_col(user_id=user.id)
         response = api.delete(f"/collections/{col.id}")
         assert response.status_code == 204
+
+
+class TestNode:
+    def test_list_nodes(self, api, create_user, create_col, create_node):
+        user = create_user()
+        col = create_col(user_id=user.id)
+        create_node(col_id=col.id)
+        response = api.get(f"/collections/{col.id}/nodes")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["data"]) >= 1
+
+    def test_get_node(self, api, create_user, create_col, create_node):
+        user = create_user()
+        col = create_col(user_id=user.id)
+        node = create_node(col_id=col.id)
+        response = api.get(f"/collections/{col.id}/nodes/{node.id}")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["data"]["id"] == node.id
+
+    def test_create_node(self, api, create_user, create_col):
+        user = create_user()
+        col = create_col(user_id=user.id)
+        response = api.post(f"/collections/{col.id}/nodes", body={"type": "url", "url": "https://example.com"})
+        assert response.status_code == 200
+        assert response.json()["data"]["collection_id"] == col.id
+
+    def test_update_node(self, api, create_user, create_col, create_node):
+        user = create_user()
+        col = create_col(user_id=user.id)
+        node = create_node(col_id=col.id)
+        response = api.patch(f"/collections/{col.id}/nodes/{node.id}", body={"due": 9999999999})
+        assert response.status_code == 200
+        assert response.json()["data"]["due"] == 9999999999
+        
+    def test_delete_node(self, api, create_user, create_col, create_node):
+        user = create_user()
+        col = create_col(user_id=user.id)
+        node = create_node(col_id=col.id)
+        response = api.delete(f"/collections/{col.id}/nodes/{node.id}")
+        assert response.status_code == 200
+        assert node.id in response.json()["data"]["deleted_ids"]
