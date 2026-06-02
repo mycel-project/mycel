@@ -22,3 +22,19 @@ class Db:
     def fetch_all(self, query: str, params: tuple | dict = ()) -> list[Any]:
         with get_connection(self.db_path) as con:
             return con.execute(query, params).fetchall()
+
+    def clear_all(self):
+            if "test" not in str(self.db_path).lower():
+                raise PermissionError("Safety check failed: clear_all can only be run on test databases.")
+
+            tables = self.fetch_all(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
+            )
+
+            with get_connection(self.db_path) as con:
+                con.execute("PRAGMA foreign_keys = OFF")
+                for table in tables:
+                    table_name = table[0]
+                    con.execute(f"DELETE FROM {table_name}")
+                con.execute("PRAGMA foreign_keys = ON")
+                con.commit()

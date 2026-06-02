@@ -1,6 +1,8 @@
+import asyncio
 import sqlite3
 from typing import cast
 from unittest.mock import Mock
+from fastapi.testclient import TestClient
 from fractional_indexing import generate_n_keys_between
 from src.db import Db
 from pathlib import Path
@@ -14,8 +16,10 @@ from sqlalchemy.orm import sessionmaker
 
 from unittest.mock import MagicMock
 from src.db.schema import init_schema
+from src.main import Application
 from src.models.node_content import NodeContent
 from src.repositories import node_repository
+from src.repositories.collection_repository import CollectionRepository
 from src.repositories.node_repository import NodeRepository
 from src.services.collection_service import CollectionService
 from src.services.node_service import NodeService
@@ -31,9 +35,14 @@ def generate_id():
     return _make_id
 
 @pytest.fixture
-def db_fixture(tmp_path: Path) -> Db:
+def db_fixture(tmp_path: Path):
+    # for unit tests
     db_path = tmp_path / "test.db"
-    return Db(db_path)
+    db = Db(db_path)
+    yield db 
+    
+    if db_path.exists():
+        os.remove(db_path)
 
 # default object
 @pytest.fixture
@@ -49,7 +58,7 @@ def default_user(db_fixture: Db, generate_id):
 def default_collection(db_fixture, default_user, generate_id):
     col_id = generate_id()
     db_fixture.execute(
-        "INSERT INTO collections (id, user_id, name, created_at, updated_at) VALUES (?, ?, 'Test Col', 0, 0)",
+        "INSERT INTO collections (id, user_id, name, created_at, updated_at) VALUES (?, ?, 'Test', 0, 0)",
         (col_id, default_user)
     )
     return col_id
@@ -69,6 +78,9 @@ def default_node(db_fixture, default_collection, generate_id):
 def node_repo(db_fixture):
     return NodeRepository(db_fixture)
 
+@pytest.fixture
+def col_repo(db_fixture):
+    return CollectionRepository(db_fixture)
 
 # default services
 
@@ -100,6 +112,15 @@ def node_service():
     service._repo = repo
     return service
 
+@pytest.fixture
+def col_service(col_repo):
+    service = CollectionService(collection_repository=col_repo)
+    return service
+
+# FastAPI
+@pytest.fixture
+def client(app):
+    return TestClient(app.interface.interface.app)
 
 @pytest.fixture
 def nodes(db, col):

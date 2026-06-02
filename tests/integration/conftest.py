@@ -1,20 +1,27 @@
 import asyncio
-from pathlib import Path
+import os
+import tempfile
 import pytest
 
 from src.main import Application
 
 
 @pytest.fixture(scope="session")
-def app():    
-    db_path = "pytest.db"
-    app = Application(db_path=str(db_path))
+def app():
+    db_url = os.getenv("TEST_DATABASE_URL")  # ex: postgresql://user:pass@localhost/testdb
     
+    if db_url:
+        app = Application(db_path=db_url)
+    else:
+        with tempfile.NamedTemporaryFile(suffix="test.db", delete=False) as f:
+            app = Application(db_path=f.name)
+                
     asyncio.run(app.init_async())
     return app
 
 @pytest.fixture(autouse=True)
 def clean_db(app):
+    app.db.clear_all()
     yield
     app.db.clear_all()
 
@@ -27,19 +34,13 @@ def user_service(app):
     return app.services["user_service"]
 
 @pytest.fixture
-def user(user_service):
-    user_id = 1
-    try:
-        user = user_service.get_user(user_id)
-    except:
-        user = user_service.create_user(id=user_id, name="TestUser")
-    return user.id
+def create_user(user_service):
+    def _create_user(id=1, name="TestUser"):
+        return user_service.create_user(id=id, name=name)
+    return _create_user
 
 @pytest.fixture
-def col(col_service, user):
-    col_id = 102020102
-    try:
-        col = col_service.get_collection(col_id)
-    except:
-        col = col_service.create_collection(user_id=user, name="TestCol", id=col_id)
-    return col.id
+def create_col(col_service):
+    def _create_col(name="TestCol", user_id=1):
+        return col_service.create_collection(user_id=user_id, name=name)
+    return _create_col
