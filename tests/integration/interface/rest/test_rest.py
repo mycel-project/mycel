@@ -38,3 +38,15 @@ class TestCollection:
         assert response.status_code == 200
         assert response.json()["data"]["name"] == "test"
 
+    def test_update_collection(self, api, create_user, create_col):
+        user = create_user()
+        col = create_col(user_id=user.id)
+        response = api.patch(f"/collections/{col.id}", body={"name": "new name"})
+        assert response.status_code == 200
+        assert response.json()["data"]["name"] == "new name"
+
+    def test_delete_collection(self, api, create_user, create_col):
+        user = create_user()
+        col = create_col(user_id=user.id)
+        response = api.delete(f"/collections/{col.id}")
+        assert response.status_code == 204
