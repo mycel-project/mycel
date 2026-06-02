@@ -30,51 +30,51 @@ class NodeRepository:
     )
 
     def create(
-        self,
-        collection_id: int,
-        content: NodeContent,
-        data: Optional[NodeData],
-        type: NodeType,
-        position: str,
-        due: Optional[int] = None,
-        type_data: Optional[TypeData] = None,
-        parent_id: Optional[int] = None,
-    ) -> Node:
-        now = int(time.time() * 1000)
-        node = Node(
-            id=now,
-            collection_id=collection_id,
-            parent_id=parent_id,
-            created_at=now,
-            updated_at=now,
-            deleted_at=None,
-            data=data or NodeData(),
-            type_data=type_data or TYPE_DATA_MAP[type](),
-            due=due if due is not None else now,
-            content=content, 
-            position=position,
-            type=type
-        )
-        self.db.execute(
-            """INSERT INTO nodes
-               (id, collection_id, parent_id, type, created_at, updated_at, deleted_at, data, type_data, due, content, position)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
-            (
-                node.id,
-                node.collection_id,
-                node.parent_id,
-                node.type,
-                node.created_at,
-                node.updated_at,
-                node.deleted_at,
-                node.data.to_db(),
-                node.type_data.model_dump_json(),
-                node.due,
-                node.content.to_db(),  
-                node.position,
-            ),
-        )
-        return node
+            self,
+            collection_id: int,
+            content: NodeContent,
+            type: NodeType,
+            position: str,
+            data: Optional[NodeData] = None,
+            due: Optional[int] = None,
+            type_data: Optional[TypeData] = None,
+            parent_id: Optional[int] = None,
+        ) -> Node:
+            now = int(time.time() * 1000)
+            node = Node(
+                id=now,
+                collection_id=collection_id,
+                parent_id=parent_id,
+                created_at=now,
+                updated_at=now,
+                deleted_at=None,
+                data=data or NodeData(),
+                type_data=type_data or TYPE_DATA_MAP[type](),
+                due=due if due is not None else now,
+                content=content, 
+                position=position,
+                type=type
+            )
+            self.db.execute(
+                """INSERT INTO nodes
+                   (id, collection_id, parent_id, type, created_at, updated_at, deleted_at, data, type_data, due, content, position)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (
+                    node.id,
+                    node.collection_id,
+                    node.parent_id,
+                    node.type,
+                    node.created_at,
+                    node.updated_at,
+                    node.deleted_at,
+                    node.data.to_db(),
+                    node.type_data.model_dump_json(),
+                    node.due,
+                    node.content.to_db(),  
+                    node.position,
+                ),
+            )
+            return node
     
     def get(self, id: int) -> Optional[Node]:
         row = self.db.fetch_one("SELECT * FROM nodes WHERE id = ?", (id,))
