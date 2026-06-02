@@ -8,3 +8,4 @@ class UserView(BaseModel):
     id: int
     name: str
     conf: UserConf
+    created_at: int

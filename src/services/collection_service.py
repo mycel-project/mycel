@@ -61,6 +61,9 @@ class CollectionService:
         return CollectionView(
             id=collection.id,
             name=collection.name,
+            conf=collection.conf,
+            fsrsconf=collection.fsrsconf,
+            created_at=collection.created_at,
         )
 
     def to_views(self, collections: list[Collection]) -> list[CollectionView]:

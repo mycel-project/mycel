@@ -168,14 +168,13 @@ class Rest(BaseInterface):
             return ApiResponse(data=user)
 
         @self.app.get("/users/{user_id}", tags=["users"])
-        async def get_user_details(user_id: int, _ = Depends(self.get_user)) -> ApiResponse[User]:
-            return ApiResponse(data=self.user_service.get_user(user_id))
+        async def get_user(user_id: int, _ = Depends(self.get_user)) -> ApiResponse[UserView]:
+            return ApiResponse(data=self.user_orchestrator.get_user(user_id))
 
         @self.app.patch("/users/{user_id}", tags=["users"])
         async def update_user(user_id: int, data: UserUpdate, _ = Depends(self.get_user)) -> ApiResponse[UserView]:
             user = self.user_orchestrator.update_user(user_id, data)
             return ApiResponse(data=user)
-
 
         # COLLECTIONS
 
@@ -183,11 +182,6 @@ class Rest(BaseInterface):
         async def list_collections(user_id = Depends(self.get_user)) -> ApiResponse[list[CollectionView]]:
             collections = self.collection_orchestrator.get_collections(user_id)
             return ApiResponse(data=collections)
-
-        @self.app.get("/collections/{col_id}", tags=["collections"])
-        async def get_collection_details(col_id: int, user_id = Depends(self.get_user)) -> ApiResponse[Collection]:
-            collection = self.collection_service.get_collection(col_id)
-            return ApiResponse(data=collection)
 
         class CollectionCreateRequest(BaseModel):
             name: str
