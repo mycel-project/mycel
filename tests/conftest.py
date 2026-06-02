@@ -22,6 +22,56 @@ from src.services.node_service import NodeService
 from src.services.review_service import ReviewService
 from src.types.node_type import NodeType
 
+# Can use int or str
+@pytest.fixture
+def generate_id():
+    def _make_id():
+        time.sleep(0.001)
+        return int(time.time() * 1000)
+    return _make_id
+
+@pytest.fixture
+def db_fixture(tmp_path: Path) -> Db:
+    db_path = tmp_path / "test.db"
+    return Db(db_path)
+
+# default object
+@pytest.fixture
+def default_user(db_fixture: Db, generate_id):
+    user_id = generate_id()
+    db_fixture.execute(
+        "INSERT OR IGNORE INTO users (id, name, created_at) VALUES (?, 'default_user', 0)",
+        (user_id,)
+    )
+    return user_id
+
+@pytest.fixture
+def default_collection(db_fixture, default_user, generate_id):
+    col_id = generate_id()
+    db_fixture.execute(
+        "INSERT INTO collections (id, user_id, name, created_at, updated_at) VALUES (?, ?, 'Test Col', 0, 0)",
+        (col_id, default_user)
+    )
+    return col_id
+
+@pytest.fixture
+def default_node(db_fixture, default_collection, generate_id):
+    node_id = generate_id()
+    node_type = list(NodeType)[0]
+    db_fixture.execute(
+        "INSERT INTO nodes (id, collection_id, type, created_at, updated_at, due) VALUES (?, ?, ?, 0, 0, 0)",
+        (node_id, default_collection, node_type.value)
+    )
+    return node_id, node_type
+
+# default repos
+@pytest.fixture
+def node_repo(db_fixture):
+    return NodeRepository(db_fixture)
+
+
+# default services
+
 @pytest.fixture
 def review_service():
     db = Mock()
@@ -50,64 +100,6 @@ def node_service():
     service._repo = repo
     return service
 
-@pytest.fixture
-def db_fixture(tmp_path: Path) -> Db:
-    db_path = tmp_path / "test.db"
-    return Db(db_path)
-
-@pytest.fixture
-def default_user(db_fixture: Db) -> int:
-    user_id = 1
-    db_fixture.execute(
-        "INSERT OR IGNORE INTO users (id, name, created_at) VALUES (?, 'default_user', 0)",
-        (user_id,)
-    )
-    return user_id
-
-# @pytest.fixture
-# def db_fixture(tmp_path):
-#     test_db_url = os.getenv("TEST_DATABASE_URL")
-#     
-#     if test_db_url:
-#         engine = create_engine(test_db_url)
-#     else:
-#         db_path = tmp_path / "test_db.sqlite"
-#         engine = create_engine(
-#             f"sqlite:///{db_path}",
-#             connect_args={"check_same_thread": False}
-#         )
-#
-#     Base.metadata.create_all(bind=engine)
-#     TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-#     session = TestingSessionLocal()
-#     
-#     yield session
-#     
-#     session.close()
-#     Base.metadata.drop_all(bind=engine)
-
-# @pytest.fixture(autouse=True)
-# def default_user(db_fixture) -> int:
-#     from src.models.user_orm import UserORM
-#     
-#     user_id = 1
-#     db_fixture.add(UserORM(id=user_id, name="default_user", created_at=0))
-#     db_fixture.commit()
-#         
-#     return user_id
-    
-
-@pytest.fixture
-def node_repo(db):
-    return NodeRepository(db)
-
-@pytest.fixture
-def col(db): 
-    service = CollectionService(db)
-
-    col = service.create_collection("pytest", 1)
-
-    return col  
 
 @pytest.fixture
 def nodes(db, col):
@@ -216,3 +208,37 @@ def nodes(db, col):
         repo.update(node)
 
     return repo.get_by_collection(col.id)
+
+
+# @pytest.fixture
+# def db_fixture(tmp_path):
+#     test_db_url = os.getenv("TEST_DATABASE_URL")
+#     
+#     if test_db_url:
+#         engine = create_engine(test_db_url)
+#     else:
+#         db_path = tmp_path / "test_db.sqlite"
+#         engine = create_engine(
+#             f"sqlite:///{db_path}",
+#             connect_args={"check_same_thread": False}
+#         )
+#
+#     Base.metadata.create_all(bind=engine)
+#     TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+#     session = TestingSessionLocal()
+#     
+#     yield session
+#     
+#     session.close()
+#     Base.metadata.drop_all(bind=engine)
+
+# @pytest.fixture(autouse=True)
+# def default_user(db_fixture) -> int:
+#     from src.models.user_orm import UserORM
+#     
+#     user_id = 1
+#     db_fixture.add(UserORM(id=user_id, name="default_user", created_at=0))
+#     db_fixture.commit()
+#         
+#     return user_id
+    
