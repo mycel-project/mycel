@@ -77,7 +77,7 @@ class Rest(BaseInterface):
         if self.uvicorn.active:
             await self.uvicorn.stop()
 
-    async def get_current_user_id(self, request: Request) -> str:
+    async def get_user(self, request: Request) -> str:
         if self.config.deployment_mode == DeploymentMode.CLOUD:
             assert self.auth_service != None
             return await self.auth_service.get_user_id(request.headers.get("Authorization", "")) # For now MycelCloud is single user.
@@ -140,31 +140,32 @@ class Rest(BaseInterface):
         # COLLECTIONS
         
         @self.app.get("/collections", tags=["collections"])
-        async def list_collections():
-            collections = self.collection_service.get_collections(1)
+        async def list_collections(user_id = Depends(self.get_user)):
+            collections = self.collection_service.get_collections(user_id)
             return {"collections": collections}
 
         @self.app.get("/collections/{colId}", tags=["collections"])
         async def get_collection_details(colId: int):
             data = self.collection_service.get_collection_detailed(colId)
             return {"details": data}
+        async def get_collection_details(colId: int, user_id = Depends(self.get_user)):
 
         class CollectionCreate(BaseModel):
             name: str
         @self.app.post("/collections", tags=["collections"])
-        async def create_collection(data: CollectionCreate):
-            collection = self.collection_service.create_collection(data.name, 1)
+        async def create_collection(data: CollectionCreate, user_id = Depends(self.get_user)):
+            collection = self.collection_service.create_collection(data.name, user_id)
             return {"collection": CollectionListView.model_validate(collection)}
 
         @self.app.delete("/collections/{collection_id}", status_code = 204, tags=["collections"])
-        async def delete_collection(collection_id: int):
+        async def delete_collection(collection_id: int, user_id = Depends(self.get_user)):
             self.collection_service.delete_collection(collection_id)
 
         class CollectionUpdate(BaseModel):
             newName: str | None = None
             config: ConfigUpdate | None = None # We could be more precise here with a schema
         @self.app.patch("/collections/{col_id}", tags=["collections"])
-        async def update_collections(col_id: int,  data: CollectionUpdate):
+        async def update_collections(col_id: int,  data: CollectionUpdate, user_id = Depends(self.get_user)):
             if data.newName is not None:
                 self.collection_service.rename_collection(col_id, data.newName)
             if data.config is not None:
@@ -172,30 +173,28 @@ class Rest(BaseInterface):
             return {"status": "ok"}
 
         @self.app.get("/collections/{col_id}/nodes", tags=["collections"])
-        async def get_nodes(col_id: int):
+        async def get_nodes(col_id: int, user_id = Depends(self.get_user)):
             nodes = self.node_orchestrator.get_nodes_view(col_id, 10000)
             return {"nodes": nodes}
 
-        
-
         @self.app.get("/collections/{col_id}/nodes/priorities")
-        async def get_priorities(col_id: int):
+        async def get_priorities(col_id: int, user_id = Depends(self.get_user)):
             # This route is important because adding or modifying a node's priority on the frontend invalidates other priorities, as priority is a relative value. It allows quickly refreshing all node priorities in a collection.
             priorities = self.node_orchestrator.get_priorities(col_id)
             return {"priorities": priorities}
 
         @self.app.get("/collections/{col_id}/nodes/deleted")
-        async def get_deleted_nodes(col_id: int):
+        async def get_deleted_nodes(col_id: int, user_id = Depends(self.get_user)):
             nodes = self.node_service.get_deleted_nodes_view(col_id)
             return {"nodes": nodes}
 
         @self.app.get("/collections/{col_id}/nodes/{node_id}")
-        async def get_node(col_id: int, node_id: int):
+        async def get_node(col_id: int, node_id: int, user_id = Depends(self.get_user)):
             node = self.node_orchestrator.get_node_view(node_id)
             return {"node": node}
 
         @self.app.get("/collections/{col_id}/nodes/{node_id}/root")
-        async def get_root_node(col_id: int, node_id: int):
+        async def get_root_node(col_id: int, node_id: int, user_id = Depends(self.get_user)):
             """
             For convenience
             Get the highest parent node for the given node_id.
@@ -206,21 +205,21 @@ class Rest(BaseInterface):
             return {"node": node}
         
         @self.app.post("/collections/{col_id}/nodes/{node_id}/split")
-        async def split_node(col_id: int, node_id: int, level: int, tz_offset: int = 0):
+        async def split_node(col_id: int, node_id: int, level: int, tz_offset: int = 0, user_id = Depends(self.get_user)):
             nodes = self.node_orchestrator.split_node_to_views(col_id, node_id, tz_offset, level)
             return {"nodes": nodes}
 
         @self.app.get("/collections/{col_id}/nodes/{node_id}/outline")
-        async def get_outline_node(col_id: int, node_id: int):
+        async def get_outline_node(col_id: int, node_id: int, user_id = Depends(self.get_user)):
             outline = self.node_orchestrator.get_outline_for_node(col_id, node_id)
             return {"outline": outline}
  
         @self.app.get("/collections/{col_id}/nodes/{node_id}")
-        async def get_node_metrics(col_id: int, node_id: int):
+        async def get_node_metrics(col_id: int, node_id: int, user_id = Depends(self.get_user)):
             return self.node_service.get_node_metrics(node_id)
 
         @self.app.delete("/collections/{col_id}/nodes/{node_id}")
-        async def delete_node(col_id: int, node_id: int):
+        async def delete_node(col_id: int, node_id: int, user_id = Depends(self.get_user)):
             """Deletes the node and its entire subtree."""
             deleted_ids = self.node_service.soft_delete_subtree(node_id)
             return {"deleted_ids": deleted_ids}
@@ -230,7 +229,7 @@ class Rest(BaseInterface):
             date: str       # "2026-05-20"
             tz_offset: int  # minutes
         @self.app.post("/collections/{col_id}/nodes/{node_id}/reschedule")
-        async def reschedule_node(col_id: int, node_id: int, data: RescheduleNodeRequest):
+        async def reschedule_node(col_id: int, node_id: int, data: RescheduleNodeRequest, user_id = Depends(self.get_user)):
             node = self.node_orchestrator.reschedule_node_to_view(col_id, node_id, data.date, data.tz_offset)
             return {"node": node}
 
@@ -238,7 +237,7 @@ class Rest(BaseInterface):
             restore_ancestors: bool = False
             restore_descendants: bool = False
         @self.app.post("/collections/{col_id}/nodes/{node_id}/restore")
-        async def restore_nodes(col_id: int, node_id: int, body: RestoreNodeRequest):
+        async def restore_nodes(col_id: int, node_id: int, body: RestoreNodeRequest, user_id = Depends(self.get_user)):
             """Restore a node, optionally including its parents and/or children."""
             nodes = self.node_orchestrator.restore_nodes_to_views(
                 node_id,
@@ -255,19 +254,19 @@ class Rest(BaseInterface):
             extract_type: NodeType
             tz_offset: int = 0
         @self.app.post("/collections/{col_id}/nodes/{node_id}/extracts")
-        async def create_node_extract(col_id: int, node_id: int, data: NodeExtract):
+        async def create_node_extract(col_id: int, node_id: int, data: NodeExtract, user_id = Depends(self.get_user)):
             extract_result = self.node_orchestrator.create_extract(col_id, data.extract_type, node_id, data.text, data.field, data.start_index, data.end_index, data.tz_offset)
             return extract_result.model_dump()
             
         @self.app.post("/collections/{col_id}/nodes")
-        async def create_node(col_id: int, data: NodeCreate, tz_offset: int = 0):
+        async def create_node(col_id: int, data: NodeCreate, tz_offset: int = 0, user_id = Depends(self.get_user)):
             node = self.node_orchestrator.create_node_to_view(col_id, data, tz_offset) 
             return {"node": node}
 
         class ReprioritiseNode(BaseModel):
             priority: float 
         @self.app.post("/collections/{col_id}/nodes/{node_id}/reprioritise")
-        async def reprioritise_node(col_id: int, node_id: int, data: ReprioritiseNode):
+        async def reprioritise_node(col_id: int, node_id: int, data: ReprioritiseNode, user_id = Depends(self.get_user)):
             node = self.node_orchestrator.reprioritise_node_to_view(
                 col_id,
                 node_id,
@@ -275,7 +274,7 @@ class Rest(BaseInterface):
             return {"node": node}
 
         @self.app.patch("/collections/{col_id}/nodes/{node_id}")
-        async def update_node(col_id: int, node_id: int, data: NodeUpdate):
+        async def update_node(col_id: int, node_id: int, data: NodeUpdate, user_id = Depends(self.get_user)):
             updated_node = self.node_orchestrator.update_node_to_view(
                 node_id,
                 data
@@ -288,7 +287,7 @@ class Rest(BaseInterface):
             start_index: int
             end_index: int
         @self.app.post("/collections/{col_id}/nodes/{node_id}/remove-links")
-        async def remove_links(col_id: int, node_id: int, data: SelectionData):
+        async def remove_links(col_id: int, node_id: int, data: SelectionData, user_id = Depends(self.get_user)):
             node = self.node_orchestrator.remove_links_to_view(col_id, node_id, data.text, data.field, data.start_index, data.end_index)
             return {"node": node}
 
@@ -303,17 +302,17 @@ class Rest(BaseInterface):
             type_review_data: TypeReviewData # data specific to node type
             tz_offset: int = 0
         @self.app.post("/collections/{col_id}/nodes/{node_id}/spore-review")
-        async def review_spore(col_id: int, node_id: int, data: ReviewData):
+        async def review_spore(col_id: int, node_id: int, data: ReviewData, user_id = Depends(self.get_user)):
             node = self.review_orchestrator.review_to_view(col_id, node_id, data.duration, data.type_review_data, tz_offset_min=data.tz_offset)
             return {"node": node}
 
         @self.app.post("/collections/{col_id}/nodes/{node_id}/fragment-review")
-        async def review_fragment(col_id: int, node_id: int, data: ReviewData):
+        async def review_fragment(col_id: int, node_id: int, data: ReviewData, user_id = Depends(self.get_user)):
             node = self.review_orchestrator.review_to_view(col_id, node_id, data.duration, data.type_review_data, tz_offset_min=data.tz_offset)
             return {"node": node}
 
         @self.app.get("/collections/{col_id}/reviews/calendar")
-        async def get_calendar(col_id: int, tz_offset: int = 0):
+        async def get_calendar(col_id: int, tz_offset: int = 0, user_id = Depends(self.get_user)):
             # Goal : ?start=2025-01-01&end=2025-05-31&include=reviewed,due
             calendar = self.review_orchestrator.get_calendar(
                 col_id,
@@ -323,36 +322,24 @@ class Rest(BaseInterface):
             return {"calendar": calendar}
 
         @self.app.post("/collections/{col_id}/reviews/undo")
-        async def undo_review(col_id: int):
+        async def undo_review(col_id: int, user_id = Depends(self.get_user)):
             node_from_undone_review = self.review_orchestrator.undo_review(col_id)
             return {"node": node_from_undone_review}
 
         @self.app.get("/collections/{col_id}/reviews/next")
-        async def get_next_review(col_id: int, tz_offset: int = 0):
+        async def get_next_review(col_id: int, tz_offset: int = 0, user_id = Depends(self.get_user)):
             node = self.review_orchestrator.get_next_review(col_id, tz_offset)
             return {"node": node}
 
         @self.app.get("/users", tags=["users"])
-        async def list_users(request: Request):
-            
-            if self.config.deployment_mode == DeploymentMode.CLOUD:
-                assert self.auth_service != None
-                users = await self.auth_service.get_authenticated_users(request)
-            else:
-                users = self.user_service.get_users()
-                
+        async def list_users(request: Request, user_id = Depends(self.get_user)):               
             return {"users": users}
         
         @self.app.get("/users/me")
-        async def get_current_user(user_id: str = Depends(self.get_current_user_id)):
+        async def get_current_user(user_id = Depends(self.get_user)):
             return {"user": user_id}
 
         @self.app.patch("/users/me/settings")
-        async def update_user_conf(data: UserConfUpdate):
-            user = self.user_service.update_user_conf(1, data)
+        async def update_user_conf(data: UserConfUpdate, user_id = Depends(self.get_user)):
+            user = self.user_service.update_user_conf(user_id, data)
             return {"user": user}
-
-        @self.app.get("/users/settings/schema")
-        async def user_config_schema():
-            schema = self.user_service.get_user_config_schema()
-            return {"schema": schema}        
