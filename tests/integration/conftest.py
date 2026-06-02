@@ -5,6 +5,8 @@ import pytest
 
 from src.main import Application
 
+def generate_token():
+    return 1
 
 @pytest.fixture(scope="session")
 def app():
@@ -18,6 +20,25 @@ def app():
                 
     asyncio.run(app.init_async())
     return app
+
+@pytest.fixture
+def api(client):
+    token = generate_token() 
+    
+    class Api:
+        def get(self, url, **kwargs):
+            return client.get(url, headers={"Authorization": f"Bearer {token}"}, **kwargs)
+        
+        def post(self, url, body=None, **kwargs):
+            return client.post(url, json=body, headers={"Authorization": f"Bearer {token}"}, **kwargs)
+        
+        def patch(self, url, body=None, **kwargs):
+            return client.patch(url, json=body, headers={"Authorization": f"Bearer {token}"}, **kwargs)
+        
+        def delete(self, url, **kwargs):
+            return client.delete(url, headers={"Authorization": f"Bearer {token}"}, **kwargs)
+    
+    return Api()
 
 @pytest.fixture(autouse=True)
 def clean_db(app):
