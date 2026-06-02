@@ -21,18 +21,21 @@ class UserService:
         return user
 
     def get_users(self) -> list[User]:
+        # Add logic to select multiple users and juste show them ? or in orhestrator ?
         return self._repo.list()
     
     def create_user(
         self,
         name: str,
-        user_conf: Optional[UserConf] = None
+        user_conf: Optional[UserConf] = None,
+        id: Optional[int] = None,
     ) -> User:
         if user_conf is None:
             user_conf = UserConf()
         return self._repo.create(
             name=name,
-            conf=user_conf
+            conf=user_conf,
+            id=id,
         )
 
     def get_config(

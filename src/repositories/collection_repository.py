@@ -37,9 +37,12 @@ class CollectionRepository:
         name: str,
         conf: CollectionConf,
         fsrsconf: FsrsConf,
+        id: Optional[int] = None,
     ) -> Collection:
         now = int(time.time() * 1000)
-
+        if id is None:
+            id = now
+        
         self.db.execute(
             """
             INSERT INTO collections
@@ -47,7 +50,7 @@ class CollectionRepository:
             VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
             (
-                now,
+                id,
                 user_id,
                 name,
                 now,
@@ -58,7 +61,7 @@ class CollectionRepository:
         )
 
         return Collection(
-            id=now,
+            id=id,
             user_id=user_id,
             name=name,
             created_at=now,

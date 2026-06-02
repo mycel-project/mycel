@@ -21,13 +21,15 @@ class CollectionService:
     - retrieval of collections
     - business rules related to collections lifecycle
     """
-    def __init__(self, db: Db):
-        self._repo = CollectionRepository(db)
+    def __init__(self, collection_repository: CollectionRepository):
+        self._repo = collection_repository
 
     def create_collection(
         self,
         name: str,
-        user_id: int
+        user_id: int,
+        id: Optional[int] = None,
+
     ) -> Collection:
         conf = self.create_default_collection_conf() # Can juste do conf = CollectionConf() if it has default values in model
         fsrsconf = self.create_default_fsrs_conf() # //
@@ -35,7 +37,8 @@ class CollectionService:
             user_id=user_id,
             name=name,
             conf=conf,
-            fsrsconf=fsrsconf
+            fsrsconf=fsrsconf,
+            id=id,
         )
 
     def get_collection(self, collection_id: int) -> Collection:

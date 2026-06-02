@@ -4,7 +4,6 @@ from typing import Optional
 
 from src.models.user import User
 from src.models.user_conf import UserConf
-from src.models.user_update import UserUpdate
 
 
 class UserRepository:
@@ -27,8 +26,11 @@ class UserRepository:
         self,
         name: str,
         conf: UserConf,
+        id: Optional[int] = None,
     ) -> User:
         now = int(time.time() * 1000)
+        if id is None:
+            id = now
 
         self.db.execute(
             """
@@ -36,14 +38,14 @@ class UserRepository:
             VALUES (?, ?, ?, ?)
             """,
             (
-                now,
+                id,
                 name,
                 now,
                 json.dumps(conf.model_dump()),
             ),
         )
         return User(
-            id=now,
+            id=id,
             name=name,
             created_at=now,
             conf=conf,
