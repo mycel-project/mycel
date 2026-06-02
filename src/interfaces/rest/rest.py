@@ -136,6 +136,11 @@ class Rest(BaseInterface):
             Get cloze regex used to manipulate cloze field of spores.
             """
             return ClozeRegex(regex=CLOZE_REGEX)
+        
+        @self.app.get("/users/settings/schema")
+        async def user_config_schema():
+            schema = self.user_service.get_user_config_schema()
+            return {"schema": schema}        
 
         # COLLECTIONS
         
