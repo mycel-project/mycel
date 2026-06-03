@@ -18,8 +18,10 @@ from src.domain.domain_exceptions import DomainException, Unauthorized
 from src.event_bus import EventBus
 from src.interfaces.base_interface import BaseInterface
 from src.interfaces.uvicorn import UvicornServer
+from src.models.extract_result import ExtractResult
 from src.models.node_create import NodeCreate
 from src.models.collection import Collection
+from src.models.outline import Outline
 from src.models.type_review_data import TypeReviewData
 from src.models.type_review_data.fragment_review_data import FragmentReviewData
 from src.models.type_review_data.spore_review_data import SporeReviewData
@@ -214,8 +216,8 @@ class Rest(BaseInterface):
             return ApiResponse(data=nodes)
 
         @self.app.post("/collections/{col_id}/nodes", tags=["nodes"])
-        async def create_node(col_id: int, data: NodeCreate, tz_offset: int = 0, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
-            node = self.node_orchestrator.create_node_to_detail_view(col_id, data, tz_offset)
+        async def create_node(col_id: int, data: NodeCreate, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
+            node = self.node_orchestrator.create_node_to_detail_view(col_id, data, data.tz_offset)
             return ApiResponse(data=node)
         
         @self.app.get("/collections/{col_id}/nodes/priorities", tags=["nodes"])
@@ -256,6 +258,16 @@ class Rest(BaseInterface):
             allows reaching the root without traversing multiple calls manually.
             """
             return ApiResponse(data=self.node_orchestrator.get_root_node(node_id))
+
+        @self.app.get("/collections/{col_id}/nodes/{node_id}/outline", tags=["nodes"])
+        async def get_outline_node(col_id: int, node_id: int, user_id = Depends(self.get_user)) -> ApiResponse[Outline]:
+            return ApiResponse(data=self.node_orchestrator.get_outline_for_node(col_id, node_id))
+        
+        class ReprioritiseNodeRequest(BaseModel):
+            priority: float
+        @self.app.post("/collections/{col_id}/nodes/{node_id}/reprioritise", tags=["nodes"])
+        async def reprioritise_node(col_id: int, node_id: int, data: ReprioritiseNodeRequest, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
+            return ApiResponse(data=self.node_orchestrator.reprioritise_node_to_detail_view(col_id, node_id, data.priority))
     
         class RescheduleNodeRequest(BaseModel):
             date: str       # "2026-05-20"
@@ -279,53 +291,36 @@ class Rest(BaseInterface):
                 restore_descendants=body.restore_descendants,
             ))
 
-
-
-
-        
-        @self.app.get("/collections/{col_id}/nodes/{node_id}/outline")
-        async def get_outline_node(col_id: int, node_id: int, user_id = Depends(self.get_user)):
-            outline = self.node_orchestrator.get_outline_for_node(col_id, node_id)
-            return {"outline": outline}
-
-        class NodeExtract(BaseModel):
+        class NodeExtractRequest(BaseModel):
             text: str
             field: int
             start_index: int
             end_index: int
             extract_type: NodeType
             tz_offset: int = 0
-        @self.app.post("/collections/{col_id}/nodes/{node_id}/extracts")
-        async def create_node_extract(col_id: int, node_id: int, data: NodeExtract, user_id = Depends(self.get_user)):
-            extract_result = self.node_orchestrator.create_extract(col_id, data.extract_type, node_id, data.text, data.field, data.start_index, data.end_index, data.tz_offset)
-            return extract_result.model_dump()
-
-
-        class ReprioritiseNode(BaseModel):
-            priority: float 
-        @self.app.post("/collections/{col_id}/nodes/{node_id}/reprioritise")
-        async def reprioritise_node(col_id: int, node_id: int, data: ReprioritiseNode, user_id = Depends(self.get_user)):
-            node = self.node_orchestrator.reprioritise_node_to_view(
-                col_id,
-                node_id,
-                data.priority)
-            return {"node": node}
+        @self.app.post("/collections/{col_id}/nodes/{node_id}/extracts", tags=["nodes"])
+        async def create_node_extract(col_id: int, node_id: int, data: NodeExtractRequest, user_id = Depends(self.get_user)) -> ApiResponse[ExtractResult]:
+            return ApiResponse(data=self.node_orchestrator.create_extract(
+                col_id, data.extract_type, node_id, data.text, data.field, data.start_index, data.end_index, data.tz_offset
+            ))
 
         class SelectionData(BaseModel):
             text: str
             field: int
             start_index: int
             end_index: int
-        @self.app.post("/collections/{col_id}/nodes/{node_id}/remove-links")
-        async def remove_links(col_id: int, node_id: int, data: SelectionData, user_id = Depends(self.get_user)):
-            node = self.node_orchestrator.remove_links_to_view(col_id, node_id, data.text, data.field, data.start_index, data.end_index)
-            return {"node": node}
+        @self.app.post("/collections/{col_id}/nodes/{node_id}/remove-links", tags=["nodes"])
+        async def remove_links(col_id: int, node_id: int, data: SelectionData, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
+            return ApiResponse(data=self.node_orchestrator.remove_links_to_detail_view(
+                col_id, node_id, data.text, data.field, data.start_index, data.end_index
+            ))
 
-        @self.app.post("/collections/{col_id}/nodes/{node_id}/split")
-        async def split_node(col_id: int, node_id: int, level: int, tz_offset: int = 0, user_id = Depends(self.get_user)):
-            nodes = self.node_orchestrator.split_node_to_views(col_id, node_id, tz_offset, level)
-            return {"nodes": nodes}
-
+        class SplitNodeRequest(BaseModel):
+            level: int
+            tz_offset: int = 0
+        @self.app.post("/collections/{col_id}/nodes/{node_id}/split", tags=["nodes"])
+        async def split_node(col_id: int, node_id: int, data: SplitNodeRequest, user_id = Depends(self.get_user)) -> ApiResponse[list[NodeDetailView]]:
+            return ApiResponse(data=self.node_orchestrator.split_node_to_detail_views(col_id, node_id, data.tz_offset, data.level))
 
 
 

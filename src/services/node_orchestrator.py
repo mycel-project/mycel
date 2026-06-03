@@ -85,10 +85,10 @@ class NodeOrchestrator:
     def update_node_to_detail_view(self, node_id: int, data: NodeUpdate) -> NodeDetailView:
         return self._node_view_builder.to_detail_view(self.update_node(node_id, data))
 
-    def reprioritise_node_to_view(self, collection_id: int, node_id: int, target_node_priority: float) -> NodeView:
+    def reprioritise_node_to_detail_view(self, collection_id: int, node_id: int, target_node_priority: float) -> NodeDetailView:
         self._priority_service.reprioritise_node(collection_id, node_id, target_node_priority)
         node = self._node_service.get_node(node_id)
-        return self._node_view_builder.to_view(node)
+        return self._node_view_builder.to_detail_view(node)
     
     def create_extract(self, col_id: int, extract_type: int, source_node_id: int, text: str, field: int, start_index: int, end_index: int, tz_offset_min: int) -> ExtractResult:
         source_node = self._node_service.get_node(source_node_id)
@@ -122,8 +122,8 @@ class NodeOrchestrator:
             logger.warning(f"Failed to emphasize region in parent (id {source_node_id}), but extract is valid: {e}")
         
         return ExtractResult(
-            extract_node=self._node_view_builder.to_view(extract),
-            source_node=self._node_view_builder.to_view(source),
+            extract_node=self._node_view_builder.to_detail_view(extract),
+            source_node=self._node_view_builder.to_detail_view(source),
         )
 
     def restore_nodes_to_views(
@@ -159,18 +159,18 @@ class NodeOrchestrator:
         node = self._reschedule_node_usecase.execute(col_id, node_id, local_date_iso, tz_offset_min)
         return self._node_view_builder.to_detail_view(node)
 
-    def remove_links_to_view(self, col_id: int, node_id: int, text: str, field: int, start_index: int, end_index: int) -> NodeView:
+    def remove_links_to_detail_view(self, col_id: int, node_id: int, text: str, field: int, start_index: int, end_index: int) -> NodeDetailView:
         node = self._node_service.get_node(node_id)
         self._check_text_match(node, field, start_index, end_index, text)
         node = self._node_format_service.remove_links(node, str(field), start_index, end_index, text)
         updated = self._node_service.update(node_id, NodeUpdate(content=node.content))
-        return self._node_view_builder.to_view(updated)
+        return self._node_view_builder.to_detail_view(updated)
 
     def get_outline_for_node(self, col_id: int, node_id: int) -> Outline:
         node = self._node_service.get_node(node_id)
         return self._get_outline_usecase.execute(node)
 
-    def split_node_to_views(self, col_id: int, node_id: int, tz_offset_min: int, level: int) -> list[NodeView]:
+    def split_node_to_detail_views(self, col_id: int, node_id: int, tz_offset_min: int, level: int) -> list[NodeDetailView]:
         node = self._node_service.get_node(node_id)
         content = node.content.get_first_field()
         if content is None:
@@ -179,7 +179,7 @@ class NodeOrchestrator:
         self._fragment_service.emphasize_region(node_id, NodeType.FRAGMENT, "0", 0, len(content))
         source_node = self._fragment_service.dismiss(node_id)
         nodes = children + [source_node]
-        return self._node_view_builder.to_views(nodes)
+        return self._node_view_builder.to_detail_views(nodes)
 
     def get_deleted_nodes_view(
         self,

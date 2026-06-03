@@ -1,5 +1,7 @@
 import time
 
+from src.types.node_type import NodeType
+
 class TestUser:
     def test_create_user(self, api):
         response = api.post("/users", body={"name": "test"})
@@ -148,3 +150,60 @@ class TestNode:
         response = api.post(f"/collections/{col.id}/nodes/{node.id}/restore", body={})
         assert response.status_code == 200
         assert any(n["id"] == node.id for n in response.json()["data"])
+
+    def test_reprioritise_node(self, api, create_user, create_col, create_node):
+        user = create_user()
+        col = create_col(user_id=user.id)
+        node = create_node(col_id=col.id)
+        response = api.post(f"/collections/{col.id}/nodes/{node.id}/reprioritise", body={"priority": 0.5})
+        assert response.status_code == 200
+        assert response.json()["data"]["id"] == node.id
+
+    def test_get_outline(self, api, create_user, create_col, create_node):
+        user = create_user()
+        col = create_col(user_id=user.id)
+        node = create_node(col_id=col.id)
+        response = api.get(f"/collections/{col.id}/nodes/{node.id}/outline")
+        assert response.status_code == 200
+        assert "entries" in response.json()["data"]
+
+    def test_create_extract(self, api, create_user, create_col, create_node):
+        user = create_user()
+        col = create_col(user_id=user.id)
+        node = create_node(col_id=col.id, content="Hello world")
+        response = api.post(
+            f"/collections/{col.id}/nodes/{node.id}/extracts",
+            body={
+                "text": "Hello",
+                "field": 0,
+                "start_index": 0,
+                "end_index": 5,
+                "extract_type": NodeType.FRAGMENT,
+                "tz_offset": 0,
+            }
+        )
+        assert response.status_code == 200
+        data = response.json()["data"]
+        assert "extract_node" in data
+        assert "source_node" in data
+
+    def test_remove_links(self, api, create_user, create_col, create_node):
+        user = create_user()
+        col = create_col(user_id=user.id)
+        node = create_node(col_id=col.id, content="Hello world")
+        response = api.post(
+            f"/collections/{col.id}/nodes/{node.id}/remove-links",
+            body={"text": "Hello", "field": 0, "start_index": 0, "end_index": 5}
+        )
+        assert response.status_code == 200
+        assert response.json()["data"]["id"] == node.id
+
+    def test_split_node(self, api, create_user, create_col, create_node):
+        user = create_user()
+        col = create_col(user_id=user.id)
+        node = create_node(col_id=col.id, content="# Title\n## Section")
+        response = api.post(f"/collections/{col.id}/nodes/{node.id}/split", body={"level": 1, "tz_offset": 0})
+        assert response.status_code == 200
+        data = response.json()["data"]
+        assert isinstance(data, list)
+        assert len(data) >= 1

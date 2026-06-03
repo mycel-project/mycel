@@ -24,5 +24,8 @@ class NodeViewBuilder:
             content=node.content,
         )
 
+    def to_detail_views(self, nodes: list[Node]) -> list[NodeDetailView]:
+        return [self.to_detail_view(n) for n in nodes]
+
     def to_views(self, nodes: list[Node]) -> list[NodeView]:
         return [self.to_view(n) for n in nodes]
