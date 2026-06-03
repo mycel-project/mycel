@@ -207,7 +207,7 @@ class Rest(BaseInterface):
             self.collection_service.delete_collection(col_id)
 
         @self.app.patch("/collections/{col_id}", tags=["collections"])
-        async def update_collection(col_id: int, data: CollectionUpdate, user_id = Depends(self.get_user)):
+        async def update_collection(col_id: int, data: CollectionUpdate, user_id = Depends(self.get_user)) -> ApiResponse[CollectionView]:
             collection = self.collection_orchestrator.update_collection(col_id, data)
             return ApiResponse(data=collection)
 
@@ -242,9 +242,11 @@ class Rest(BaseInterface):
             node = self.node_orchestrator.get_node_detail_view(node_id)
             return ApiResponse(data=node)
 
-        @self.app.delete("/collections/{col_id}/nodes/{node_id}", tags=["nodes"])
+        @self.app.delete("/collections/{col_id}/nodes/{node_id}", tags=["nodes"], status_code=200)
         async def delete_node(col_id: int, node_id: int, user_id = Depends(self.get_user)):
-            """Deletes the node and its entire subtree."""
+            """
+            Soft-deletes the node and its entire subtree. Returns all deleted node ids so the client can update its local state without a full refetch.
+            """
             deleted_ids = self.node_service.soft_delete_subtree(node_id)
             return ApiResponse(data={"deleted_ids": deleted_ids})
 
@@ -268,7 +270,7 @@ class Rest(BaseInterface):
         
         class ReprioritiseNodeRequest(BaseModel):
             priority: float
-        @self.app.post("/collections/{col_id}/nodes/{node_id}/reprioritise", tags=["nodes"])
+        @self.app.patch("/collections/{col_id}/nodes/{node_id}/reprioritise", tags=["nodes"])
         async def reprioritise_node(col_id: int, node_id: int, data: ReprioritiseNodeRequest, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
             return ApiResponse(data=self.node_orchestrator.reprioritise_node_to_detail_view(col_id, node_id, data.priority))
     
@@ -293,20 +295,7 @@ class Rest(BaseInterface):
                 restore_ancestors=body.restore_ancestors,
                 restore_descendants=body.restore_descendants,
             ))
-
-        class NodeExtractRequest(BaseModel):
-            text: str
-            field: int
-            start_index: int
-            end_index: int
-            extract_type: NodeType
-            tz_offset: int = 0
-        @self.app.post("/collections/{col_id}/nodes/{node_id}/extracts", tags=["nodes"])
-        async def create_node_extract(col_id: int, node_id: int, data: NodeExtractRequest, user_id = Depends(self.get_user)) -> ApiResponse[ExtractResult]:
-            return ApiResponse(data=self.node_orchestrator.create_extract(
-                col_id, data.extract_type, node_id, data.text, data.field, data.start_index, data.end_index, data.tz_offset
-            ))
-
+        
         class SelectionData(BaseModel):
             text: str
             field: int
@@ -316,6 +305,15 @@ class Rest(BaseInterface):
         async def remove_links(col_id: int, node_id: int, data: SelectionData, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
             return ApiResponse(data=self.node_orchestrator.remove_links_to_detail_view(
                 col_id, node_id, data.text, data.field, data.start_index, data.end_index
+            ))
+
+        class NodeExtractRequest(SelectionData):
+            extract_type: NodeType
+            tz_offset: int = 0
+        @self.app.post("/collections/{col_id}/nodes/{node_id}/extracts", tags=["nodes"])
+        async def create_node_extract(col_id: int, node_id: int, data: NodeExtractRequest, user_id = Depends(self.get_user)) -> ApiResponse[ExtractResult]:
+            return ApiResponse(data=self.node_orchestrator.create_extract(
+                col_id, data.extract_type, node_id, data.text, data.field, data.start_index, data.end_index, data.tz_offset
             ))
 
         class SplitNodeRequest(BaseModel):
@@ -333,6 +331,9 @@ class Rest(BaseInterface):
 
         @self.app.post("/collections/{col_id}/reviews/undo", tags=["reviews"])
         async def undo_review(col_id: int, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
+            """
+            Undo the last review. Returns the node from the undone review so the client can navigate back to it.
+            """
             return ApiResponse(data=self.review_orchestrator.undo_review(col_id))
 
         @self.app.get("/collections/{col_id}/reviews/calendar", tags=["reviews"])

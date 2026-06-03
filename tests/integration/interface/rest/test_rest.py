@@ -155,7 +155,7 @@ class TestNode:
         user = create_user()
         col = create_col(user_id=user.id)
         node = create_node(col_id=col.id)
-        response = api.post(f"/collections/{col.id}/nodes/{node.id}/reprioritise", body={"priority": 0.5})
+        response = api.patch(f"/collections/{col.id}/nodes/{node.id}/reprioritise", body={"priority": 0.5})
         assert response.status_code == 200
         assert response.json()["data"]["id"] == node.id
 
