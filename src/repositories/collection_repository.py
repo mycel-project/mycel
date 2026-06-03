@@ -5,7 +5,7 @@ from uuid import uuid4
 from src.db import Db
 from src.models.collection import Collection
 from src.models.collection_conf import CollectionConf
-from src.models.fsrs_conf import FsrsConf
+from src.models.algo_conf import AlgoConf
 
 class CollectionRepository:
     def __init__(self, db: Db):
@@ -21,22 +21,22 @@ class CollectionRepository:
             conf=CollectionConf.model_validate(
                 json.loads(row["conf"]) if isinstance(row["conf"], str) else row["conf"]
             ),
-            fsrsconf=FsrsConf.model_validate(
-                json.loads(row["fsrsconf"]) if isinstance(row["fsrsconf"], str) else row["fsrsconf"]
+            algoconf=AlgoConf.model_validate(
+                json.loads(row["algoconf"]) if isinstance(row["algoconf"], str) else row["algoconf"]
             ),
         )
 
-    def create(self, user_id: str, name: str, conf: CollectionConf, fsrsconf: FsrsConf, id: Optional[str] = None) -> Collection:
+    def create(self, user_id: str, name: str, conf: CollectionConf, algoconf: AlgoConf, id: Optional[str] = None) -> Collection:
         now = int(time.time() * 1000)
         if id is None:
             id = str(uuid4())
         self.db.execute(
-            """INSERT INTO collections (id, user_id, name, created_at, updated_at, conf, fsrsconf)
-               VALUES (:id, :user_id, :name, :created_at, :updated_at, :conf, :fsrsconf)""",
+            """INSERT INTO collections (id, user_id, name, created_at, updated_at, conf, algoconf)
+               VALUES (:id, :user_id, :name, :created_at, :updated_at, :conf, :algoconf)""",
             {"id": id, "user_id": user_id, "name": name, "created_at": now, "updated_at": now,
-             "conf": json.dumps(conf.model_dump()), "fsrsconf": json.dumps(fsrsconf.model_dump())},
+             "conf": json.dumps(conf.model_dump()), "algoconf": json.dumps(algoconf.model_dump())},
         )
-        return Collection(id=id, user_id=user_id, name=name, created_at=now, updated_at=now, conf=conf, fsrsconf=fsrsconf)
+        return Collection(id=id, user_id=user_id, name=name, created_at=now, updated_at=now, conf=conf, algoconf=algoconf)
 
     def get(self, id: str) -> Optional[Collection]:
         row = self.db.fetch_one("SELECT * FROM collections WHERE id = :id", {"id": id})
@@ -49,9 +49,9 @@ class CollectionRepository:
     def update(self, collection: Collection) -> None:
         now = int(time.time() * 1000)
         self.db.execute(
-            """UPDATE collections SET name=:name, conf=:conf, fsrsconf=:fsrsconf, updated_at=:now WHERE id=:id""",
+            """UPDATE collections SET name=:name, conf=:conf, algoconf=:algoconf, updated_at=:now WHERE id=:id""",
             {"name": collection.name, "conf": json.dumps(collection.conf.model_dump()),
-             "fsrsconf": json.dumps(collection.fsrsconf.model_dump()), "now": now, "id": collection.id},
+             "algoconf": json.dumps(collection.algoconf.model_dump()), "now": now, "id": collection.id},
         )
 
     def delete(self, id: str) -> None:

@@ -2,7 +2,7 @@ from typing import Optional
 from pydantic import BaseModel, model_validator
 
 from src.models.collection_conf import CollectionConf
-from src.models.fsrs_conf import FsrsConf
+from src.models.algo_conf import AlgoConf
 
 
 class CollectionUpdate(BaseModel):
@@ -16,4 +16,4 @@ class CollectionUpdate(BaseModel):
     """
     name: Optional[str] = None
     conf: Optional[CollectionConf] = None
-    fsrsconf: Optional[FsrsConf] = None
+    algoconf: Optional[AlgoConf] = None

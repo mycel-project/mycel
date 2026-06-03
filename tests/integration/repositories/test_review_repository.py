@@ -84,7 +84,7 @@ def test_review_get_last_by_collection(db_fixture, default_collection, default_u
     node2_id = generate_id()
 
     db_fixture.execute(
-        "INSERT INTO collections (id, user_id, name, created_at, updated_at, conf, fsrsconf) VALUES (:id, :user_id, 'C2', 0, 0, '{}', '{}')",
+        "INSERT INTO collections (id, user_id, name, created_at, updated_at, conf, algoconf) VALUES (:id, :user_id, 'C2', 0, 0, '{}', '{}')",
         {"id": col2_id, "user_id": default_user}
     )
     db_fixture.execute(

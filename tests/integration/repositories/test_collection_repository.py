@@ -1,19 +1,19 @@
 import time
 
 from src.models.collection_conf import CollectionConf
-from src.models.fsrs_conf import FsrsConf
+from src.models.algo_conf import AlgoConf
 from src.repositories.collection_repository import CollectionRepository
 
 def test_collection_create_and_get(db_fixture, default_user):
     repo = CollectionRepository(db=db_fixture)
     conf = CollectionConf()
-    fsrsconf = FsrsConf()
+    algoconf = AlgoConf()
 
     created = repo.create(
         user_id=default_user,
         name="Deck",
         conf=conf,
-        fsrsconf=fsrsconf
+        algoconf=algoconf
     )
 
     assert created.id is not None
@@ -33,7 +33,7 @@ def test_collection_partial_update(db_fixture, default_user):
         user_id=default_user,
         name="Old Name",
         conf=CollectionConf(),
-        fsrsconf=FsrsConf()
+        algoconf=AlgoConf()
     )
     
     created.name = "New Name"
@@ -43,14 +43,14 @@ def test_collection_partial_update(db_fixture, default_user):
     assert updated is not None
     assert updated.name == "New Name"
     assert updated.conf is not None
-    assert updated.fsrsconf is not None
+    assert updated.algoconf is not None
     
 def test_collection_delete(db_fixture, default_user):
     repo = CollectionRepository(db=db_fixture)
     conf = CollectionConf()
-    fsrsconf = FsrsConf()
+    algoconf = AlgoConf()
     
-    created = repo.create(user_id=default_user, name="To Delete", conf=conf, fsrsconf=fsrsconf)
+    created = repo.create(user_id=default_user, name="To Delete", conf=conf, algoconf=algoconf)
 
     repo.delete(created.id)
 
@@ -60,11 +60,11 @@ def test_collection_delete(db_fixture, default_user):
 def test_collection_list_ordering(db_fixture, default_user):
     repo = CollectionRepository(db=db_fixture)
     
-    c1 = repo.create(user_id=default_user, name="Collection 1", conf=CollectionConf(), fsrsconf=FsrsConf())
+    c1 = repo.create(user_id=default_user, name="Collection 1", conf=CollectionConf(), algoconf=AlgoConf())
     time.sleep(0.002) 
-    c2 = repo.create(user_id=default_user, name="Collection 2", conf=CollectionConf(), fsrsconf=FsrsConf())
+    c2 = repo.create(user_id=default_user, name="Collection 2", conf=CollectionConf(), algoconf=AlgoConf())
     time.sleep(0.002)
-    c3 = repo.create(user_id=default_user, name="Collection 3", conf=CollectionConf(), fsrsconf=FsrsConf())
+    c3 = repo.create(user_id=default_user, name="Collection 3", conf=CollectionConf(), algoconf=AlgoConf())
     
     results = repo.list(default_user)
 

@@ -27,7 +27,7 @@ from src.services.review_service import ReviewService
 from src.types.node_type import NodeType
 
 @pytest.fixture
-def generate_id() -> str:
+def generate_id():
     def _make_id():
         return str(uuid4())
     return _make_id
@@ -55,7 +55,7 @@ def default_user(db_fixture: Db, generate_id):
 def default_collection(db_fixture, default_user, generate_id):
     col_id = generate_id()
     db_fixture.execute(
-        "INSERT INTO collections (id, user_id, name, created_at, updated_at, conf, fsrsconf) VALUES (:id, :user_id, 'Test', 0, 0, '{}', '{}')",
+        "INSERT INTO collections (id, user_id, name, created_at, updated_at, conf, algoconf) VALUES (:id, :user_id, 'Test', 0, 0, '{}', '{}')",
         {"id": col_id, "user_id": default_user}
     )
     return col_id

@@ -16,9 +16,9 @@ class FsrsService:
         self._fsrs_conf_hash = None
 
     def _get_scheduler(self, col_id: str):
-        fsrs_conf = self._collection_service.get_fsrs_conf(col_id)
+        fsrs_conf = self._collection_service.get_algo_conf(col_id) # only used for fsrs for now
 
-        conf_dict = fsrs_conf.to_fsrs_dict()
+        conf_dict = fsrs_conf.to_algo_dict()
         conf_hash = hashlib.md5(
             json.dumps(conf_dict, default=str).encode()
         ).hexdigest()

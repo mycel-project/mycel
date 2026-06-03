@@ -7,8 +7,8 @@ from src.repositories.collection_repository import CollectionRepository
 from src.schemas.collection_update import CollectionUpdate
 from src.schemas.collection_view import CollectionView
 from src.models.collection_conf import CollectionConf
-from src.models.fsrs_conf import FsrsConf
-from src.schemas import FsrsConfUpdate, CollectionConfUpdate
+from src.models.algo_conf import AlgoConf
+from src.schemas import AlgoConfUpdate, CollectionConfUpdate
 from src.schemas.config_update import ConfigUpdate
 
 
@@ -35,7 +35,7 @@ class CollectionService:
             user_id=user_id,
             name=name,
             conf=CollectionConf(),
-            fsrsconf=FsrsConf(),
+            algoconf=AlgoConf(),
             id=id,
         )
 
@@ -51,18 +51,18 @@ class CollectionService:
     def delete_collection(self, collection_id: str) -> None:
         self._repo.delete(collection_id)
 
-    def get_fsrs_conf(self, collection_id: str) -> FsrsConf:
+    def get_algo_conf(self, collection_id: str) -> AlgoConf:
         collection = self._repo.get(collection_id)
         if not collection:
             raise ValueError("Collection not found")
-        return collection.fsrsconf
+        return collection.algoconf
 
     def to_view(self, collection: Collection) -> CollectionView:
         return CollectionView(
             id=collection.id,
             name=collection.name,
             conf=collection.conf,
-            fsrsconf=collection.fsrsconf,
+            algoconf=collection.algoconf,
             created_at=collection.created_at,
         )
 

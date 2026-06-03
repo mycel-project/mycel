@@ -34,7 +34,6 @@ def app():
     else:
         with tempfile.NamedTemporaryFile(suffix="test.db", delete=False) as f:
             app = Application(db_path=f.name)
-                
     asyncio.run(app.init_async())
     return app
 

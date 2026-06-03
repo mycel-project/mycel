@@ -23,7 +23,7 @@ class CollectionORM(Base):
     created_at: Mapped[int] = mapped_column(BigInteger, nullable=False)
     updated_at: Mapped[int] = mapped_column(BigInteger, nullable=False)
     conf: Mapped[str] = mapped_column(String, nullable=False, server_default="{}")
-    fsrsconf: Mapped[str] = mapped_column(String, nullable=False, server_default="{}")
+    algoconf: Mapped[str] = mapped_column(String, nullable=False, server_default="{}")
 
 
 class NodeORM(Base):

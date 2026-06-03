@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 from .collection_conf import CollectionConf
-from .fsrs_conf import FsrsConf
+from .algo_conf import AlgoConf
 
 class Collection(BaseModel):
     model_config = ConfigDict(validate_assignment=True)
@@ -10,4 +10,4 @@ class Collection(BaseModel):
     created_at: int
     updated_at: int
     conf: CollectionConf
-    fsrsconf: FsrsConf
+    algoconf: AlgoConf

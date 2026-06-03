@@ -2,7 +2,7 @@ from pydantic import BaseModel, ConfigDict, field_validator
 from typing import Optional, Tuple
 
 
-class FsrsConfUpdate(BaseModel):
+class AlgoConfUpdate(BaseModel):
     parameters: Optional[Tuple[float, ...]] = None
     desired_retention: Optional[float] = None
     learning_steps: Optional[Tuple[int, ...]] = None

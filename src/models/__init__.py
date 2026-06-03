@@ -3,6 +3,6 @@ from .node import Node
 from .review import Review
 from .collection_conf import CollectionConf
 from .node_content import NodeContent
-from .fsrs_conf import FsrsConf
+from .algo_conf import AlgoConf
 
-__all__ = ["Collection", "Node", "Review", "CollectionConf", "FsrsConf", "NodeContent"]
+__all__ = ["Collection", "Node", "Review", "CollectionConf", "AlgoConf", "NodeContent"]

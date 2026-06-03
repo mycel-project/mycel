@@ -6,7 +6,7 @@ class ConfigUpdate(BaseModel): # rename to collection config update i guess
 
     Attributes:
         collection: Optional updates for collection configuration.
-        fsrs: Optional updates for FSRS configuration.
+        algo: Optional updates for ALGO configuration.
     """
     collection: dict | None = None
-    fsrs: dict | None = None
+    algo: dict | None = None

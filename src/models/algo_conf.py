@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from typing import Tuple
 from datetime import timedelta
 
-class FsrsConf(BaseModel):
+class AlgoConf(BaseModel):
     parameters: Tuple[float, ...] = (
         0.212, 1.2931, 2.3065, 8.2956, 6.4133,
         0.8334, 3.0194, 0.001, 1.8722, 0.1666,
@@ -16,7 +16,7 @@ class FsrsConf(BaseModel):
     maximum_interval: int = 36500
     enable_fuzzing: bool = True
 
-    def to_fsrs_dict(self) -> dict:
+    def to_algo_dict(self) -> dict:
         d = self.model_dump()
         d["learning_steps"] = tuple(timedelta(seconds=s) for s in self.learning_steps)
         d["relearning_steps"] = tuple(timedelta(seconds=s) for s in self.relearning_steps)
