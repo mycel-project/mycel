@@ -22,9 +22,12 @@ jobs:
           else
             echo "is_prerelease=false" >> $GITHUB_OUTPUT
           fi
+          
+  test:
+    uses: ./.github/workflows/ci.yml
 
   release:
-    needs: [check-prerelease]
+    needs: [check-prerelease, test]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
