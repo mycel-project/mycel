@@ -15,7 +15,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from unittest.mock import MagicMock
-from src.db.schema import init_schema
 from src.main import Application
 from src.models.node_content import NodeContent
 from src.repositories import node_repository
@@ -49,8 +48,8 @@ def db_fixture(tmp_path: Path):
 def default_user(db_fixture: Db, generate_id):
     user_id = generate_id()
     db_fixture.execute(
-        "INSERT OR IGNORE INTO users (id, name, created_at) VALUES (?, 'default_user', 0)",
-        (user_id,)
+        "INSERT OR IGNORE INTO users (id, name, created_at) VALUES (:id, 'default_user', 0)",
+        {"id": user_id}
     )
     return user_id
 
@@ -58,8 +57,8 @@ def default_user(db_fixture: Db, generate_id):
 def default_collection(db_fixture, default_user, generate_id):
     col_id = generate_id()
     db_fixture.execute(
-        "INSERT INTO collections (id, user_id, name, created_at, updated_at) VALUES (?, ?, 'Test', 0, 0)",
-        (col_id, default_user)
+        "INSERT INTO collections (id, user_id, name, created_at, updated_at, conf, fsrsconf) VALUES (:id, :user_id, 'Test', 0, 0, '{}', '{}')",
+        {"id": col_id, "user_id": default_user}
     )
     return col_id
 
@@ -68,8 +67,8 @@ def default_node(db_fixture, default_collection, generate_id):
     node_id = generate_id()
     node_type = list(NodeType)[0]
     db_fixture.execute(
-        "INSERT INTO nodes (id, collection_id, type, created_at, updated_at, due) VALUES (?, ?, ?, 0, 0, 0)",
-        (node_id, default_collection, node_type.value)
+        "INSERT INTO nodes (id, collection_id, type, created_at, updated_at, due) VALUES (:id, :col_id, :type, 0, 0, 0)",
+        {"id": node_id, "col_id": default_collection, "type": node_type.value}
     )
     return node_id, node_type
 

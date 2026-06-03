@@ -34,12 +34,12 @@ def test_review_node_queries(db_fixture, default_collection, generate_id):
     node2_id = generate_id()
 
     db_fixture.execute(
-        "INSERT INTO nodes (id, collection_id, type, created_at, updated_at, due) VALUES (?, ?, ?, 0, 0, 0)", 
-        (node1_id, default_collection, node_type.value)
+        "INSERT INTO nodes (id, collection_id, type, created_at, updated_at, due, content, data, type_data) VALUES (:id, :col_id, :type, 0, 0, 0, '{}', '{}', '{}')",
+        {"id": node1_id, "col_id": default_collection, "type": node_type.value}
     )
     db_fixture.execute(
-        "INSERT INTO nodes (id, collection_id, type, created_at, updated_at, due) VALUES (?, ?, ?, 0, 0, 0)", 
-        (node2_id, default_collection, node_type.value)
+        "INSERT INTO nodes (id, collection_id, type, created_at, updated_at, due, content, data, type_data) VALUES (:id, :col_id, :type, 0, 0, 0, '{}', '{}', '{}')",
+        {"id": node2_id, "col_id": default_collection, "type": node_type.value}
     )
 
     for i in range(3):
@@ -75,25 +75,22 @@ def test_review_get_last_by_collection(db_fixture, default_collection, default_u
     
     node1_id = generate_id()
     db_fixture.execute(
-        "INSERT INTO nodes (id, collection_id, type, created_at, updated_at, due) VALUES (?, ?, ?, 0, 0, 0)", 
-        (node1_id, default_collection, node_type.value)
+        "INSERT INTO nodes (id, collection_id, type, created_at, updated_at, due, content, data, type_data) VALUES (:id, :col_id, :type, 0, 0, 0, '{}', '{}', '{}')",
+        {"id": node1_id, "col_id": default_collection, "type": node_type.value}
     )
-
     repo.create(node_id=node1_id, type=node_type, node_state_before=get_dummy_state(node_type), duration=5000, now=1000)
     repo.create(node_id=node1_id, type=node_type, node_state_before=get_dummy_state(node_type), duration=5000, now=2000)
-
     col2_id = generate_id()
     node2_id = generate_id()
-    
+
     db_fixture.execute(
-        "INSERT INTO collections (id, user_id, name, created_at, updated_at) VALUES (?, ?, 'C2', 0, 0)", 
-        (col2_id, default_user)
+        "INSERT INTO collections (id, user_id, name, created_at, updated_at, conf, fsrsconf) VALUES (:id, :user_id, 'C2', 0, 0, '{}', '{}')",
+        {"id": col2_id, "user_id": default_user}
     )
     db_fixture.execute(
-        "INSERT INTO nodes (id, collection_id, type, created_at, updated_at, due) VALUES (?, ?, ?, 0, 0, 0)", 
-        (node2_id, col2_id, node_type.value)
+        "INSERT INTO nodes (id, collection_id, type, created_at, updated_at, due, content, data, type_data) VALUES (:id, :col_id, :type, 0, 0, 0, '{}', '{}', '{}')",
+        {"id": node2_id, "col_id": col2_id, "type": node_type.value}
     )
-    
     repo.create(node_id=node2_id, type=node_type, node_state_before=get_dummy_state(node_type), duration=5000, now=3000)
 
     last_review = repo.get_last_review_by_collection(default_collection)
