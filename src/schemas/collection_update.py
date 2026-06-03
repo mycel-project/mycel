@@ -1,5 +1,5 @@
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 from src.models.collection_conf import CollectionConf
 from src.models.fsrs_conf import FsrsConf

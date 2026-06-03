@@ -1,4 +1,4 @@
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, ConfigDict, model_validator
 from typing import Optional
 import json
 
@@ -16,6 +16,7 @@ TYPE_DATA_MAP = {
 
 
 class Node(BaseModel):
+    model_config = ConfigDict(validate_assignment=True)
     id: int
     collection_id: int
     created_at: int

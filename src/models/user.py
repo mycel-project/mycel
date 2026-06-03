@@ -1,9 +1,10 @@
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, ConfigDict
 
 from src.models.user_conf import UserConf
 
 
 class User(BaseModel):
+    model_config = ConfigDict(validate_assignment=True)
     id: int
     name: str
     created_at: int

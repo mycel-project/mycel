@@ -1,5 +1,5 @@
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 from src.models.user_conf import UserConf
 

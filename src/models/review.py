@@ -1,6 +1,6 @@
 import json
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, ConfigDict, model_validator
 from typing import Optional
 
 from src.models.node_state_before import NodeStateBefore
@@ -15,6 +15,7 @@ TYPE_REVIEW_DATA_MAP = {
 }
 
 class Review(BaseModel):
+    model_config = ConfigDict(validate_assignment=True)
     id: int
     node_id: int
     type: NodeType = NodeType.FRAGMENT
