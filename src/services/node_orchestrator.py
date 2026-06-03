@@ -148,16 +148,16 @@ class NodeOrchestrator:
 
         return self._node_view_builder.to_views(restored)
 
-    def get_root_node(self, node_id: int) -> NodeView:
+    def get_root_node(self, node_id: int) -> NodeDetailView:
         root_node = self._node_service.get_root_node(node_id)
-        return self._node_view_builder.to_view(root_node)
+        return self._node_view_builder.to_detail_view(root_node)
 
     def get_priorities(self, col_id: int) -> dict[int, float]:
         return self._priority_service.get_priorities(col_id)
 
-    def reschedule_node_to_view(self, col_id: int, node_id: int, local_date_iso: str, tz_offset_min: int) -> NodeView:
+    def reschedule_node_to_detail_view(self, col_id: int, node_id: int, local_date_iso: str, tz_offset_min: int) -> NodeDetailView:
         node = self._reschedule_node_usecase.execute(col_id, node_id, local_date_iso, tz_offset_min)
-        return self._node_view_builder.to_view(node)
+        return self._node_view_builder.to_detail_view(node)
 
     def remove_links_to_view(self, col_id: int, node_id: int, text: str, field: int, start_index: int, end_index: int) -> NodeView:
         node = self._node_service.get_node(node_id)

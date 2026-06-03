@@ -1,3 +1,5 @@
+import time
+
 class TestUser:
     def test_create_user(self, api):
         response = api.post("/users", body={"name": "test"})
@@ -94,3 +96,55 @@ class TestNode:
         response = api.delete(f"/collections/{col.id}/nodes/{node.id}")
         assert response.status_code == 200
         assert node.id in response.json()["data"]["deleted_ids"]
+        
+    def test_get_priorities(self, api, create_user, create_col, create_node):
+        user = create_user()
+        col = create_col(user_id=user.id)
+        node1 = create_node(col_id=col.id)
+        time.sleep(0.01)
+        node2 = create_node(col_id=col.id)
+        response = api.get(f"/collections/{col.id}/nodes/priorities")
+        assert response.status_code == 200
+        data = response.json()["data"]
+        assert isinstance(data, dict)
+        assert str(node1.id) in data
+        assert str(node2.id) in data
+
+    def test_get_deleted_nodes(self, api, create_user, create_col, create_node):
+        user = create_user()
+        col = create_col(user_id=user.id)
+        node = create_node(col_id=col.id)
+        api.delete(f"/collections/{col.id}/nodes/{node.id}")
+        response = api.get(f"/collections/{col.id}/nodes/deleted")
+        assert response.status_code == 200
+        deleted = response.json()["data"]
+        assert any(n["id"] == node.id for n in deleted)
+
+    def test_get_root_node(self, api, create_user, create_col, create_node):
+        user = create_user()
+        col = create_col(user_id=user.id)
+        root = create_node(col_id=col.id)
+        child = create_node(col_id=col.id, parent_id=root.id)
+        response = api.get(f"/collections/{col.id}/nodes/{child.id}/root")
+        assert response.status_code == 200
+        assert response.json()["data"]["id"] == root.id
+
+    def test_reschedule_node(self, api, create_user, create_col, create_node):
+        user = create_user()
+        col = create_col(user_id=user.id)
+        node = create_node(col_id=col.id)
+        response = api.post(
+            f"/collections/{col.id}/nodes/{node.id}/reschedule",
+            body={"date": "2099-05-20", "tz_offset": 120}
+        )
+        assert response.status_code == 200
+        assert response.json()["data"]["id"] == node.id
+
+    def test_restore_node(self, api, create_user, create_col, create_node):
+        user = create_user()
+        col = create_col(user_id=user.id)
+        node = create_node(col_id=col.id)
+        api.delete(f"/collections/{col.id}/nodes/{node.id}")
+        response = api.post(f"/collections/{col.id}/nodes/{node.id}/restore", body={})
+        assert response.status_code == 200
+        assert any(n["id"] == node.id for n in response.json()["data"])

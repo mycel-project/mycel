@@ -158,6 +158,11 @@ class Rest(BaseInterface):
 
         @self.app.get("/schemas/user-settings", tags=["system"])
         async def get_user_settings_schema() -> ApiResponse[dict]:
+            """
+            Returns the user settings schema dynamically.
+            Implementations can render a fully dynamic settings UI by parsing field types and metadata
+            (category, unit, step, warning, etc.) without hardcoding any specific field names or values.
+            """ 
             return ApiResponse(data=UserConf.model_json_schema())
         
         # USERS
@@ -192,9 +197,9 @@ class Rest(BaseInterface):
             collection = self.collection_orchestrator.create_collection(data.name, user_id)
             return ApiResponse(data=collection)
 
-        @self.app.delete("/collections/{collection_id}", status_code = 204, tags=["collections"])
-        async def delete_collection(collection_id: int, user_id = Depends(self.get_user)):
-            self.collection_service.delete_collection(collection_id)
+        @self.app.delete("/collections/{col_id}", status_code = 204, tags=["collections"])
+        async def delete_collection(col_id: int, user_id = Depends(self.get_user)):
+            self.collection_service.delete_collection(col_id)
 
         @self.app.patch("/collections/{col_id}", tags=["collections"])
         async def update_collection(col_id: int, data: CollectionUpdate, user_id = Depends(self.get_user)):
@@ -202,11 +207,30 @@ class Rest(BaseInterface):
             return ApiResponse(data=collection)
 
         # NODES
-
+        
         @self.app.get("/collections/{col_id}/nodes", tags=["nodes"])
         async def list_nodes(col_id: int, user_id = Depends(self.get_user)) -> ApiResponse[list[NodeView]]:
             nodes = self.node_orchestrator.get_nodes_view(col_id, 10000)
             return ApiResponse(data=nodes)
+
+        @self.app.post("/collections/{col_id}/nodes", tags=["nodes"])
+        async def create_node(col_id: int, data: NodeCreate, tz_offset: int = 0, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
+            node = self.node_orchestrator.create_node_to_detail_view(col_id, data, tz_offset)
+            return ApiResponse(data=node)
+        
+        @self.app.get("/collections/{col_id}/nodes/priorities", tags=["nodes"])
+        async def get_priorities(col_id: int, user_id = Depends(self.get_user)) -> ApiResponse[dict[int, float]]:
+            """
+            Priority is a relative value, so adding or modifying a node invalidates other priorities. This route allows the frontend to refresh all priorities in a collection efficiently.
+            """
+            return ApiResponse(data=self.node_orchestrator.get_priorities(col_id))
+
+        @self.app.get("/collections/{col_id}/nodes/deleted", tags=["nodes"])
+        async def get_deleted_nodes(col_id: int, user_id = Depends(self.get_user)) -> ApiResponse[list[NodeView]]:
+            """
+            Returns all soft-deleted nodes in a collection.
+            """
+            return ApiResponse(data=self.node_orchestrator.get_deleted_nodes_view(col_id))
         
         @self.app.get("/collections/{col_id}/nodes/{node_id}", tags=["nodes"])
         async def get_node(col_id: int, node_id: int, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
@@ -223,69 +247,47 @@ class Rest(BaseInterface):
         async def update_node(col_id: int, node_id: int, data: NodeUpdate, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
             updated_node = self.node_orchestrator.update_node_to_detail_view(node_id, data)
             return ApiResponse(data=updated_node)
-
-        @self.app.post("/collections/{col_id}/nodes", tags=["nodes"])
-        async def create_node(col_id: int, data: NodeCreate, tz_offset: int = 0, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
-            node = self.node_orchestrator.create_node_to_detail_view(col_id, data, tz_offset)
-            return ApiResponse(data=node)
-
         
-
-        @self.app.get("/collections/{col_id}/nodes/priorities")
-        async def get_priorities(col_id: int, user_id = Depends(self.get_user)):
-            # This route is important because adding or modifying a node's priority on the frontend invalidates other priorities, as priority is a relative value. It allows quickly refreshing all node priorities in a collection.
-            priorities = self.node_orchestrator.get_priorities(col_id)
-            return {"priorities": priorities}
-
-        @self.app.get("/collections/{col_id}/nodes/deleted")
-        async def get_deleted_nodes(col_id: int, user_id = Depends(self.get_user)):
-            nodes = self.node_orchestrator.get_deleted_nodes_view(col_id)
-            return {"nodes": nodes}
-
-        @self.app.get("/collections/{col_id}/nodes/{node_id}/root")
-        async def get_root_node(col_id: int, node_id: int, user_id = Depends(self.get_user)):
+        @self.app.get("/collections/{col_id}/nodes/{node_id}/root", tags=["nodes"])
+        async def get_root_node(col_id: int, node_id: int, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
             """
-            For convenience
             Get the highest parent node for the given node_id.
-            Useful when the frontend is not using a cache and the node tree is deeply nested.
-            Allows quickly reaching the root without having to traverse manually through multiple calls.
+            Useful when the frontend is not using a cache and the node tree is deeply nested,
+            allows reaching the root without traversing multiple calls manually.
             """
-            node = self.node_orchestrator.get_root_node(node_id)
-            return {"node": node}
-        
-        @self.app.post("/collections/{col_id}/nodes/{node_id}/split")
-        async def split_node(col_id: int, node_id: int, level: int, tz_offset: int = 0, user_id = Depends(self.get_user)):
-            nodes = self.node_orchestrator.split_node_to_views(col_id, node_id, tz_offset, level)
-            return {"nodes": nodes}
+            return ApiResponse(data=self.node_orchestrator.get_root_node(node_id))
+    
+        class RescheduleNodeRequest(BaseModel):
+            date: str       # "2026-05-20"
+            tz_offset: int  # minutes
+        @self.app.post("/collections/{col_id}/nodes/{node_id}/reschedule", tags=["nodes"])
+        async def reschedule_node(col_id: int, node_id: int, data: RescheduleNodeRequest, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
+            """
+            Reschedule a node to a specific date.
+            """
+            return ApiResponse(data=self.node_orchestrator.reschedule_node_to_detail_view(col_id, node_id, data.date, data.tz_offset))
 
+        class RestoreNodeRequest(BaseModel):
+            restore_ancestors: bool = False
+            restore_descendants: bool = False
+        @self.app.post("/collections/{col_id}/nodes/{node_id}/restore", tags=["nodes"])
+        async def restore_nodes(col_id: int, node_id: int, body: RestoreNodeRequest, user_id = Depends(self.get_user)) -> ApiResponse[list[NodeView]]:
+            """Restore a node, optionally including its parents and/or children."""
+            return ApiResponse(data=self.node_orchestrator.restore_nodes_to_views(
+                node_id,
+                restore_ancestors=body.restore_ancestors,
+                restore_descendants=body.restore_descendants,
+            ))
+
+
+
+
+        
         @self.app.get("/collections/{col_id}/nodes/{node_id}/outline")
         async def get_outline_node(col_id: int, node_id: int, user_id = Depends(self.get_user)):
             outline = self.node_orchestrator.get_outline_for_node(col_id, node_id)
             return {"outline": outline}
 
-
-        
-        class RescheduleNodeRequest(BaseModel):
-            date: str       # "2026-05-20"
-            tz_offset: int  # minutes
-        @self.app.post("/collections/{col_id}/nodes/{node_id}/reschedule")
-        async def reschedule_node(col_id: int, node_id: int, data: RescheduleNodeRequest, user_id = Depends(self.get_user)):
-            node = self.node_orchestrator.reschedule_node_to_view(col_id, node_id, data.date, data.tz_offset)
-            return {"node": node}
-
-        class RestoreNodeRequest(BaseModel):
-            restore_ancestors: bool = False
-            restore_descendants: bool = False
-        @self.app.post("/collections/{col_id}/nodes/{node_id}/restore")
-        async def restore_nodes(col_id: int, node_id: int, body: RestoreNodeRequest, user_id = Depends(self.get_user)):
-            """Restore a node, optionally including its parents and/or children."""
-            nodes = self.node_orchestrator.restore_nodes_to_views(
-                node_id,
-                restore_ancestors=body.restore_ancestors,
-                restore_descendants=body.restore_descendants,
-            )
-            return {"nodes": nodes}
-            
         class NodeExtract(BaseModel):
             text: str
             field: int
@@ -309,7 +311,6 @@ class Rest(BaseInterface):
                 data.priority)
             return {"node": node}
 
-
         class SelectionData(BaseModel):
             text: str
             field: int
@@ -320,7 +321,10 @@ class Rest(BaseInterface):
             node = self.node_orchestrator.remove_links_to_view(col_id, node_id, data.text, data.field, data.start_index, data.end_index)
             return {"node": node}
 
-
+        @self.app.post("/collections/{col_id}/nodes/{node_id}/split")
+        async def split_node(col_id: int, node_id: int, level: int, tz_offset: int = 0, user_id = Depends(self.get_user)):
+            nodes = self.node_orchestrator.split_node_to_views(col_id, node_id, tz_offset, level)
+            return {"nodes": nodes}
 
 
 
