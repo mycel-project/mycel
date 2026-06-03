@@ -78,8 +78,13 @@ class NodeRepository:
         e.g. for UTC+1, May 20 local → 2026-05-19 23:00:00 UTC.
         """
         tz_offset_ms = tz_offset_minutes * 60_000
+        dismiss_filter = (
+            "json_extract(type_data, '$.dismiss') = 1"
+            if self.db.is_sqlite
+            else "type_data::jsonb->>'dismiss' = 'true'"
+        )
         rows = self.db.fetch_all(
-            """
+            f"""
             SELECT
                 (CAST((due + :tz) AS BIGINT) / 86400000) * 86400000 - :tz AS day_start_ms,
                 type,
@@ -89,7 +94,7 @@ class NodeRepository:
               AND due >= :start_ms
               AND due < :to_ms
               AND deleted_at IS NULL
-              AND NOT (type = 1 AND json_extract(type_data, '$.dismiss') = 1)
+              AND NOT (type = 1 AND {dismiss_filter})
             GROUP BY day_start_ms, type
             ORDER BY day_start_ms
             """,

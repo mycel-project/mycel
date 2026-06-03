@@ -43,12 +43,11 @@ def db_fixture(tmp_path: Path):
     if db_path.exists():
         os.remove(db_path)
 
-# default object
 @pytest.fixture
 def default_user(db_fixture: Db, generate_id):
     user_id = generate_id()
     db_fixture.execute(
-        "INSERT OR IGNORE INTO users (id, name, created_at) VALUES (:id, 'default_user', 0)",
+        "INSERT INTO users (id, name, created_at, conf) VALUES (:id, 'default_user', 0, '{}')",
         {"id": user_id}
     )
     return user_id

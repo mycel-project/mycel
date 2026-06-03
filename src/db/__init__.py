@@ -1,25 +1,41 @@
+import os
 import time
 from pathlib import Path
 from typing import Any
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from .schema import Base
-from .models import CollectionORM
+from .models import *
+from dotenv import load_dotenv
+
+load_dotenv()
 
 class Db:
-    def __init__(self, db_path: Path):
+    def __init__(self, db_path: str | Path, testing: bool = False):
+        self.testing = testing
+        db_path = os.getenv("DATABASE_URL") or db_path
         self.db_path = db_path
-        url = f"sqlite:///{db_path}"
+        if str(db_path).startswith("postgresql"):
+            url = str(db_path)
+        else:
+            url = f"sqlite:///{db_path}"
         self.engine = create_engine(url)
         Base.metadata.create_all(self.engine)
         self.session_factory = sessionmaker(bind=self.engine)
 
         with self.session_factory() as session:
-            session.execute(text("""
-                INSERT OR IGNORE INTO users (id, name, created_at, conf)
-                VALUES (:id, 'default', :now, '{}')
-            """), {"id": 1, "now": int(time.time() * 1000)})
-            session.commit()
+            existing = session.execute(text("SELECT id FROM users WHERE id = :id"), {"id": 1}).fetchone()
+            if not existing:
+                session.execute(text("INSERT INTO users (id, name, created_at, conf) VALUES (:id, :name, :now, '{}')"), {"id": 1, "name": "default", "now": int(time.time() * 1000)})
+                session.commit()
+
+    @property
+    def is_sqlite(self) -> bool:
+        """
+        The codebase is otherwise fully agnostic to the database dialect.
+        This property exists solely to handle SQLite-specific SQL syntax where needed (e.g. json_extract vs ::jsonb).
+        """
+        return "sqlite" in str(self.engine.url)
 
     def execute(self, query: str, params: tuple | dict = ()) -> None:
         with self.session_factory() as session:
@@ -35,15 +51,13 @@ class Db:
             return list(session.execute(text(query), self._to_dict(params)).mappings().fetchall())
 
     def clear_all(self):
-        if "test" not in str(self.db_path).lower():
+        if not self.testing:
             raise PermissionError("Safety check failed: clear_all can only be run on test databases.")
         with self.session_factory() as session:
-            session.execute(text("PRAGMA foreign_keys = OFF"))
-            for table in Base.metadata.sorted_tables:
+            for table in reversed(Base.metadata.sorted_tables):
                 session.execute(table.delete())
-            session.execute(text("PRAGMA foreign_keys = ON"))
             session.commit()
-
+            
     def _to_dict(self, params: tuple | dict) -> dict:
         if isinstance(params, dict):
             return params

@@ -1,4 +1,4 @@
-from sqlalchemy import Integer, String, ForeignKey, Index
+from sqlalchemy import BigInteger, String, ForeignKey, Index
 from sqlalchemy.orm import Mapped, mapped_column
 from src.db.schema import Base
 
@@ -8,20 +8,20 @@ from src.db.schema import Base
 class UserORM(Base):
     __tablename__ = "users"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
-    created_at: Mapped[int] = mapped_column(Integer, nullable=False)
-    conf: Mapped[str] = mapped_column(String, default="{}")
+    created_at: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    conf: Mapped[str] = mapped_column(String, nullable=False, server_default="{}")
 
 
 class CollectionORM(Base):
     __tablename__ = "collections"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     name: Mapped[str] = mapped_column(String, nullable=False)
-    created_at: Mapped[int] = mapped_column(Integer, nullable=False)
-    updated_at: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    updated_at: Mapped[int] = mapped_column(BigInteger, nullable=False)
     conf: Mapped[str] = mapped_column(String, nullable=False, server_default="{}")
     fsrsconf: Mapped[str] = mapped_column(String, nullable=False, server_default="{}")
 
@@ -29,18 +29,18 @@ class CollectionORM(Base):
 class NodeORM(Base):
     __tablename__ = "nodes"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    collection_id: Mapped[int] = mapped_column(Integer, ForeignKey("collections.id", ondelete="CASCADE"), nullable=False)
-    parent_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    type: Mapped[int] = mapped_column(Integer, nullable=False)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    collection_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("collections.id", ondelete="CASCADE"), nullable=False)
+    parent_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    type: Mapped[int] = mapped_column(BigInteger, nullable=False)
     content: Mapped[str] = mapped_column(String, nullable=False, server_default="{}")
-    created_at: Mapped[int] = mapped_column(Integer, nullable=False)
-    updated_at: Mapped[int] = mapped_column(Integer, nullable=False)
-    deleted_at: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    created_at: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    updated_at: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    deleted_at: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     data: Mapped[str] = mapped_column(String, nullable=False, server_default="{}")
     type_data: Mapped[str] = mapped_column(String, nullable=False, server_default="{}")
-    due: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    last_review: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    due: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default="0")
+    last_review: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     position: Mapped[str | None] = mapped_column(String, nullable=True)
 
     __table_args__ = (
@@ -52,11 +52,11 @@ class NodeORM(Base):
 class ReviewORM(Base):
     __tablename__ = "reviews"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    node_id: Mapped[int] = mapped_column(Integer, ForeignKey("nodes.id", ondelete="CASCADE"), nullable=False)
-    type: Mapped[int] = mapped_column(Integer, nullable=False)
-    time: Mapped[int] = mapped_column(Integer, nullable=False)
-    duration: Mapped[int] = mapped_column(Integer, nullable=False)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    node_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("nodes.id", ondelete="CASCADE"), nullable=False)
+    type: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    time: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    duration: Mapped[int] = mapped_column(BigInteger, nullable=False)
     type_review_data: Mapped[str] = mapped_column(String, nullable=False, server_default="{}")
     node_state_before: Mapped[str | None] = mapped_column(String, nullable=True)
 
