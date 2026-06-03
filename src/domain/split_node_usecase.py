@@ -17,12 +17,12 @@ class SplitNodeUseCase:
         self._create_fragment = create_fragment_usecase
         self._get_outline = get_outline_usecase
 
-    def execute(self, collection_id: str, node_id: str, tz_offset: int, level: int) -> list[Node]:
+    def execute(self, user_id: str, collection_id: str, node_id: str, tz_offset: int, level: int) -> list[Node]:
         node = self._node_service.get_node(node_id)
         text = node.content.get_first_field() or "" if node.content else ""
         outline = self._get_outline.execute(node)
         entries = [e for e in outline.entries if e.level <= level]
-        
+
         if not entries:
             raise NoHeadingToSplit(node_id, level)
         results = []
@@ -30,25 +30,24 @@ class SplitNodeUseCase:
         intro = text[:entries[0].offset].strip() if entries else ""
         fragment_count = len(entries) + (1 if intro else 0)
         if fragment_count <= 1:
-            # if there is only one heading but content above (intro), proceed. Else cancel.
             raise NoHeadingToSplit(node_id, level)
 
         if intro:
             node_result = self._create_fragment.execute(
-                collection_id, intro, parent_id=node.id, tz_offset=tz_offset
+                user_id, collection_id, intro, parent_id=node.id, tz_offset=tz_offset
             )
             results.append(node_result)
 
         due = start_of_local_tomorrow_ms(tz_offset)
-        
+
         for i, entry in enumerate(entries):
             start = entry.offset
             end = entries[i + 1].offset if i + 1 < len(entries) else len(text)
             content = text[start:end].strip()
             if content:
                 node_result = self._create_fragment.execute(
-                    collection_id, content, parent_id=node.id, tz_offset=tz_offset, due=due,
+                    user_id, collection_id, content, parent_id=node.id, tz_offset=tz_offset, due=due,
                 )
                 results.append(node_result)
-                
+
         return results

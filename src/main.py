@@ -100,9 +100,9 @@ class Application():
 
         collection_orchestrator = CollectionOrchestrator(collection_service)
         
-        node_orchestrator = NodeOrchestrator(node_service, fragment_service, spore_service, priority_service, ressource_service, node_view_builder, node_format_service, create_node_from_url_usecase, reschedule_node_usecase, get_outline_usecase, split_node_usecase)
-        
-        review_orchestrator = ReviewOrchestrator(user_service, node_service, review_service, node_view_builder)
+        node_orchestrator = NodeOrchestrator(node_service, fragment_service, spore_service, priority_service, ressource_service, node_view_builder, node_format_service, create_node_from_url_usecase, reschedule_node_usecase, get_outline_usecase, split_node_usecase, collection_service)
+
+        review_orchestrator = ReviewOrchestrator(user_service, node_service, review_service, node_view_builder, collection_service)
 
         self.cleanup_service = CleanupService(node_service, collection_service, user_service)
         

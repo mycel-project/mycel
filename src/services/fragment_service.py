@@ -25,13 +25,14 @@ class FragmentService:
             NodeType.SPORE: self._node_format_service.inline_region,
         }
         
-    def create_fragment(self, col_id: str, content: Union[str, dict], parent_id: Optional[str] = None, tz_offset: int = 0) -> Node:
+    def create_fragment(self, user_id: str, col_id: str, content: Union[str, dict], parent_id: Optional[str] = None, tz_offset: int = 0) -> Node:
         return self._create_fragment.execute(
+            user_id=user_id,
             collection_id=col_id,
             content=content,
             parent_id=parent_id,
             tz_offset=tz_offset,
-        )        
+        )
 
     def update_fragment(self, node_id: str, data: NodeUpdate) -> Node:
         node = self._node_service.get_node(node_id)

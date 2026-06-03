@@ -10,6 +10,7 @@ from src.models.type_review_data.spore_review_data import SporeReviewData
 from src.schemas.node_detail_view import NodeDetailView
 from src.schemas.node_update import NodeUpdate
 from src.schemas.node_view import NodeView
+from src.services.collection_service import CollectionService
 from src.services.node_service import NodeService
 from src.services.node_view_builder import NodeViewBuilder
 from src.services.review_service import ReviewService
@@ -18,20 +19,22 @@ from src.types.node_type import NodeType
 
 
 class ReviewOrchestrator:
-    def __init__(self, user_service: UserService, node_service: NodeService, review_service: ReviewService, node_view_builder: NodeViewBuilder):
+    def __init__(self, user_service: UserService, node_service: NodeService, review_service: ReviewService, node_view_builder: NodeViewBuilder, collection_service: CollectionService):
         self._user_service = user_service
         self._node_service = node_service
         self._review_service = review_service
         self._node_view_builder = node_view_builder
+        self._collection_service = collection_service
 
     def review_to_detail_view(self, user_id: str, col_id: str, node_id: str, duration: int, data: TypeReviewData, tz_offset_min: int = 0) -> NodeDetailView:
+        self._collection_service.get_collection(user_id, col_id)
         pending_review_id = self._review_service.get_pending_node_id()
         if pending_review_id is None:
             raise NoPendingNodeError(node_id)
         if pending_review_id != node_id:
             raise PendingReviewMismatchError(node_id, pending_review_id)
         if isinstance(data, SporeReviewData):
-            node = self._review_service.review_spore(col_id, node_id, duration, data) # FSRS does not need tz
+            node = self._review_service.review_spore(col_id, node_id, duration, data)
         elif isinstance(data, FragmentReviewData):
             node = self._review_service.review_fragment(col_id, node_id, duration, data, tz_offset_min)
         else:
@@ -57,6 +60,7 @@ class ReviewOrchestrator:
             return None
 
     def undo_review(self, user_id: str, col_id: str) -> NodeDetailView:
+        self._collection_service.get_collection(user_id, col_id)
         max_undo_age = self._user_service.get_undo_max_age_min(user_id)
         last_review = self._review_service.undo_review(col_id, max_undo_age)
         try:
@@ -73,6 +77,7 @@ class ReviewOrchestrator:
 
     def get_calendar(
         self,
+        user_id: str,
         col_id: str,
         due: bool = True,
         done: bool = False,
@@ -80,6 +85,7 @@ class ReviewOrchestrator:
         end=None,
         tz_offset_minutes: int = 0,
     ) -> list[DayReviewOverview]:
+        self._collection_service.get_collection(user_id, col_id)
         # Use review service to get done for that period
         # Must determine which format to use to handle due/done. Timestamps ? iso ? What is cleaner for frontend ? maybe iso as we send back iso and it's only day specific ?
 

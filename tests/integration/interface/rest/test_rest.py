@@ -61,7 +61,7 @@ class TestNode:
     def test_list_nodes(self, api, create_user, create_col, create_node):
         user, token = create_user()
         col = create_col(user_id=user.id)
-        create_node(col_id=col.id)
+        create_node(col_id=col.id, user_id=user.id)
         response = api.get(f"/collections/{col.id}/nodes", token)
         assert response.status_code == 200
         data = response.json()
@@ -70,7 +70,7 @@ class TestNode:
     def test_get_node(self, api, create_user, create_col, create_node):
         user, token = create_user()
         col = create_col(user_id=user.id)
-        node = create_node(col_id=col.id)
+        node = create_node(col_id=col.id, user_id=user.id)
         response = api.get(f"/collections/{col.id}/nodes/{node.id}", token)
         assert response.status_code == 200
         data = response.json()
@@ -86,7 +86,7 @@ class TestNode:
     def test_update_node(self, api, create_user, create_col, create_node):
         user, token = create_user()
         col = create_col(user_id=user.id)
-        node = create_node(col_id=col.id)
+        node = create_node(col_id=col.id, user_id=user.id)
         response = api.patch(f"/collections/{col.id}/nodes/{node.id}", token, body={"due": 9999999999})
         assert response.status_code == 200
         assert response.json()["data"]["due"] == 9999999999
@@ -94,7 +94,7 @@ class TestNode:
     def test_delete_node(self, api, create_user, create_col, create_node):
         user, token = create_user()
         col = create_col(user_id=user.id)
-        node = create_node(col_id=col.id)
+        node = create_node(col_id=col.id, user_id=user.id)
         response = api.delete(f"/collections/{col.id}/nodes/{node.id}", token)
         assert response.status_code == 200
         assert node.id in response.json()["data"]["deleted_ids"]
@@ -102,9 +102,9 @@ class TestNode:
     def test_get_priorities(self, api, create_user, create_col, create_node):
         user, token = create_user()
         col = create_col(user_id=user.id)
-        node1 = create_node(col_id=col.id)
+        node1 = create_node(col_id=col.id, user_id=user.id)
         time.sleep(0.01)
-        node2 = create_node(col_id=col.id)
+        node2 = create_node(col_id=col.id, user_id=user.id)
         response = api.get(f"/collections/{col.id}/nodes/priorities", token)
         assert response.status_code == 200
         data = response.json()["data"]
@@ -115,7 +115,7 @@ class TestNode:
     def test_get_deleted_nodes(self, api, create_user, create_col, create_node):
         user, token = create_user()
         col = create_col(user_id=user.id)
-        node = create_node(col_id=col.id)
+        node = create_node(col_id=col.id, user_id=user.id)
         api.delete(f"/collections/{col.id}/nodes/{node.id}", token)
         response = api.get(f"/collections/{col.id}/nodes/deleted", token)
         assert response.status_code == 200
@@ -125,8 +125,8 @@ class TestNode:
     def test_get_root_node(self, api, create_user, create_col, create_node):
         user, token = create_user()
         col = create_col(user_id=user.id)
-        root = create_node(col_id=col.id)
-        child = create_node(col_id=col.id, parent_id=root.id)
+        root = create_node(col_id=col.id, user_id=user.id)
+        child = create_node(col_id=col.id, user_id=user.id, parent_id=root.id)
         response = api.get(f"/collections/{col.id}/nodes/{child.id}/root", token)
         assert response.status_code == 200
         assert response.json()["data"]["id"] == root.id
@@ -134,7 +134,7 @@ class TestNode:
     def test_reschedule_node(self, api, create_user, create_col, create_node):
         user, token = create_user()
         col = create_col(user_id=user.id)
-        node = create_node(col_id=col.id)
+        node = create_node(col_id=col.id, user_id=user.id)
         response = api.post(
             f"/collections/{col.id}/nodes/{node.id}/reschedule",
             token,
@@ -146,7 +146,7 @@ class TestNode:
     def test_restore_node(self, api, create_user, create_col, create_node):
         user, token = create_user()
         col = create_col(user_id=user.id)
-        node = create_node(col_id=col.id)
+        node = create_node(col_id=col.id, user_id=user.id)
         api.delete(f"/collections/{col.id}/nodes/{node.id}", token)
         response = api.post(f"/collections/{col.id}/nodes/{node.id}/restore", token, body={})
         assert response.status_code == 200
@@ -155,7 +155,7 @@ class TestNode:
     def test_reprioritise_node(self, api, create_user, create_col, create_node):
         user, token = create_user()
         col = create_col(user_id=user.id)
-        node = create_node(col_id=col.id)
+        node = create_node(col_id=col.id, user_id=user.id)
         response = api.patch(f"/collections/{col.id}/nodes/{node.id}/reprioritise", token, body={"priority": 0.5})
         assert response.status_code == 200
         assert response.json()["data"]["id"] == node.id
@@ -163,7 +163,7 @@ class TestNode:
     def test_get_outline(self, api, create_user, create_col, create_node):
         user, token = create_user()
         col = create_col(user_id=user.id)
-        node = create_node(col_id=col.id)
+        node = create_node(col_id=col.id, user_id=user.id)
         response = api.get(f"/collections/{col.id}/nodes/{node.id}/outline", token)
         assert response.status_code == 200
         assert "entries" in response.json()["data"]
@@ -171,7 +171,7 @@ class TestNode:
     def test_create_extract(self, api, create_user, create_col, create_node):
         user, token = create_user()
         col = create_col(user_id=user.id)
-        node = create_node(col_id=col.id, content="Hello world")
+        node = create_node(col_id=col.id, user_id=user.id, content="Hello world")
         response = api.post(
             f"/collections/{col.id}/nodes/{node.id}/extracts",
             token,
@@ -192,7 +192,7 @@ class TestNode:
     def test_remove_links(self, api, create_user, create_col, create_node):
         user, token = create_user()
         col = create_col(user_id=user.id)
-        node = create_node(col_id=col.id, content="Hello world")
+        node = create_node(col_id=col.id, user_id=user.id, content="Hello world")
         response = api.post(
             f"/collections/{col.id}/nodes/{node.id}/remove-links",
             token,
@@ -204,7 +204,7 @@ class TestNode:
     def test_split_node(self, api, create_user, create_col, create_node):
         user, token = create_user()
         col = create_col(user_id=user.id)
-        node = create_node(col_id=col.id, content="# Title\n## Section")
+        node = create_node(col_id=col.id, user_id=user.id, content="# Title\n## Section")
         response = api.post(f"/collections/{col.id}/nodes/{node.id}/split", token, body={"level": 2, "tz_offset": 0})
         assert response.status_code == 200
         data = response.json()["data"]
@@ -229,7 +229,7 @@ class TestReview:
     def test_review_node_no_pending(self, api, create_user, create_col, create_node):
         user, token = create_user()
         col = create_col(user_id=user.id)
-        node = create_node(col_id=col.id)
+        node = create_node(col_id=col.id, user_id=user.id)
         response = api.post(
             f"/collections/{col.id}/nodes/{node.id}/review",
             token,

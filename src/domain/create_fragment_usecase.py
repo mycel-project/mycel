@@ -20,6 +20,7 @@ class CreateFragmentUseCase:
 
     def execute(
         self,
+        user_id: str,
         collection_id: str,
         content: Union[str, dict, NodeContent],
         data: Optional[NodeData] = None,
@@ -40,6 +41,7 @@ class CreateFragmentUseCase:
             due = start_of_local_day_ms(now_ms() + interval * MS_PER_DAY, tz_offset)
             
         return self._create_node.execute(
+            user_id=user_id,
             collection_id=collection_id,
             type=NodeType.FRAGMENT,
             content=content,

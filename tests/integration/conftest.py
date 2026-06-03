@@ -106,8 +106,9 @@ def create_node_use_case(app):
 
 @pytest.fixture
 def create_node(create_node_use_case):
-    def _create_node(col_id, type=NodeType.FRAGMENT, content="Test content", parent_id=None):
+    def _create_node(col_id, user_id, type=NodeType.FRAGMENT, content="Test content", parent_id=None):
         return create_node_use_case.execute(
+            user_id=user_id,
             collection_id=col_id,
             type=type,
             content=content,

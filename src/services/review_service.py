@@ -110,14 +110,14 @@ class ReviewService:
     def get_encounter_count(self, node_id: str) -> int:
         return self._repo.get_encounter_count(node_id)
 
-    def get_reviews_for_today(self, tz_offset_minutes: int = 0) -> list[Review]:
+    def get_reviews_for_today(self, col_id: str, tz_offset_minutes: int = 0) -> list[Review]:
         today_start = start_of_local_today_ms(tz_offset_minutes)
         today_end = today_start + MS_PER_DAY
-        return self._repo.get_by_period(today_start, today_end)
+        return self._repo.get_by_period(today_start, today_end, col_id)
 
     def get_next_review_id(self, user_id: str, col_id: str, tz_offset: int = 0) -> str | None:
-        nodes = self._node_service.get_nodes_scheduling_context(col_id)
-        today_reviews = self.get_reviews_for_today(tz_offset)
+        nodes = self._node_service.get_nodes_scheduling_context(user_id, col_id)
+        today_reviews = self.get_reviews_for_today(col_id, tz_offset)
         today_reviews_context = []
 
         for r in today_reviews:
@@ -132,7 +132,7 @@ class ReviewService:
                     node_type=node.type,
                 )
             )
-                                
+
         return self._scheduling_engine.get_next_node(user_id, nodes, today_reviews_context, tz_offset)
 
     def get_next_review(self, user_id: str, col_id: str, tz_offset: int = 0) -> Node | None:

@@ -52,10 +52,13 @@ class ReviewRepository:
         rows = self.db.fetch_all("SELECT * FROM reviews WHERE node_id = :node_id ORDER BY time", {"node_id": node_id})
         return [self._row_to_model(r) for r in rows]
 
-    def get_by_period(self, start: int, end: int) -> list[Review]:
+    def get_by_period(self, start: int, end: int, col_id: str) -> list[Review]:
         rows = self.db.fetch_all(
-            "SELECT * FROM reviews WHERE time >= :start AND time < :end ORDER BY time",
-            {"start": start, "end": end},
+            """SELECT r.* FROM reviews r
+               JOIN nodes n ON r.node_id = n.id
+               WHERE r.time >= :start AND r.time < :end AND n.collection_id = :col_id
+               ORDER BY r.time""",
+            {"start": start, "end": end, "col_id": col_id},
         )
         return [self._row_to_model(r) for r in rows]
 

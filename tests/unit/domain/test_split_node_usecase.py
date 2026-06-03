@@ -54,7 +54,7 @@ def make_use_case(generate_id, make_node):
 
 
 def get_content(cf, index: int) -> str:
-    return cf.call_args_list[index][0][1]
+    return cf.call_args_list[index][0][2]
 
 
 class TestSplitNodeUseCase:
@@ -64,19 +64,19 @@ class TestSplitNodeUseCase:
         text = "# Title\nSome content under h1.\n"
         uc, cf = make_use_case(text)
         with pytest.raises(NoHeadingToSplit):
-            uc.execute(generate_id(), generate_id(), 0, level=1)
+            uc.execute(generate_id(), generate_id(), generate_id(), 0, level=1)
 
     def test_intro_before_first_heading_is_captured(self, generate_id, make_use_case):
         text = "Intro paragraph.\n\n# Title\nContent.\n"
         uc, cf = make_use_case(text)
-        results = uc.execute(generate_id(), generate_id(), 0, level=1)
+        results = uc.execute(generate_id(), generate_id(), generate_id(), 0, level=1)
         assert len(results) == 2
         assert "Intro paragraph." in get_content(cf, 0)
 
     def test_multiple_h1s_split_correctly(self, generate_id, make_use_case):
         text = "# First\nContent A.\n# Second\nContent B.\n# Third\nContent C.\n"
         uc, cf = make_use_case(text)
-        results = uc.execute(generate_id(), generate_id(), 0, level=1)
+        results = uc.execute(generate_id(), generate_id(), generate_id(), 0, level=1)
         assert len(results) == 3
         contents = [get_content(cf, i) for i in range(len(cf.call_args_list))]
         assert any("# First" in c and "Content A." in c for c in contents)
@@ -88,13 +88,13 @@ class TestSplitNodeUseCase:
         text = "# Title\n## Sub\nContent.\n"
         uc, cf = make_use_case(text)
         with pytest.raises(NoHeadingToSplit):
-            uc.execute(generate_id(), generate_id(), 0, level=1)
+            uc.execute(generate_id(), generate_id(), generate_id(), 0, level=1)
 
     def test_level_1_with_multiple_h1s_ignores_h2(self, generate_id, make_use_case):
         """Multiple H1s: H2s should be included in their parent H1 fragment."""
         text = "# Title A\n## Sub\nContent.\n# Title B\nMore.\n"
         uc, cf = make_use_case(text)
-        results = uc.execute(generate_id(), generate_id(), 0, level=1)
+        results = uc.execute(generate_id(), generate_id(), generate_id(), 0, level=1)
         assert len(results) == 2
         contents = [get_content(cf, i) for i in range(len(cf.call_args_list))]
         assert any("## Sub" in c and "Content." in c for c in contents)
@@ -102,7 +102,7 @@ class TestSplitNodeUseCase:
     def test_level_2_splits_on_h2(self, generate_id, make_use_case):
         text = "# Title\nIntro.\n## Sub A\nContent A.\n## Sub B\nContent B.\n"
         uc, cf = make_use_case(text)
-        results = uc.execute(generate_id(), generate_id(), 0, level=2)
+        results = uc.execute(generate_id(), generate_id(), generate_id(), 0, level=2)
         assert len(results) == 3  # # Title+Intro, ## Sub A, ## Sub B
         contents = [get_content(cf, i) for i in range(len(cf.call_args_list))]
         assert any("## Sub A" in c for c in contents)
@@ -113,13 +113,13 @@ class TestSplitNodeUseCase:
         text = "## Sub A\nContent A.\n## Sub B\nContent B.\n"
         uc, cf = make_use_case(text)
         with pytest.raises(NoHeadingToSplit):
-            uc.execute(generate_id(), generate_id(), 0, level=1)
+            uc.execute(generate_id(), generate_id(), generate_id(), 0, level=1)
 
     def test_empty_content_raises(self, generate_id, make_use_case):
         text = ""
         uc, cf = make_use_case(text)
         with pytest.raises(NoHeadingToSplit):
-            uc.execute(generate_id(), generate_id(), 0, level=3)
+            uc.execute(generate_id(), generate_id(), generate_id(), 0, level=3)
 
     def test_no_content_field_raises(self, generate_id):
         node_service = MagicMock()
@@ -132,13 +132,13 @@ class TestSplitNodeUseCase:
         create_fragment = MagicMock()
         uc = SplitNodeUseCase(node_service, create_fragment, GetOutlineUseCase())
         with pytest.raises(NoHeadingToSplit):
-            uc.execute(generate_id(), generate_id(), 0, level=2)
+            uc.execute(generate_id(), generate_id(), generate_id(), 0, level=2)
 
     def test_content_fully_preserved(self, generate_id, make_use_case):
         """All sections of the original text end up in fragments."""
         text = "Intro.\n# H1\nBody.\n## H2\nSub.\n"
         uc, cf = make_use_case(text)
-        uc.execute(generate_id(), generate_id(), 0, level=2)
+        uc.execute(generate_id(), generate_id(), generate_id(), 0, level=2)
         combined = " ".join(get_content(cf, i) for i in range(len(cf.call_args_list)))
         for chunk in ["Intro.", "# H1", "Body.", "## H2", "Sub."]:
             assert chunk in combined
@@ -147,13 +147,13 @@ class TestSplitNodeUseCase:
         text = "# A\nContent.\n# B\nMore.\n"
         parent_id = generate_id()
         uc, cf = make_use_case(text, node_id=parent_id)
-        uc.execute(generate_id(), parent_id, 0, level=1)
+        uc.execute(generate_id(), generate_id(), parent_id, 0, level=1)
         for c in cf.call_args_list:
             assert c[1]["parent_id"] == parent_id
 
     def test_tz_offset_passed_correctly(self, generate_id, make_use_case):
         text = "# A\nContent.\n# B\nMore.\n"
         uc, cf = make_use_case(text)
-        uc.execute(generate_id(), generate_id(), tz_offset=120, level=1)
+        uc.execute(generate_id(), generate_id(), generate_id(), tz_offset=120, level=1)
         for c in cf.call_args_list:
             assert c[1]["tz_offset"] == 120

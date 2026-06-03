@@ -56,7 +56,7 @@ def test_review_node_queries(db_fixture, default_collection, generate_id):
     assert reviews_n2[0].time == 2000
     assert repo.get_encounter_count(node2_id) == 3
 
-def test_review_get_by_period(db_fixture, default_node):
+def test_review_get_by_period(db_fixture, default_node, default_collection):
     repo = ReviewRepository(db=db_fixture)
     node_id, node_type = default_node
 
@@ -64,8 +64,8 @@ def test_review_get_by_period(db_fixture, default_node):
     repo.create(node_id=node_id, type=node_type, node_state_before=get_dummy_state(node_type), duration=5000, now=200)
     repo.create(node_id=node_id, type=node_type, node_state_before=get_dummy_state(node_type), duration=5000, now=300)
 
-    results = repo.get_by_period(start=150, end=250)
-    
+    results = repo.get_by_period(start=150, end=250, col_id=default_collection)
+
     assert len(results) == 1
     assert results[0].time == 200
 

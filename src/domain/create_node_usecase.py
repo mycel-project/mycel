@@ -17,6 +17,7 @@ class CreateNodeUseCase:
 
     def execute(
         self,
+        user_id: str,
         collection_id: str,
         type: NodeType,
         content: Union[str, dict, NodeContent],
@@ -32,6 +33,7 @@ class CreateNodeUseCase:
             else:
                 position = self._priority_service.prioritise_random_near_node(collection_id, parent_id, 10)
         return self._node_service.create_node(
+            user_id=user_id,
             collection_id=collection_id,
             type=type,
             content=content,

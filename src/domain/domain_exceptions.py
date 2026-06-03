@@ -27,6 +27,14 @@ class NoUserFound(UserError):
             status_code=404,
         )
 
+class ForbiddenError(UserError):
+    def __init__(self):
+        super().__init__(
+            code="FORBIDDEN",
+            message="Access denied",
+            status_code=403,
+        )
+
 # Collection errors
 
 class CollectionError(DomainException):

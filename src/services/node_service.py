@@ -7,7 +7,6 @@ from src.models.node_data import NodeData
 from src.models.type_data import TypeData
 from src.repositories.node_repository import NodeRepository
 from src.schemas.node_view import NodeView
-from src.schemas.node_metrics import NodeMetrics
 from src.schemas.node_update import NodeUpdate
 from src.models.node_content import NodeContent
 from src.types.count_by_type_and_day import CountByTypeAndDay
@@ -15,7 +14,6 @@ from src.types.node_type import NodeType
 from src.utils.time import overdue_ms, now_ms
 
 class NodeService:
-    # Need to pass col_id (and user ?) systematically
     """
     Default behaviour is to filter nodes by aliveness (deleted_at field at None), excepted in get_node where we raise exception if node is deleted
 
@@ -25,7 +23,19 @@ class NodeService:
         self._repo = node_repository
         
     def get_node(self, node_id: str, include_deleted: bool = False) -> Node:
+        """
+        Retrieve a node without transporting heavy user data.
+        Safe to use after node ownership has been verified, never before!
+        """
         node = self._repo.get(node_id)
+        if node is None:
+            raise NoNodeFound(node_id)
+        if not include_deleted and node.deleted_at is not None:
+            raise NodeDeleted(node_id)
+        return node
+
+    def get_node_for_user(self, user_id: str, col_id: str, node_id: str, include_deleted: bool = False) -> Node:
+        node = self._repo.get_owned(user_id, col_id, node_id)
         if node is None:
             raise NoNodeFound(node_id)
         if not include_deleted and node.deleted_at is not None:
@@ -34,6 +44,7 @@ class NodeService:
 
     def get_nodes(
         self,
+        user_id: str,
         collection_id: str,
         limit: int = 5000,
         include_alive: bool = True,
@@ -41,7 +52,7 @@ class NodeService:
     ) -> list[Node]:
         if not include_alive and not include_deleted:
             raise ValueError("At least one of include_alive or include_deleted must be True")
-        nodes = self._repo.get_by_collection(collection_id, limit)
+        nodes = self._repo.get_by_collection(user_id, collection_id, limit)
         if include_alive and include_deleted:
             return nodes
         if include_alive:
@@ -56,6 +67,7 @@ class NodeService:
 
     def create_node(
         self,
+        user_id: str,
         collection_id: str,
         type: NodeType,
         content: Union[str, dict, NodeContent],
@@ -127,8 +139,8 @@ class NodeService:
                 continue
         return ids
 
-    def get_nodes_scheduling_context(self, collection_id: str) -> list[NodeSchedulingContext]:
-        nodes = self.get_nodes(collection_id)
+    def get_nodes_scheduling_context(self, user_id: str, collection_id: str) -> list[NodeSchedulingContext]:
+        nodes = self.get_nodes(user_id, collection_id)
         now = now_ms()
         return [
             NodeSchedulingContext(

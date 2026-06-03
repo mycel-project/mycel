@@ -120,7 +120,7 @@ def client(app):
     return TestClient(app.interface.interface.app)
 
 @pytest.fixture
-def nodes(db, col):
+def nodes(db, col, default_user):
     repo = NodeRepository(db)
 
     now = int(time.time() * 1000)
@@ -225,7 +225,7 @@ def nodes(db, col):
 
         repo.update(node)
 
-    return repo.get_by_collection(col.id)
+    return repo.get_by_collection(default_user, col.id)
 
 
 # @pytest.fixture
