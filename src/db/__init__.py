@@ -1,6 +1,5 @@
 import os
 import time
-from pathlib import Path
 from typing import Any
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
@@ -11,7 +10,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class Db:
-    def __init__(self, db_path: str | Path, testing: bool = False):
+    def __init__(self, db_path: str, testing: bool = False):
         self.testing = testing
         db_path = os.getenv("DATABASE_URL") or db_path
         self.db_path = db_path
