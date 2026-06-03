@@ -11,9 +11,9 @@ class NodeView(BaseModel):
     Lightweight DTO for list display. Contains a short content preview.
     For full content rendering, use NodeDetailView.
     """
-    id: int
-    collection_id: int
-    parent_id: Optional[int] = None
+    id: str
+    collection_id: str
+    parent_id: Optional[str] = None
     type: int
     priority: float
     due: int

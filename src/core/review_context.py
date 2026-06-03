@@ -6,5 +6,5 @@ class ReviewContext(BaseModel):
     """
     Review data used by scheduling engine
     """
-    id: int
+    id: str
     node_type: int

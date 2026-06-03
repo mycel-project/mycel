@@ -2,7 +2,7 @@ from pydantic import BaseModel
 
 
 class SporeReview(BaseModel):
-    id: int
-    collection_id: int
+    id: str
+    collection_id: str
     type: int
     content: str

@@ -25,7 +25,7 @@ class FragmentService:
             NodeType.SPORE: self._node_format_service.inline_region,
         }
         
-    def create_fragment(self, col_id: int, content: Union[str, dict], parent_id: Optional[int] = None, tz_offset: int = 0) -> Node:
+    def create_fragment(self, col_id: str, content: Union[str, dict], parent_id: Optional[str] = None, tz_offset: int = 0) -> Node:
         return self._create_fragment.execute(
             collection_id=col_id,
             content=content,
@@ -33,13 +33,13 @@ class FragmentService:
             tz_offset=tz_offset,
         )        
 
-    def update_fragment(self, node_id: int, data: NodeUpdate) -> Node:
+    def update_fragment(self, node_id: str, data: NodeUpdate) -> Node:
         node = self._node_service.get_node(node_id)
         if node.type != NodeType.FRAGMENT:
             raise NotAFragment(node_id)
         return self._node_service.update(node_id, data)
         
-    def emphasize_region(self, node_id: int, node_region_type: int, field: str, start: int, end: int, text: str | None = None) -> Node:
+    def emphasize_region(self, node_id: str, node_region_type: int, field: str, start: int, end: int, text: str | None = None) -> Node:
         """
         Text is used to see if rebuild text is similar to what is passed in text (it should be)
         """
@@ -56,7 +56,7 @@ class FragmentService:
             NodeUpdate(content=node.content)
         )
 
-    def dismiss(self, node_id: int) -> Node:
+    def dismiss(self, node_id: str) -> Node:
         return self._node_service.update(node_id,
             NodeUpdate(
                 type_data=FragmentData(

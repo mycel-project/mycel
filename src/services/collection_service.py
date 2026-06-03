@@ -27,8 +27,8 @@ class CollectionService:
     def create_collection(
         self,
         name: str,
-        user_id: int,
-        id: Optional[int] = None,
+        user_id: str,
+        id: Optional[str] = None,
 
     ) -> Collection:
         return self._repo.create(
@@ -39,19 +39,19 @@ class CollectionService:
             id=id,
         )
 
-    def get_collection(self, collection_id: int) -> Collection:
+    def get_collection(self, collection_id: str) -> Collection:
         collection = self._repo.get(collection_id)
         if collection is None:
             raise NoCollectionFound(collection_id)
         return collection
 
-    def get_collections(self, user_id) -> list[Collection]:
+    def get_collections(self, user_id: str) -> list[Collection]:
         return self._repo.list(user_id)
 
-    def delete_collection(self, collection_id: int) -> None:
+    def delete_collection(self, collection_id: str) -> None:
         self._repo.delete(collection_id)
 
-    def get_fsrs_conf(self, collection_id: int) -> FsrsConf:
+    def get_fsrs_conf(self, collection_id: str) -> FsrsConf:
         collection = self._repo.get(collection_id)
         if not collection:
             raise ValueError("Collection not found")
@@ -69,7 +69,7 @@ class CollectionService:
     def to_views(self, collections: list[Collection]) -> list[CollectionView]:
         return [self.to_view(c) for c in collections]
 
-    def update(self, collection_id: int, updates: CollectionUpdate) -> Collection:
+    def update(self, collection_id: str, updates: CollectionUpdate) -> Collection:
         collection = self.get_collection(collection_id)
         
         # Fields explicitly provided in updates (even if set to None) will overwrite existing values (due to model_fiels_set).

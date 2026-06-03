@@ -6,7 +6,7 @@ from src.models.fsrs_conf import FsrsConf
 
 class CollectionView(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-    id: int
+    id: str
     name: str
     conf: CollectionConf
     fsrsconf: FsrsConf

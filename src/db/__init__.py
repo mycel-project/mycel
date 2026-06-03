@@ -3,15 +3,19 @@ import time
 from typing import Any
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
+
+from src.utils.env import is_testing
 from .schema import Base
 from .models import *
 from dotenv import load_dotenv
 
 load_dotenv()
 
+DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000001"
+
 class Db:
-    def __init__(self, db_path: str, testing: bool = False):
-        self.testing = testing
+    def __init__(self, db_path: str):
+        self.testing = is_testing()
         db_path = os.getenv("DATABASE_URL") or db_path
         self.db_path = db_path
         if str(db_path).startswith("postgresql"):
@@ -23,9 +27,9 @@ class Db:
         self.session_factory = sessionmaker(bind=self.engine)
 
         with self.session_factory() as session:
-            existing = session.execute(text("SELECT id FROM users WHERE id = :id"), {"id": 1}).fetchone()
+            existing = session.execute(text("SELECT id FROM users WHERE id = :id"), {"id": DEFAULT_USER_ID}).fetchone()
             if not existing:
-                session.execute(text("INSERT INTO users (id, name, created_at, conf) VALUES (:id, :name, :now, '{}')"), {"id": 1, "name": "default", "now": int(time.time() * 1000)})
+                session.execute(text("INSERT INTO users (id, name, created_at, conf) VALUES (:id, :name, :now, '{}')"), {"id": DEFAULT_USER_ID, "name": "default", "now": int(time.time() * 1000)})
                 session.commit()
 
     @property

@@ -40,8 +40,8 @@ class ReviewService:
 
     def review_spore(
             self,
-            col_id: int,
-            node_id: int,
+            col_id: str,
+            node_id: str,
             duration: int,
             data: SporeReviewData,
     ) -> Node:
@@ -76,8 +76,8 @@ class ReviewService:
 
     def review_fragment(
             self,
-            col_id: int,
-            node_id: int,
+            col_id: str,
+            node_id: str,
             duration: int,
             data: FragmentReviewData,
             tz_offset: int = 0,
@@ -107,7 +107,7 @@ class ReviewService:
             )
         )
 
-    def get_encounter_count(self, node_id: int) -> int:
+    def get_encounter_count(self, node_id: str) -> int:
         return self._repo.get_encounter_count(node_id)
 
     def get_reviews_for_today(self, tz_offset_minutes: int = 0) -> list[Review]:
@@ -115,7 +115,7 @@ class ReviewService:
         today_end = today_start + MS_PER_DAY
         return self._repo.get_by_period(today_start, today_end)
 
-    def get_next_review_id(self, col_id: int, tz_offset: int = 0) -> int | None:
+    def get_next_review_id(self, user_id: str, col_id: str, tz_offset: int = 0) -> str | None:
         nodes = self._node_service.get_nodes_scheduling_context(col_id)
         today_reviews = self.get_reviews_for_today(tz_offset)
         today_reviews_context = []
@@ -133,23 +133,23 @@ class ReviewService:
                 )
             )
                                 
-        return self._scheduling_engine.get_next_node(nodes, today_reviews_context, tz_offset)
+        return self._scheduling_engine.get_next_node(user_id, nodes, today_reviews_context, tz_offset)
 
-    def get_next_review(self, col_id: int, tz_offset: int = 0) -> Node | None:
-        next_node_id = self.get_next_review_id(col_id, tz_offset)
+    def get_next_review(self, user_id: str, col_id: str, tz_offset: int = 0) -> Node | None:
+        next_node_id = self.get_next_review_id(user_id, col_id, tz_offset)
         if not next_node_id:
             return None
         node = self._node_service.get_node(next_node_id)
         self._pending_review_cache.set(next_node_id)
         return node
 
-    def set_pending_node_id(self, node_id: int):
+    def set_pending_node_id(self, node_id: str):
         self._pending_review_cache.set(node_id)
 
-    def get_pending_node_id(self) -> int | None: 
+    def get_pending_node_id(self) -> str | None: 
         return self._pending_review_cache.get()
 
-    def undo_review(self, col_id: int, max_age_min: int | None = None) -> Review:
+    def undo_review(self, col_id: str, max_age_min: int | None = None) -> Review:
         last_review = self._repo.get_last_review_by_collection(col_id)
 
         if last_review is None:

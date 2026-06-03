@@ -8,7 +8,7 @@ from src.db.schema import Base
 class UserORM(Base):
     __tablename__ = "users"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
     created_at: Mapped[int] = mapped_column(BigInteger, nullable=False)
     conf: Mapped[str] = mapped_column(String, nullable=False, server_default="{}")
@@ -17,8 +17,8 @@ class UserORM(Base):
 class CollectionORM(Base):
     __tablename__ = "collections"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     name: Mapped[str] = mapped_column(String, nullable=False)
     created_at: Mapped[int] = mapped_column(BigInteger, nullable=False)
     updated_at: Mapped[int] = mapped_column(BigInteger, nullable=False)
@@ -29,9 +29,9 @@ class CollectionORM(Base):
 class NodeORM(Base):
     __tablename__ = "nodes"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    collection_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("collections.id", ondelete="CASCADE"), nullable=False)
-    parent_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    collection_id: Mapped[str] = mapped_column(String(36), ForeignKey("collections.id", ondelete="CASCADE"), nullable=False)
+    parent_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     type: Mapped[int] = mapped_column(BigInteger, nullable=False)
     content: Mapped[str] = mapped_column(String, nullable=False, server_default="{}")
     created_at: Mapped[int] = mapped_column(BigInteger, nullable=False)
@@ -52,8 +52,8 @@ class NodeORM(Base):
 class ReviewORM(Base):
     __tablename__ = "reviews"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    node_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("nodes.id", ondelete="CASCADE"), nullable=False)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    node_id: Mapped[str] = mapped_column(String(36), ForeignKey("nodes.id", ondelete="CASCADE"), nullable=False)
     type: Mapped[int] = mapped_column(BigInteger, nullable=False)
     time: Mapped[int] = mapped_column(BigInteger, nullable=False)
     duration: Mapped[int] = mapped_column(BigInteger, nullable=False)

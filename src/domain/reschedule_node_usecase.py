@@ -16,7 +16,7 @@ class RescheduleNodeUseCase:
         self._node_service = node_service
         self._pending_review_cache = pending_review_cache
 
-    def execute(self, col_id: int, node_id: int, local_date_iso: str, tz_offset_min: int) -> Node:
+    def execute(self, col_id: str, node_id: str, local_date_iso: str, tz_offset_min: int) -> Node:
         timestamp_ms = local_date_to_utc_ms(local_date_iso, tz_offset_min)
 
         tz = timezone(timedelta(minutes=tz_offset_min))

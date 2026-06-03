@@ -17,7 +17,7 @@ class SplitNodeUseCase:
         self._create_fragment = create_fragment_usecase
         self._get_outline = get_outline_usecase
 
-    def execute(self, collection_id: int, node_id: int, tz_offset: int, level: int) -> list[Node]:
+    def execute(self, collection_id: str, node_id: str, tz_offset: int, level: int) -> list[Node]:
         node = self._node_service.get_node(node_id)
         text = node.content.get_first_field() or "" if node.content else ""
         outline = self._get_outline.execute(node)

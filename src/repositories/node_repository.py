@@ -1,5 +1,6 @@
 import time
 from typing import Optional
+from uuid import uuid4
 
 from src.db import Db
 from src.models.node import TYPE_DATA_MAP, Node
@@ -29,10 +30,11 @@ class NodeRepository:
             position=row["position"],
         )
 
-    def create(self, collection_id: int, content: NodeContent, type: NodeType, position: str, data: Optional[NodeData] = None, due: Optional[int] = None, type_data: Optional[TypeData] = None, parent_id: Optional[int] = None) -> Node:
+    def create(self, collection_id: str, content: NodeContent, type: NodeType, position: str, data: Optional[NodeData] = None, due: Optional[int] = None, type_data: Optional[TypeData] = None, parent_id: Optional[str] = None) -> Node:
         now = int(time.time() * 1000)
+        node_id = str(uuid4())
         node = Node(
-            id=now, collection_id=collection_id, parent_id=parent_id,
+            id=node_id, collection_id=collection_id, parent_id=parent_id,
             created_at=now, updated_at=now, deleted_at=None,
             data=data or NodeData(), type_data=type_data or TYPE_DATA_MAP[type](),
             due=due if due is not None else now, content=content, position=position, type=type
@@ -50,7 +52,7 @@ class NodeRepository:
         )
         return node
 
-    def get(self, id: int) -> Optional[Node]:
+    def get(self, id: str) -> Optional[Node]:
         row = self.db.fetch_one("SELECT * FROM nodes WHERE id = :id", {"id": id})
         return self._row_to_model(row) if row else None
 
@@ -69,10 +71,10 @@ class NodeRepository:
             },
         )
 
-    def delete(self, id: int) -> None:
+    def delete(self, id: str) -> None:
         self.db.execute("DELETE FROM nodes WHERE id = :id", {"id": id})
 
-    def due_count_by_type_and_day(self, collection_id: int, start_ms: int, to_ms: int, tz_offset_minutes: int = 0) -> list[tuple[int, int, int]]:
+    def due_count_by_type_and_day(self, collection_id: str, start_ms: int, to_ms: int, tz_offset_minutes: int = 0) -> list[tuple[int, int, int]]:
         """
         day_start_ms is UTC midnight of the local day (i.e. local midnight expressed in UTC).
         e.g. for UTC+1, May 20 local → 2026-05-19 23:00:00 UTC.
@@ -102,7 +104,7 @@ class NodeRepository:
         )
         return [(row["day_start_ms"], row["type"], row["count"]) for row in rows]
 
-    def get_by_collection(self, collection_id: int, limit: Optional[int] = None) -> list[Node]:
+    def get_by_collection(self, collection_id: str, limit: Optional[int] = None) -> list[Node]:
         if limit:
             rows = self.db.fetch_all(
                 "SELECT * FROM nodes WHERE collection_id = :col_id ORDER BY position LIMIT :limit",
@@ -115,42 +117,42 @@ class NodeRepository:
             )
         return [self._row_to_model(r) for r in rows]
 
-    def get_by_type(self, collection_id: int, type: int) -> list[Node]:
+    def get_by_type(self, collection_id: str, type: int) -> list[Node]:
         rows = self.db.fetch_all(
             "SELECT * FROM nodes WHERE collection_id = :col_id AND type = :type ORDER BY position",
             {"col_id": collection_id, "type": type},
         )
         return [self._row_to_model(r) for r in rows]
 
-    def get_by_state(self, collection_id: int, state: int) -> list[Node]:
+    def get_by_state(self, collection_id: str, state: int) -> list[Node]:
         rows = self.db.fetch_all(
             "SELECT * FROM nodes WHERE collection_id = :col_id AND state = :state ORDER BY position",
             {"col_id": collection_id, "state": state},
         )
         return [self._row_to_model(r) for r in rows]
 
-    def update_position(self, node_id: int, position: str) -> None:
+    def update_position(self, node_id: str, position: str) -> None:
         now = int(time.time() * 1000)
         self.db.execute(
             "UPDATE nodes SET position = :position, updated_at = :now WHERE id = :id",
             {"position": position, "now": now, "id": node_id},
         )
 
-    def update_state(self, node_id: int, state: int) -> None:
+    def update_state(self, node_id: str, state: int) -> None:
         now = int(time.time() * 1000)
         self.db.execute(
             "UPDATE nodes SET state = :state, updated_at = :now WHERE id = :id",
             {"state": state, "now": now, "id": node_id},
         )
 
-    def update_last_review(self, node_id: int) -> None:
+    def update_last_review(self, node_id: str) -> None:
         now = int(time.time() * 1000)
         self.db.execute(
             "UPDATE nodes SET last_review = :now, updated_at = :now WHERE id = :id",
             {"now": now, "id": node_id},
         )
 
-    def get_due(self, collection_id: int, now_ms: Optional[int] = None) -> list[Node]:
+    def get_due(self, collection_id: str, now_ms: Optional[int] = None) -> list[Node]:
         now_ms = now_ms or int(time.time() * 1000)
         rows = self.db.fetch_all(
             "SELECT * FROM nodes WHERE collection_id = :col_id AND due <= :now_ms ORDER BY due",
@@ -158,14 +160,14 @@ class NodeRepository:
         )
         return [self._row_to_model(r) for r in rows]
 
-    def get_children(self, node_id: int) -> list[Node]:
+    def get_children(self, node_id: str) -> list[Node]:
         rows = self.db.fetch_all(
             "SELECT * FROM nodes WHERE parent_id = :node_id ORDER BY position",
             {"node_id": node_id},
         )
         return [self._row_to_model(r) for r in rows]
 
-    def get_children_recursive(self, node_id: int) -> list[Node]:
+    def get_children_recursive(self, node_id: str) -> list[Node]:
         """Does not include root node"""
         rows = self.db.fetch_all(
             """
@@ -181,7 +183,7 @@ class NodeRepository:
         )
         return [self._row_to_model(r) for r in rows]
 
-    def get_expired_deleted(self, collection_id: int, cutoff_ms: int) -> list[Node]:
+    def get_expired_deleted(self, collection_id: str, cutoff_ms: int) -> list[Node]:
         rows = self.db.fetch_all(
             """SELECT * FROM nodes WHERE collection_id = :col_id
                AND deleted_at IS NOT NULL AND deleted_at < :cutoff""",
@@ -189,39 +191,39 @@ class NodeRepository:
         )
         return [self._row_to_model(r) for r in rows]
 
-    def get_position(self, node_id: int) -> Optional[str]:
+    def get_position(self, node_id: str) -> Optional[str]:
         row = self.db.fetch_one("SELECT position FROM nodes WHERE id = :id", {"id": node_id})
         return row["position"] if row else None
 
-    def get_all_positions(self, collection_id: int) -> list[tuple[int, str]]:
+    def get_all_positions(self, collection_id: str) -> list[tuple[str, str]]:
         rows = self.db.fetch_all(
             "SELECT id, position FROM nodes WHERE collection_id = :col_id AND deleted_at IS NULL ORDER BY position",
             {"col_id": collection_id},
         )
         return [(row["id"], row["position"]) for row in rows]
 
-    def count_before_position(self, collection_id: int, position: str) -> int:
+    def count_before_position(self, collection_id: str, position: str) -> int:
         row = self.db.fetch_one(
             "SELECT COUNT(*) as count FROM nodes WHERE collection_id = :col_id AND position < :position AND deleted_at IS NULL",
             {"col_id": collection_id, "position": position},
         )
         return row["count"] if row else 0
 
-    def count_by_collection(self, collection_id: int) -> int:
+    def count_by_collection(self, collection_id: str) -> int:
         row = self.db.fetch_one(
             "SELECT COUNT(*) as count FROM nodes WHERE collection_id = :col_id AND deleted_at IS NULL",
             {"col_id": collection_id},
         )
         return row["count"] if row else 0
 
-    def get_position_at_offset(self, collection_id: int, offset: int) -> Optional[str]:
+    def get_position_at_offset(self, collection_id: str, offset: int) -> Optional[str]:
         row = self.db.fetch_one(
             "SELECT position FROM nodes WHERE collection_id = :col_id AND deleted_at IS NULL ORDER BY position LIMIT 1 OFFSET :offset",
             {"col_id": collection_id, "offset": offset},
         )
         return row["position"] if row else None
 
-    def get_predecessor_position(self, collection_id: int, position: str, exclude_id: int) -> Optional[str]:
+    def get_predecessor_position(self, collection_id: str, position: str, exclude_id: str) -> Optional[str]:
         row = self.db.fetch_one(
             """SELECT position FROM nodes
                WHERE collection_id = :col_id AND position < :position AND id != :exclude_id AND deleted_at IS NULL
@@ -230,7 +232,7 @@ class NodeRepository:
         )
         return row["position"] if row else None
 
-    def get_successor_position(self, collection_id: int, position: str, exclude_id: int) -> Optional[str]:
+    def get_successor_position(self, collection_id: str, position: str, exclude_id: str) -> Optional[str]:
         row = self.db.fetch_one(
             """SELECT position FROM nodes
                WHERE collection_id = :col_id AND position > :position AND id != :exclude_id AND deleted_at IS NULL
@@ -239,7 +241,7 @@ class NodeRepository:
         )
         return row["position"] if row else None
 
-    def get_tail_key(self, collection_id: int) -> Optional[str]:
+    def get_tail_key(self, collection_id: str) -> Optional[str]:
         """Get the last position in the collection, ordered lexicographically."""
         row = self.db.fetch_one(
             "SELECT position FROM nodes WHERE collection_id = :col_id AND deleted_at IS NULL ORDER BY position DESC LIMIT 1",

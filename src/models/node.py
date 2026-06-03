@@ -17,8 +17,8 @@ TYPE_DATA_MAP = {
 
 class Node(BaseModel):
     model_config = ConfigDict(validate_assignment=True)
-    id: int
-    collection_id: int
+    id: str
+    collection_id: str
     created_at: int
     updated_at: int
     data: NodeData
@@ -28,7 +28,7 @@ class Node(BaseModel):
     type: NodeType = NodeType.FRAGMENT
     type_data: TypeData
     deleted_at: Optional[int] = None
-    parent_id: Optional[int] = None
+    parent_id: Optional[str] = None
     last_review: Optional[int] = None  
 
     

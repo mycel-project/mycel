@@ -20,7 +20,7 @@ class UserError(DomainException):
         )
 
 class NoUserFound(UserError):
-    def __init__(self, user_id: int):
+    def __init__(self, user_id: str):
         super().__init__(
             code="USER_NOT_FOUND",
             message=f"No user found for id {user_id}",
@@ -38,7 +38,7 @@ class CollectionError(DomainException):
         )
 
 class NoCollectionFound(CollectionError):
-    def __init__(self, collection_id: int):
+    def __init__(self, collection_id: str):
         super().__init__(
             code="COLLECTION_NOT_FOUND",
             message=f"No collection found for id {collection_id}",
@@ -48,7 +48,7 @@ class NoCollectionFound(CollectionError):
 # Node errors
 
 class NoNodeFound(DomainException):
-    def __init__(self, node_id: int):
+    def __init__(self, node_id: str):
         super().__init__(
             code="NODE_NOT_FOUND",
             message=f"No node found for id {node_id}",
@@ -57,7 +57,7 @@ class NoNodeFound(DomainException):
         
 
 class NotAFragment(DomainException):
-    def __init__(self, node_id: int):
+    def __init__(self, node_id: str):
         super().__init__(
             code="NOT_A_FRAGMENT",
             message=f"Node with id {node_id} is not a fragment",
@@ -66,7 +66,7 @@ class NotAFragment(DomainException):
 
 
 class NotASpore(DomainException):
-    def __init__(self, node_id: int):
+    def __init__(self, node_id: str):
         super().__init__(
             code="NOT_A_SPORE",
             message=f"Node with id {node_id} is not a spore",
@@ -75,7 +75,7 @@ class NotASpore(DomainException):
 
 
 class NotAKnownType(DomainException):
-    def __init__(self, node_id: int, type_value: int):
+    def __init__(self, node_id: str, type_value: int):
         super().__init__(
             code="UNKNOWN_NODE_TYPE",
             message=f"Node with id {node_id} has an unknown type key: {type_value}",
@@ -83,12 +83,12 @@ class NotAKnownType(DomainException):
         )
 
 class NodeDeleted(Exception):
-    def __init__(self, node_id: int):
+    def __init__(self, node_id: str):
         super().__init__(f"Node {node_id} exists but has been deleted")
 
         
 class EmptyField(DomainException):
-    def __init__(self, node_id: int, field: str):
+    def __init__(self, node_id: str, field: str):
         super().__init__(
             code="EMPTY_FIELD",
             message=f"Node with id {node_id} has no content for field {field}",
@@ -117,7 +117,7 @@ class ExtractMismatchError(ExtractError):
         )
         
 class InvalidSourceNodeType(ExtractError):
-    def __init__(self, node_id: int, type: int):
+    def __init__(self, node_id: str, type: int):
         super().__init__(
             code="INVALID_SOURCE_NODE_TYPE",
             message=f"You can only create a new node from a fragment, but node with id {node_id} has a type of {type}.",
@@ -129,7 +129,7 @@ class InvalidSourceNodeType(ExtractError):
 class InvalidNodeUpdate(DomainException):
     def __init__(
         self,
-        node_id: int,
+        node_id: str,
         node_type: int,
         node_content: Any,
         reason: Optional[str] = None,
@@ -187,7 +187,7 @@ class ReviewError(DomainException):
         )
 
 class PendingReviewMismatchError(ReviewError):
-    def __init__(self, review_id: int, pending_id: int):
+    def __init__(self, review_id: str, pending_id: str):
         super().__init__(
             code="PENDING_REVIEW_MISMATCH",
             message=f"Received review id ({review_id}) does not match pending id ({pending_id})",
@@ -195,7 +195,7 @@ class PendingReviewMismatchError(ReviewError):
         )
 
 class NoPendingNodeError(ReviewError):
-    def __init__(self, review_id: int):
+    def __init__(self, review_id: str):
         super().__init__(
             code="NO_PENDING_NODE",
             message=f"No pending review node (received {review_id})",
@@ -223,7 +223,7 @@ class ReviewUndoError(ReviewError):
         super().__init__(code=code, message=message, status_code=status_code)
 
 class ReviewUndoNodeInaccessible(ReviewUndoError):
-    def __init__(self, node_id: int, review_id: int):
+    def __init__(self, node_id: str, review_id: str):
         super().__init__(
             code="UNDO_NODE_INACCESSIBLE",
             message=f"Review {review_id} was undone but node {node_id} is inaccessible",
@@ -256,7 +256,7 @@ class NoClozeFieldError(ClozeValidationError):
         )
 
 class NoHeadingToSplit(DomainException):
-    def __init__(self, node_id: int, level: int):
+    def __init__(self, node_id: str, level: int):
         super().__init__(
             code="NO_HEADING_TO_SPLIT",
             message=f"No heading of level <= {level} found in node {node_id}",

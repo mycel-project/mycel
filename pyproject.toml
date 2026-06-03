@@ -13,3 +13,6 @@ log_cli_level = "INFO"
 env_files = [
     ".env.test"
 ]
+filterwarnings = [
+    "ignore::jwt.InsecureKeyLengthWarning"
+]

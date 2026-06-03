@@ -16,7 +16,7 @@ class CreateNodeFromUrlUseCase:
         self._create_fragment = create_fragment_use_case
         self._ressource_service = ressource_service
 
-    def execute(self, collection_id: int, url: str, tz_offset: int = 0) -> Node:
+    def execute(self, collection_id: str, url: str, tz_offset: int = 0) -> Node:
         if not is_valid_url(url):
             raise InvalidUrl(url)
 

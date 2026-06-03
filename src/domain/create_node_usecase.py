@@ -17,13 +17,13 @@ class CreateNodeUseCase:
 
     def execute(
         self,
-        collection_id: int,
+        collection_id: str,
         type: NodeType,
         content: Union[str, dict, NodeContent],
         due: Optional[int] = None,
         data: Optional[NodeData] = None,
         type_data: Optional[TypeData] = None,
-        parent_id: Optional[int] = None,
+        parent_id: Optional[str] = None,
         position: Optional[str] = None,
     ) -> Node:
         if position is None:

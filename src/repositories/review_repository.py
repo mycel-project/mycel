@@ -1,6 +1,7 @@
 import json
 import time
 from typing import Optional
+from uuid import uuid4
 from src.db import Db
 from src.models.node_state_before import NodeStateBefore
 from src.models.review import TYPE_REVIEW_DATA_MAP, Review
@@ -27,11 +28,12 @@ class ReviewRepository:
             ),
         )
 
-    def create(self, node_id: int, type: NodeType, node_state_before: NodeStateBefore, type_review_data: Optional[TypeReviewData] = None, duration: int | None = None, now: int | None = None) -> Review:
+    def create(self, node_id: str, type: NodeType, node_state_before: NodeStateBefore, type_review_data: Optional[TypeReviewData] = None, duration: int | None = None, now: int | None = None) -> Review:
         if not now:
             now = int(time.time() * 1000)
+        review_id = str(uuid4())
         review = Review(
-            id=now, node_id=node_id, time=now, duration=duration, type=type,
+            id=review_id, node_id=node_id, time=now, duration=duration, type=type,
             type_review_data=type_review_data or TYPE_REVIEW_DATA_MAP[type](),
             node_state_before=node_state_before,
         )
@@ -46,7 +48,7 @@ class ReviewRepository:
         )
         return review
 
-    def get_by_node(self, node_id: int) -> list[Review]:
+    def get_by_node(self, node_id: str) -> list[Review]:
         rows = self.db.fetch_all("SELECT * FROM reviews WHERE node_id = :node_id ORDER BY time", {"node_id": node_id})
         return [self._row_to_model(r) for r in rows]
 
@@ -57,14 +59,14 @@ class ReviewRepository:
         )
         return [self._row_to_model(r) for r in rows]
 
-    def delete(self, review_id: int) -> None:
+    def delete(self, review_id: str) -> None:
         self.db.execute("DELETE FROM reviews WHERE id = :id", {"id": review_id})
 
-    def get_encounter_count(self, node_id: int) -> int:
+    def get_encounter_count(self, node_id: str) -> int:
         row = self.db.fetch_one("SELECT COUNT(*) as count FROM reviews WHERE node_id = :node_id", {"node_id": node_id})
         return row["count"] if row else 0
 
-    def get_last_review_by_collection(self, col_id: int) -> Optional[Review]:
+    def get_last_review_by_collection(self, col_id: str) -> Optional[Review]:
         row = self.db.fetch_one(
             """SELECT r.* FROM reviews r
                JOIN nodes n ON n.id = r.node_id

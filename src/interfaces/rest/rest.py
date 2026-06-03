@@ -1,51 +1,44 @@
-from typing import Optional, Union, Any, Annotated
+from typing import cast
 from scalar_fastapi import get_scalar_api_reference
 
 import logging
-from pydantic import Field
 
-from fastapi import Depends, FastAPI, HTTPException, Request, Response
+from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+import jwt
 
 from src.core.app_infos import AppInfos
 from src.core.config import MycelConfig, DeploymentMode
 from src.core.regex import CLOZE_REGEX
-from src.domain.domain_exceptions import DomainException, Unauthorized
+from src.domain.domain_exceptions import DomainException
 from src.event_bus import EventBus
 from src.interfaces.base_interface import BaseInterface
 from src.interfaces.uvicorn import UvicornServer
 from src.models.day_review_overview import DayReviewOverview
 from src.models.extract_result import ExtractResult
 from src.models.node_create import NodeCreate
-from src.models.collection import Collection
 from src.models.outline import Outline
 from src.models.type_review_data import TypeReviewData
-from src.models.type_review_data.fragment_review_data import FragmentReviewData
-from src.models.type_review_data.spore_review_data import SporeReviewData
-from src.models.user import User
 from src.models.user_conf import UserConf
 from src.schemas.node_detail_view import NodeDetailView
 from src.schemas.node_view import NodeView
 from src.schemas.user_update import UserUpdate
 from src.schemas.collection_update import CollectionUpdate
 from src.schemas.collection_view import CollectionView
-from src.schemas.config_update import ConfigUpdate
 from src.schemas.node_update import NodeUpdate
 from src.schemas.user_view import UserView
 from src.services.auth.auth_service import AuthService
 from src.services.collection_orchestrator import CollectionOrchestrator
 from src.services.collection_service import CollectionService
-from src.services.fragment_service import FragmentService
 from src.services.node_orchestrator import NodeOrchestrator
 from src.services.node_service import NodeService
 from src.services.priority_service import PriorityService
 from src.services.review_orchestrator import ReviewOrchestrator
 from src.services.review_service import ReviewService
-from src.services.spore_service import SporeService
 from src.services.user_orchestrator import UserOrchestrator
 from src.services.user_service import UserService
 from src.types.node_type import NodeType
@@ -100,11 +93,15 @@ class Rest(BaseInterface):
             await self.uvicorn.stop()
 
     async def get_user(self, request: Request) -> str:
+        if is_testing():
+            token = request.headers.get("Authorization", "").split(" ")[1]
+            return cast(str, jwt.decode(token, "test_key", algorithms=["HS256"], audience="authenticated").get("sub"))
         if self.config.deployment_mode == DeploymentMode.CLOUD:
             assert self.auth_service != None
             return await self.auth_service.get_user_id(request.headers.get("Authorization", "")) # For now MycelCloud is single user.
         else:
-            return "1" # Defaut User for self-hosting
+            from src.db import DEFAULT_USER_ID
+            return DEFAULT_USER_ID # Defaut User for self-hosting
 
     def _register_routes(self):
         @self.app.exception_handler(RequestValidationError)
@@ -180,11 +177,11 @@ class Rest(BaseInterface):
             return ApiResponse(data=user)
 
         @self.app.get("/users/{user_id}", tags=["users"])
-        async def get_user(user_id: int, _ = Depends(self.get_user)) -> ApiResponse[UserView]:
+        async def get_user(user_id: str, _ = Depends(self.get_user)) -> ApiResponse[UserView]:
             return ApiResponse(data=self.user_orchestrator.get_user(user_id))
 
         @self.app.patch("/users/{user_id}", tags=["users"])
-        async def update_user(user_id: int, data: UserUpdate, _ = Depends(self.get_user)) -> ApiResponse[UserView]:
+        async def update_user(user_id: str, data: UserUpdate, _ = Depends(self.get_user)) -> ApiResponse[UserView]:
             user = self.user_orchestrator.update_user(user_id, data)
             return ApiResponse(data=user)
 
@@ -203,47 +200,47 @@ class Rest(BaseInterface):
             return ApiResponse(data=collection)
 
         @self.app.delete("/collections/{col_id}", status_code = 204, tags=["collections"])
-        async def delete_collection(col_id: int, user_id = Depends(self.get_user)):
+        async def delete_collection(col_id: str, user_id = Depends(self.get_user)):
             self.collection_service.delete_collection(col_id)
 
         @self.app.patch("/collections/{col_id}", tags=["collections"])
-        async def update_collection(col_id: int, data: CollectionUpdate, user_id = Depends(self.get_user)) -> ApiResponse[CollectionView]:
+        async def update_collection(col_id: str, data: CollectionUpdate, user_id = Depends(self.get_user)) -> ApiResponse[CollectionView]:
             collection = self.collection_orchestrator.update_collection(col_id, data)
             return ApiResponse(data=collection)
 
         # NODES
         
         @self.app.get("/collections/{col_id}/nodes", tags=["nodes"])
-        async def list_nodes(col_id: int, user_id = Depends(self.get_user)) -> ApiResponse[list[NodeView]]:
+        async def list_nodes(col_id: str, user_id = Depends(self.get_user)) -> ApiResponse[list[NodeView]]:
             nodes = self.node_orchestrator.get_nodes_view(col_id, 10000)
             return ApiResponse(data=nodes)
 
         @self.app.post("/collections/{col_id}/nodes", tags=["nodes"])
-        async def create_node(col_id: int, data: NodeCreate, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
+        async def create_node(col_id: str, data: NodeCreate, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
             node = self.node_orchestrator.create_node_to_detail_view(col_id, data, data.tz_offset)
             return ApiResponse(data=node)
         
         @self.app.get("/collections/{col_id}/nodes/priorities", tags=["nodes"])
-        async def get_priorities(col_id: int, user_id = Depends(self.get_user)) -> ApiResponse[dict[int, float]]:
+        async def get_priorities(col_id: str, user_id = Depends(self.get_user)) -> ApiResponse[dict[str, float]]:
             """
             Priority is a relative value, so adding or modifying a node invalidates other priorities. This route allows the frontend to refresh all priorities in a collection efficiently.
             """
             return ApiResponse(data=self.node_orchestrator.get_priorities(col_id))
 
         @self.app.get("/collections/{col_id}/nodes/deleted", tags=["nodes"])
-        async def get_deleted_nodes(col_id: int, user_id = Depends(self.get_user)) -> ApiResponse[list[NodeView]]:
+        async def get_deleted_nodes(col_id: str, user_id = Depends(self.get_user)) -> ApiResponse[list[NodeView]]:
             """
             Returns all soft-deleted nodes in a collection.
             """
             return ApiResponse(data=self.node_orchestrator.get_deleted_nodes_view(col_id))
         
         @self.app.get("/collections/{col_id}/nodes/{node_id}", tags=["nodes"])
-        async def get_node(col_id: int, node_id: int, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
+        async def get_node(col_id: str, node_id: str, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
             node = self.node_orchestrator.get_node_detail_view(node_id)
             return ApiResponse(data=node)
 
         @self.app.delete("/collections/{col_id}/nodes/{node_id}", tags=["nodes"], status_code=200)
-        async def delete_node(col_id: int, node_id: int, user_id = Depends(self.get_user)):
+        async def delete_node(col_id: str, node_id: str, user_id = Depends(self.get_user)):
             """
             Soft-deletes the node and its entire subtree. Returns all deleted node ids so the client can update its local state without a full refetch.
             """
@@ -251,12 +248,12 @@ class Rest(BaseInterface):
             return ApiResponse(data={"deleted_ids": deleted_ids})
 
         @self.app.patch("/collections/{col_id}/nodes/{node_id}", tags=["nodes"])
-        async def update_node(col_id: int, node_id: int, data: NodeUpdate, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
+        async def update_node(col_id: str, node_id: str, data: NodeUpdate, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
             updated_node = self.node_orchestrator.update_node_to_detail_view(node_id, data)
             return ApiResponse(data=updated_node)
         
         @self.app.get("/collections/{col_id}/nodes/{node_id}/root", tags=["nodes"])
-        async def get_root_node(col_id: int, node_id: int, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
+        async def get_root_node(col_id: str, node_id: str, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
             """
             Get the highest parent node for the given node_id.
             Useful when the frontend is not using a cache and the node tree is deeply nested,
@@ -265,20 +262,20 @@ class Rest(BaseInterface):
             return ApiResponse(data=self.node_orchestrator.get_root_node(node_id))
 
         @self.app.get("/collections/{col_id}/nodes/{node_id}/outline", tags=["nodes"])
-        async def get_outline_node(col_id: int, node_id: int, user_id = Depends(self.get_user)) -> ApiResponse[Outline]:
+        async def get_outline_node(col_id: str, node_id: str, user_id = Depends(self.get_user)) -> ApiResponse[Outline]:
             return ApiResponse(data=self.node_orchestrator.get_outline_for_node(col_id, node_id))
         
         class ReprioritiseNodeRequest(BaseModel):
             priority: float
         @self.app.patch("/collections/{col_id}/nodes/{node_id}/reprioritise", tags=["nodes"])
-        async def reprioritise_node(col_id: int, node_id: int, data: ReprioritiseNodeRequest, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
+        async def reprioritise_node(col_id: str, node_id: str, data: ReprioritiseNodeRequest, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
             return ApiResponse(data=self.node_orchestrator.reprioritise_node_to_detail_view(col_id, node_id, data.priority))
     
         class RescheduleNodeRequest(BaseModel):
             date: str       # "2026-05-20"
             tz_offset: int  # minutes
         @self.app.post("/collections/{col_id}/nodes/{node_id}/reschedule", tags=["nodes"])
-        async def reschedule_node(col_id: int, node_id: int, data: RescheduleNodeRequest, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
+        async def reschedule_node(col_id: str, node_id: str, data: RescheduleNodeRequest, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
             """
             Reschedule a node to a specific date.
             """
@@ -288,7 +285,7 @@ class Rest(BaseInterface):
             restore_ancestors: bool = False
             restore_descendants: bool = False
         @self.app.post("/collections/{col_id}/nodes/{node_id}/restore", tags=["nodes"])
-        async def restore_nodes(col_id: int, node_id: int, body: RestoreNodeRequest, user_id = Depends(self.get_user)) -> ApiResponse[list[NodeView]]:
+        async def restore_nodes(col_id: str, node_id: str, body: RestoreNodeRequest, user_id = Depends(self.get_user)) -> ApiResponse[list[NodeView]]:
             """Restore a node, optionally including its parents and/or children."""
             return ApiResponse(data=self.node_orchestrator.restore_nodes_to_views(
                 node_id,
@@ -302,7 +299,7 @@ class Rest(BaseInterface):
             start_index: int
             end_index: int
         @self.app.post("/collections/{col_id}/nodes/{node_id}/remove-links", tags=["nodes"])
-        async def remove_links(col_id: int, node_id: int, data: SelectionData, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
+        async def remove_links(col_id: str, node_id: str, data: SelectionData, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
             return ApiResponse(data=self.node_orchestrator.remove_links_to_detail_view(
                 col_id, node_id, data.text, data.field, data.start_index, data.end_index
             ))
@@ -311,7 +308,7 @@ class Rest(BaseInterface):
             extract_type: NodeType
             tz_offset: int = 0
         @self.app.post("/collections/{col_id}/nodes/{node_id}/extracts", tags=["nodes"])
-        async def create_node_extract(col_id: int, node_id: int, data: NodeExtractRequest, user_id = Depends(self.get_user)) -> ApiResponse[ExtractResult]:
+        async def create_node_extract(col_id: str, node_id: str, data: NodeExtractRequest, user_id = Depends(self.get_user)) -> ApiResponse[ExtractResult]:
             return ApiResponse(data=self.node_orchestrator.create_extract(
                 col_id, data.extract_type, node_id, data.text, data.field, data.start_index, data.end_index, data.tz_offset
             ))
@@ -320,24 +317,24 @@ class Rest(BaseInterface):
             level: int
             tz_offset: int = 0
         @self.app.post("/collections/{col_id}/nodes/{node_id}/split", tags=["nodes"])
-        async def split_node(col_id: int, node_id: int, data: SplitNodeRequest, user_id = Depends(self.get_user)) -> ApiResponse[list[NodeDetailView]]:
+        async def split_node(col_id: str, node_id: str, data: SplitNodeRequest, user_id = Depends(self.get_user)) -> ApiResponse[list[NodeDetailView]]:
             return ApiResponse(data=self.node_orchestrator.split_node_to_detail_views(col_id, node_id, data.tz_offset, data.level))
 
         # REVIEWS
 
         @self.app.get("/collections/{col_id}/reviews/next", tags=["reviews"])
-        async def get_next_review(col_id: int, tz_offset: int = 0, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView | None]:
-            return ApiResponse(data=self.review_orchestrator.get_next_review(col_id, tz_offset))
+        async def get_next_review(col_id: str, tz_offset: int = 0, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView | None]:
+            return ApiResponse(data=self.review_orchestrator.get_next_review(user_id, col_id, tz_offset))
 
         @self.app.post("/collections/{col_id}/reviews/undo", tags=["reviews"])
-        async def undo_review(col_id: int, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
+        async def undo_review(col_id: str, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
             """
             Undo the last review. Returns the node from the undone review so the client can navigate back to it.
             """
-            return ApiResponse(data=self.review_orchestrator.undo_review(col_id))
+            return ApiResponse(data=self.review_orchestrator.undo_review(user_id, col_id))
 
         @self.app.get("/collections/{col_id}/reviews/calendar", tags=["reviews"])
-        async def get_calendar(col_id: int, tz_offset: int = 0, user_id = Depends(self.get_user)) -> ApiResponse[list[DayReviewOverview]]:
+        async def get_calendar(col_id: str, tz_offset: int = 0, user_id = Depends(self.get_user)) -> ApiResponse[list[DayReviewOverview]]:
             # Goal : ?start=2025-01-01&end=2025-05-31&include=reviewed,due
             return ApiResponse(data=self.review_orchestrator.get_calendar(
                 col_id,
@@ -350,8 +347,8 @@ class Rest(BaseInterface):
             type_review_data: TypeReviewData # data specific to node type
             tz_offset: int = 0
         @self.app.post("/collections/{col_id}/nodes/{node_id}/review", tags=["reviews"])
-        async def review_node(col_id: int, node_id: int, data: ReviewRequest, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
-            return ApiResponse(data=self.review_orchestrator.review_to_detail_view(
+        async def review_node(col_id: str, node_id: str, data: ReviewRequest, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
+            return ApiResponse(data=self.review_orchestrator.review_to_detail_view(user_id, 
                 col_id, node_id, data.duration, data.type_review_data, tz_offset_min=data.tz_offset
             ))
         

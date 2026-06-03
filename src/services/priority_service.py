@@ -9,7 +9,7 @@ class PriorityService:
         self._repo = node_repository
         self._lexical_order = lexical_order
  
-    def get_priority(self, collection_id: int, node_id: int) -> float:
+    def get_priority(self, collection_id: str, node_id: str) -> float:
         position = self._repo.get_position(node_id)
         if position is None:
             raise ValueError(f"Node {node_id} not found or has no position")
@@ -22,7 +22,7 @@ class PriorityService:
 
         return (rank / (total - 1)) * 100
 
-    def get_priorities(self, collection_id: int) -> dict[int, float]:
+    def get_priorities(self, collection_id: str) -> dict[str, float]:
         total = self._repo.count_by_collection(collection_id)
         if total <= 1:
             return {}
@@ -32,7 +32,7 @@ class PriorityService:
             for rank, (node_id, _) in enumerate(positions)
         }
     
-    def get_position_for_priority(self, collection_id: int, percentage: float) -> str:
+    def get_position_for_priority(self, collection_id: str, percentage: float) -> str:
         if not 0 <= percentage <= 100:
             raise ValueError("Percentage must be between 0 and 100")
  
@@ -64,7 +64,7 @@ class PriorityService:
  
     def prioritise_random_between_percentage(
         self,
-        collection_id: int,
+        collection_id: str,
         min_percentage: float,
         max_percentage: float,
     ) -> str:
@@ -73,8 +73,8 @@ class PriorityService:
 
     def prioritise_random_near_node(
         self,
-        collection_id: int,
-        node_id: int,
+        collection_id: str,
+        node_id: str,
         percentage_range: float,
     ) -> str:
         """Places a node within a priority window near the given node, sliding the window when close to 100"""
@@ -83,11 +83,11 @@ class PriorityService:
         max_pct = min_pct + percentage_range
         return self.prioritise_random_between_percentage(collection_id, min_pct, max_pct)
     
-    def reprioritise_node(self, collection_id: int, node_id: int, priority: float) -> None:
+    def reprioritise_node(self, collection_id: str, node_id: str, priority: float) -> None:
         new_position = self.get_position_for_priority(collection_id, priority)
         self._repo.update_position(node_id, new_position)
 
-    def reindex_all(self, collection_id: int) -> None:
+    def reindex_all(self, collection_id: str) -> None:
         """
         Rebalances fractional index keys across the entire collection.
     

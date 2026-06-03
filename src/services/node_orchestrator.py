@@ -56,21 +56,21 @@ class NodeOrchestrator:
         if rebuilt_text != text:
             raise ExtractMismatchError(rebuilt_text, text)
 
-    def get_nodes_view(self, collection_id: int, limit: int = 1000) -> list[NodeView]:
+    def get_nodes_view(self, collection_id: str, limit: int = 1000) -> list[NodeView]:
         nodes = self._node_service.get_nodes(collection_id, limit)
         return self._node_view_builder.to_views(nodes)
 
-    def get_node_detail_view(self, node_id: int) -> NodeDetailView:
+    def get_node_detail_view(self, node_id: str) -> NodeDetailView:
         node = self._node_service.get_node(node_id)
         return self._node_view_builder.to_detail_view(node)
         
-    def create_node(self, collection_id: int, data: NodeCreate, tz_offset_min: int) -> Node:
+    def create_node(self, collection_id: str, data: NodeCreate, tz_offset_min: int) -> Node:
         if isinstance(data, NodeCreateFromUrl):
             return self._create_node_from_url_usecase.execute(collection_id, data.url, tz_offset_min)
         else:
             raise UnknownRessourceTypeError(type(data).__name__)
 
-    def update_node(self, node_id, data: NodeUpdate) -> Node:
+    def update_node(self, node_id: str, data: NodeUpdate) -> Node:
         node = self._node_service.get_node(node_id)
         if node.type == NodeType.FRAGMENT:
             return self._fragment_service.update_fragment(node_id, data)
@@ -79,18 +79,18 @@ class NodeOrchestrator:
         else:
             raise NotAKnownType(node_id, node.type)
 
-    def create_node_to_detail_view(self, collection_id: int, data: NodeCreate, tz_offset_min: int) -> NodeDetailView:
+    def create_node_to_detail_view(self, collection_id: str, data: NodeCreate, tz_offset_min: int) -> NodeDetailView:
         return self._node_view_builder.to_detail_view(self.create_node(collection_id, data, tz_offset_min))
 
-    def update_node_to_detail_view(self, node_id: int, data: NodeUpdate) -> NodeDetailView:
+    def update_node_to_detail_view(self, node_id: str, data: NodeUpdate) -> NodeDetailView:
         return self._node_view_builder.to_detail_view(self.update_node(node_id, data))
 
-    def reprioritise_node_to_detail_view(self, collection_id: int, node_id: int, target_node_priority: float) -> NodeDetailView:
+    def reprioritise_node_to_detail_view(self, collection_id: str, node_id: str, target_node_priority: float) -> NodeDetailView:
         self._priority_service.reprioritise_node(collection_id, node_id, target_node_priority)
         node = self._node_service.get_node(node_id)
         return self._node_view_builder.to_detail_view(node)
     
-    def create_extract(self, col_id: int, extract_type: int, source_node_id: int, text: str, field: int, start_index: int, end_index: int, tz_offset_min: int) -> ExtractResult:
+    def create_extract(self, col_id: str, extract_type: int, source_node_id: str, text: str, field: int, start_index: int, end_index: int, tz_offset_min: int) -> ExtractResult:
         source_node = self._node_service.get_node(source_node_id)
         
         self._check_text_match(source_node, field, start_index, end_index, text)
@@ -128,7 +128,7 @@ class NodeOrchestrator:
 
     def restore_nodes_to_views(
         self,
-        node_id: int,
+        node_id: str,
         restore_ancestors: bool = False,
         restore_descendants: bool = False,
     ) -> list[NodeView]:
@@ -148,29 +148,29 @@ class NodeOrchestrator:
 
         return self._node_view_builder.to_views(restored)
 
-    def get_root_node(self, node_id: int) -> NodeDetailView:
+    def get_root_node(self, node_id: str) -> NodeDetailView:
         root_node = self._node_service.get_root_node(node_id)
         return self._node_view_builder.to_detail_view(root_node)
 
-    def get_priorities(self, col_id: int) -> dict[int, float]:
+    def get_priorities(self, col_id: str) -> dict[str, float]:
         return self._priority_service.get_priorities(col_id)
 
-    def reschedule_node_to_detail_view(self, col_id: int, node_id: int, local_date_iso: str, tz_offset_min: int) -> NodeDetailView:
+    def reschedule_node_to_detail_view(self, col_id: str, node_id: str, local_date_iso: str, tz_offset_min: int) -> NodeDetailView:
         node = self._reschedule_node_usecase.execute(col_id, node_id, local_date_iso, tz_offset_min)
         return self._node_view_builder.to_detail_view(node)
 
-    def remove_links_to_detail_view(self, col_id: int, node_id: int, text: str, field: int, start_index: int, end_index: int) -> NodeDetailView:
+    def remove_links_to_detail_view(self, col_id: str, node_id: str, text: str, field: int, start_index: int, end_index: int) -> NodeDetailView:
         node = self._node_service.get_node(node_id)
         self._check_text_match(node, field, start_index, end_index, text)
         node = self._node_format_service.remove_links(node, str(field), start_index, end_index, text)
         updated = self._node_service.update(node_id, NodeUpdate(content=node.content))
         return self._node_view_builder.to_detail_view(updated)
 
-    def get_outline_for_node(self, col_id: int, node_id: int) -> Outline:
+    def get_outline_for_node(self, col_id: str, node_id: str) -> Outline:
         node = self._node_service.get_node(node_id)
         return self._get_outline_usecase.execute(node)
 
-    def split_node_to_detail_views(self, col_id: int, node_id: int, tz_offset_min: int, level: int) -> list[NodeDetailView]:
+    def split_node_to_detail_views(self, col_id: str, node_id: str, tz_offset_min: int, level: int) -> list[NodeDetailView]:
         node = self._node_service.get_node(node_id)
         content = node.content.get_first_field()
         if content is None:
@@ -183,7 +183,7 @@ class NodeOrchestrator:
 
     def get_deleted_nodes_view(
         self,
-        collection_id: int,
+        collection_id: str,
     ) -> list[NodeView]:
         nodes = self._node_service.get_nodes(collection_id, include_alive=False, include_deleted=True)
         return self._node_view_builder.to_views(nodes)

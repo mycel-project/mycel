@@ -52,7 +52,7 @@ class Application():
         setup_logging(self.config.log_level)
         self.bus = EventBus()
         if db_path: # to overwrite path during tests
-            self.db = Db(db_path, testing=True)
+            self.db = Db(db_path)
         else:
             self.db = Db(self.config.db_path)
         self.app_infos = AppInfos()

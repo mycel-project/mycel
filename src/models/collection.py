@@ -4,8 +4,8 @@ from .fsrs_conf import FsrsConf
 
 class Collection(BaseModel):
     model_config = ConfigDict(validate_assignment=True)
-    id: int
-    user_id: int
+    id: str
+    user_id: str
     name: str
     created_at: int
     updated_at: int

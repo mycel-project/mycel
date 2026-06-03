@@ -11,6 +11,7 @@ import os
 
 import random
 import time
+from uuid import uuid4
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -25,19 +26,17 @@ from src.services.node_service import NodeService
 from src.services.review_service import ReviewService
 from src.types.node_type import NodeType
 
-# Can use int or str
 @pytest.fixture
-def generate_id():
+def generate_id() -> str:
     def _make_id():
-        time.sleep(0.001)
-        return int(time.time() * 1000)
+        return str(uuid4())
     return _make_id
 
 @pytest.fixture
 def db_fixture(tmp_path: Path):
     # for unit tests
     db_path = tmp_path / "test.db"
-    db = Db(db_path)
+    db = Db(str(db_path))
     yield db 
     
     if db_path.exists():

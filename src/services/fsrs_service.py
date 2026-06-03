@@ -4,7 +4,6 @@ import json
 
 from src.models.type_data.spore_data import SporeData
 from src.services.node_service import NodeService
-from src.types.node_type import NodeType
 from .collection_service import CollectionService
 from src.utils.time import ms_to_datetime, now_datetime
 
@@ -16,7 +15,7 @@ class FsrsService:
         self._scheduler = None
         self._fsrs_conf_hash = None
 
-    def _get_scheduler(self, col_id: int):
+    def _get_scheduler(self, col_id: str):
         fsrs_conf = self._collection_service.get_fsrs_conf(col_id)
 
         conf_dict = fsrs_conf.to_fsrs_dict()
@@ -30,21 +29,20 @@ class FsrsService:
 
         return self._scheduler
 
-    def review_node(self, col_id: int, node_id: int, rating: int, duration: int):
+    def review_node(self, col_id: str, node_id: str, rating: int, duration: int):
         scheduler = self._get_scheduler(col_id)
         now = now_datetime()
-        card = self.convert_card_to_node(node_id)
+        card = self.convert_node_to_card(node_id)
         rating = fsrs.Rating(rating)
         return scheduler.review_card(card, rating, now, duration)
 
-    def convert_card_to_node(self, node_id: int) -> fsrs.Card:
+    def convert_node_to_card(self, node_id: str) -> fsrs.Card:
         node = self._node_service.get_node(node_id)
         if not node:
             raise ValueError(f"Node {node_id} not found")
         if not isinstance(node.type_data, SporeData):
             raise ValueError("Node is not a Spore")
         return fsrs.Card(
-            card_id=node.id,
             state=fsrs.State(node.type_data.state),
             step=node.type_data.step,
             stability=node.type_data.stability,

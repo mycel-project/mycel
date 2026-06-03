@@ -20,11 +20,11 @@ class CreateFragmentUseCase:
 
     def execute(
         self,
-        collection_id: int,
+        collection_id: str,
         content: Union[str, dict, NodeContent],
         data: Optional[NodeData] = None,
         type_data: Optional[TypeData] = None,
-        parent_id: Optional[int] = None,
+        parent_id: Optional[str] = None,
         tz_offset: int = 0,
         due: int | None = None,
     ) -> Node:

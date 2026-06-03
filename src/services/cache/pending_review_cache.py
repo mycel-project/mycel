@@ -1,11 +1,11 @@
 class PendingReviewCache:
     def __init__(self):
-        self._pending: int | None = None
+        self._pending: str | None = None
 
-    def set(self, node_id: int):
+    def set(self, node_id: str):
         self._pending = node_id
 
-    def get(self) -> int | None:
+    def get(self) -> str | None:
         return self._pending
 
     def clear(self):

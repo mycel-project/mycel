@@ -24,7 +24,7 @@ class NodeService:
     def __init__(self, node_repository: NodeRepository):
         self._repo = node_repository
         
-    def get_node(self, node_id: int, include_deleted: bool = False) -> Node:
+    def get_node(self, node_id: str, include_deleted: bool = False) -> Node:
         node = self._repo.get(node_id)
         if node is None:
             raise NoNodeFound(node_id)
@@ -34,7 +34,7 @@ class NodeService:
 
     def get_nodes(
         self,
-        collection_id: int,
+        collection_id: str,
         limit: int = 5000,
         include_alive: bool = True,
         include_deleted: bool = False,
@@ -56,14 +56,14 @@ class NodeService:
 
     def create_node(
         self,
-        collection_id: int,
+        collection_id: str,
         type: NodeType,
         content: Union[str, dict, NodeContent],
         position: str,
         due: Optional[int] = None,
         data: Optional[NodeData] = None,
         type_data: Optional[TypeData] = None,
-        parent_id: Optional[int] = None,
+        parent_id: Optional[str] = None,
     ) -> Node:
         node_content = NodeContent.from_input(content)
         return self._repo.create(
@@ -77,10 +77,10 @@ class NodeService:
             type=type,
         )
 
-    def delete_node(self, node_id: int) -> None:
+    def delete_node(self, node_id: str) -> None:
         self._repo.delete(node_id)
 
-    def restore_node(self, node_id: int) -> Node:
+    def restore_node(self, node_id: str) -> Node:
         # Not passing through self.get_node and self.update to not raise NodeDeleted
         node = self._repo.get(node_id)
         if node is None:
@@ -89,7 +89,7 @@ class NodeService:
         self._repo.update(node)
         return node
 
-    def restore_ancestors(self, node_id: int) -> list[Node]:
+    def restore_ancestors(self, node_id: str) -> list[Node]:
         restored = []
         node = self._repo.get(node_id)
         while node is not None and node.parent_id is not None:
@@ -101,7 +101,7 @@ class NodeService:
             node = parent
         return restored
 
-    def restore_descendants(self, node_id: int) -> list[Node]:
+    def restore_descendants(self, node_id: str) -> list[Node]:
         children = self._repo.get_children_recursive(node_id)
         restored = []
         for child in children:
@@ -109,15 +109,15 @@ class NodeService:
                 restored.append(self.restore_node(child.id))
         return restored
 
-    def soft_delete_node(self, node_id: int) -> Node | None:
+    def soft_delete_node(self, node_id: str) -> Node | None:
         return self.update(node_id, NodeUpdate(
             deleted_at=now_ms()
         ))
 
-    def get_expired_deleted(self, collection_id: int, cutoff_ms: int) -> list[Node]:
+    def get_expired_deleted(self, collection_id: str, cutoff_ms: int) -> list[Node]:
         return self._repo.get_expired_deleted(collection_id, cutoff_ms)
 
-    def soft_delete_subtree(self, node_id: int) -> list[int]:
+    def soft_delete_subtree(self, node_id: str) -> list[str]:
         subtree = self.get_subtree(node_id)
         ids = [n.id for n in subtree]
         for node_id in ids:
@@ -127,7 +127,7 @@ class NodeService:
                 continue
         return ids
 
-    def get_nodes_scheduling_context(self, collection_id: int) -> list[NodeSchedulingContext]:
+    def get_nodes_scheduling_context(self, collection_id: str) -> list[NodeSchedulingContext]:
         nodes = self.get_nodes(collection_id)
         now = now_ms()
         return [
@@ -158,7 +158,7 @@ class NodeService:
             type_data=node.type_data if node.type == NodeType.FRAGMENT else None # Can be made more specific if needed, to select specific data depending on the node type. At the moment, only fragment type_data is used by frontend.
         )
 
-    def get_depth(self, node_id: int) -> int:
+    def get_depth(self, node_id: str) -> int:
         depth = 0
         current_id = node_id
         while True:
@@ -168,26 +168,26 @@ class NodeService:
             current_id = node.parent_id
             depth += 1
 
-    def get_children_recursive(self, node_id: int) -> list[Node]: # Rename to descendants?
+    def get_children_recursive(self, node_id: str) -> list[Node]: # Rename to descendants?
         self.get_node(node_id)  # To check node validity
         return self._repo.get_children_recursive(node_id)
 
-    def get_subtree(self, node_id: int) -> list[Node]:
+    def get_subtree(self, node_id: str) -> list[Node]:
         root = self.get_node(node_id)
         return [root] + self.get_children_recursive(node_id)
 
-    def delete_subtree(self, node_id: int) -> list[int]:
+    def delete_subtree(self, node_id: str) -> list[str]:
         subtree = self.get_subtree(node_id)
         ids = [n.id for n in subtree]
         for node_id in ids:
             self._repo.delete(node_id)
         return ids
 
-    def get_root_node(self, node_id: int) -> Node:
+    def get_root_node(self, node_id: str) -> Node:
         root_id = self.get_root_id(node_id)
         return self.get_node(root_id)
         
-    def get_root_id(self, node_id: int) -> int:
+    def get_root_id(self, node_id: str) -> str:
         current_id = node_id
 
         while True:
@@ -198,10 +198,10 @@ class NodeService:
 
             current_id = node.parent_id
 
-    def update_position(self, node_id: int, position: str):
+    def update_position(self, node_id: str, position: str):
         self.update(node_id, NodeUpdate(position=position))
 
-    def update(self, node_id: int, updates: NodeUpdate, include_deleted = False) -> Node:
+    def update(self, node_id: str, updates: NodeUpdate, include_deleted = False) -> Node:
         node = self.get_node(node_id, include_deleted)
         print("before_update: ", node)
         print("update: ", updates)
@@ -215,12 +215,12 @@ class NodeService:
         self._repo.update(node)
         return node
         
-    def get_due_nodes(self, collection_id: int) -> list[Node]:
+    def get_due_nodes(self, collection_id: str) -> list[Node]:
         return self._keep_alive(self._repo.get_due(collection_id))
 
     def get_due_count_by_type_and_day(
         self,
-        collection_id: int,
+        collection_id: str,
         start_ms: Optional[int] = None,
         to_ms: Optional[int] = None,
         tz_offset_minutes: int = 0,

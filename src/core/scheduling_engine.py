@@ -54,10 +54,11 @@ class SchedulingEngine:
 
     def get_next_node(
         self,
+        user_id: str,
         nodes: list[NodeSchedulingContext],
         today_reviews: list[ReviewContext],
         tz_offset_minutes: int = 0,
-    ) -> Optional[int]:
+    ) -> Optional[str]:
         """
         nodes are already sorted by priority, and filtering by due day keep this priority
 
@@ -87,7 +88,7 @@ class SchedulingEngine:
             return None
 
         now = now_ms()
-        if self.user_service.get_wait_for_due_time(1):
+        if self.user_service.get_wait_for_due_time(user_id):
             ready = [n for n in nodes_due_that_day if n.due <= now]
             pool = ready or nodes_due_that_day
         else:

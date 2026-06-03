@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 import logging
 
+from src.db import DEFAULT_USER_ID
 from src.services.collection_service import CollectionService
 from src.services.node_service import NodeService
 from src.services.user_service import UserService
@@ -20,7 +21,7 @@ class CleanupService():
         self._user_service = user_service
 
     async def clean_deleted_nodes(self):
-        user = self._user_service.get_user(1)
+        user = self._user_service.get_user(DEFAULT_USER_ID)
         cutoff_ms = int((datetime.now(timezone.utc) - timedelta(days=user.conf.delete_max_age)).timestamp() * 1000)
 
         collections = self._collection_service.get_collections(user.id)

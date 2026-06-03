@@ -16,8 +16,8 @@ TYPE_REVIEW_DATA_MAP = {
 
 class Review(BaseModel):
     model_config = ConfigDict(validate_assignment=True)
-    id: int
-    node_id: int
+    id: str
+    node_id: str
     type: NodeType = NodeType.FRAGMENT
     time: int
     type_review_data: TypeReviewData

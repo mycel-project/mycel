@@ -24,7 +24,7 @@ class ReviewOrchestrator:
         self._review_service = review_service
         self._node_view_builder = node_view_builder
 
-    def review_to_detail_view(self, col_id: int, node_id: int, duration: int, data: TypeReviewData, tz_offset_min: int = 0) -> NodeDetailView:
+    def review_to_detail_view(self, user_id: str, col_id: str, node_id: str, duration: int, data: TypeReviewData, tz_offset_min: int = 0) -> NodeDetailView:
         pending_review_id = self._review_service.get_pending_node_id()
         if pending_review_id is None:
             raise NoPendingNodeError(node_id)
@@ -49,15 +49,15 @@ class ReviewOrchestrator:
             True
         )
 
-    def get_next_review(self, col_id: int, tz_offset: int = 0) -> NodeDetailView | None:
-        node = self._review_service.get_next_review(col_id, tz_offset)
+    def get_next_review(self, user_id: str, col_id: str, tz_offset: int = 0) -> NodeDetailView | None:
+        node = self._review_service.get_next_review(user_id, col_id, tz_offset)
         if node:
             return self._node_view_builder.to_detail_view(node)
         else:
             return None
 
-    def undo_review(self, col_id: int) -> NodeDetailView:
-        max_undo_age = self._user_service.get_undo_max_age_min(1)
+    def undo_review(self, user_id: str, col_id: str) -> NodeDetailView:
+        max_undo_age = self._user_service.get_undo_max_age_min(user_id)
         last_review = self._review_service.undo_review(col_id, max_undo_age)
         try:
             node_from_undone_review = self._node_service.get_node(last_review.node_id)
@@ -73,7 +73,7 @@ class ReviewOrchestrator:
 
     def get_calendar(
         self,
-        col_id,
+        col_id: str,
         due: bool = True,
         done: bool = False,
         start=None,

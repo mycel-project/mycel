@@ -1,6 +1,7 @@
 import time
 import json
 from typing import Optional
+from uuid import uuid4
 from src.db import Db
 from src.models.collection import Collection
 from src.models.collection_conf import CollectionConf
@@ -25,10 +26,10 @@ class CollectionRepository:
             ),
         )
 
-    def create(self, user_id: int, name: str, conf: CollectionConf, fsrsconf: FsrsConf, id: Optional[int] = None) -> Collection:
+    def create(self, user_id: str, name: str, conf: CollectionConf, fsrsconf: FsrsConf, id: Optional[str] = None) -> Collection:
         now = int(time.time() * 1000)
         if id is None:
-            id = now
+            id = str(uuid4())
         self.db.execute(
             """INSERT INTO collections (id, user_id, name, created_at, updated_at, conf, fsrsconf)
                VALUES (:id, :user_id, :name, :created_at, :updated_at, :conf, :fsrsconf)""",
@@ -37,11 +38,11 @@ class CollectionRepository:
         )
         return Collection(id=id, user_id=user_id, name=name, created_at=now, updated_at=now, conf=conf, fsrsconf=fsrsconf)
 
-    def get(self, id: int) -> Optional[Collection]:
+    def get(self, id: str) -> Optional[Collection]:
         row = self.db.fetch_one("SELECT * FROM collections WHERE id = :id", {"id": id})
         return self._row_to_model(row) if row else None
 
-    def update_timestamp(self, id: int) -> None:
+    def update_timestamp(self, id: str) -> None:
         now = int(time.time() * 1000)
         self.db.execute("UPDATE collections SET updated_at = :now WHERE id = :id", {"now": now, "id": id})
 
@@ -53,10 +54,10 @@ class CollectionRepository:
              "fsrsconf": json.dumps(collection.fsrsconf.model_dump()), "now": now, "id": collection.id},
         )
 
-    def delete(self, id: int) -> None:
+    def delete(self, id: str) -> None:
         self.db.execute("DELETE FROM collections WHERE id = :id", {"id": id})
 
-    def list(self, user_id: int) -> list[Collection]:
+    def list(self, user_id: str) -> list[Collection]:
         rows = self.db.fetch_all(
             "SELECT * FROM collections WHERE user_id = :user_id ORDER BY created_at",
             {"user_id": user_id}

@@ -21,7 +21,7 @@ class SporeService:
         self._node_format_service = node_format_service
         self._create_node = create_node_use_case
 
-    def create_spore(self, col_id: int, due: int, content: Union[str, dict], parent_id: Optional[int] = None) -> Node:
+    def create_spore(self, col_id: str, due: int, content: Union[str, dict], parent_id: Optional[str] = None) -> Node:
         return self._create_node.execute(
             collection_id=col_id,
             content=content,
@@ -30,7 +30,7 @@ class SporeService:
             due=due,
         )
 
-    def update_spore(self, node_id: int, data: NodeUpdate) -> Node:
+    def update_spore(self, node_id: str, data: NodeUpdate) -> Node:
         node = self._node_service.get_node(node_id)
         if node.type != NodeType.SPORE:
             raise NotASpore(node_id)
@@ -54,7 +54,7 @@ class SporeService:
     def has_cloze(self, content: str) -> bool:
         return CLOZE_PATTERN.search(content) is not None
 
-    def cloze_region(self, node_id: int, text: str, field: str, start: int, end: int) -> Node:
+    def cloze_region(self, node_id: str, text: str, field: str, start: int, end: int) -> Node:
         node = self._node_service.get_node(node_id)
 
         clozed_node = self._node_format_service.cloze_region(node, field, start, end, text)
@@ -66,7 +66,7 @@ class SporeService:
             NodeUpdate(content=node.content)
         )
 
-    def remove_extract_formatting(self, node_id: int, field_key: str = "0") -> Node:
+    def remove_extract_formatting(self, node_id: str, field_key: str = "0") -> Node:
         node = self._node_service.get_node(node_id)
 
         field_content = node.content.fields[field_key]

@@ -8,7 +8,7 @@ class NodeMetrics(BaseModel): # sending some of those things in NodeView (as typ
     """
     Intended for UI usage
     """
-    id: int
+    id: str
     last_review: Optional[int] = None
     type_data: Optional[TypeData] = None
     encounter_count: Optional[int] = None
