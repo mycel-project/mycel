@@ -45,6 +45,7 @@ from src.types.node_type import NodeType
 from src.utils.env import is_testing
 
 from typing import Generic, TypeVar
+
 T = TypeVar("T")
 
 class ApiResponse(BaseModel, Generic[T]):
@@ -201,11 +202,11 @@ class Rest(BaseInterface):
 
         @self.app.delete("/collections/{col_id}", status_code = 204, tags=["collections"])
         async def delete_collection(col_id: str, user_id = Depends(self.get_user)):
-            self.collection_service.delete_collection(col_id)
+            self.collection_service.delete_collection(user_id, col_id)
 
         @self.app.patch("/collections/{col_id}", tags=["collections"])
         async def update_collection(col_id: str, data: CollectionUpdate, user_id = Depends(self.get_user)) -> ApiResponse[CollectionView]:
-            collection = self.collection_orchestrator.update_collection(col_id, data)
+            collection = self.collection_orchestrator.update_collection(user_id, col_id, data)
             return ApiResponse(data=collection)
 
         # NODES

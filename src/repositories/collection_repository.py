@@ -38,24 +38,23 @@ class CollectionRepository:
         )
         return Collection(id=id, user_id=user_id, name=name, created_at=now, updated_at=now, conf=conf, algoconf=algoconf)
 
-    def get(self, id: str) -> Optional[Collection]:
-        row = self.db.fetch_one("SELECT * FROM collections WHERE id = :id", {"id": id})
-        return self._row_to_model(row) if row else None
+    def get(self, user_id: str, id: str) -> Optional[Collection]:
+            row = self.db.fetch_one("SELECT * FROM collections WHERE id = :id AND user_id = :user_id", {"id": id, "user_id": user_id})
+            return self._row_to_model(row) if row else None
 
-    def update_timestamp(self, id: str) -> None:
-        now = int(time.time() * 1000)
-        self.db.execute("UPDATE collections SET updated_at = :now WHERE id = :id", {"now": now, "id": id})
+    def update(self, user_id: str, collection: Collection) -> None:
+            now = int(time.time() * 1000)
+            self.db.execute(
+                """UPDATE collections SET name=:name, conf=:conf, algoconf=:algoconf, updated_at=:now WHERE id=:id AND user_id=:user_id""",
+                {"name": collection.name, "conf": json.dumps(collection.conf.model_dump()),
+                 "algoconf": json.dumps(collection.algoconf.model_dump()), "now": now, "id": collection.id, "user_id": user_id},
+            )
 
-    def update(self, collection: Collection) -> None:
-        now = int(time.time() * 1000)
-        self.db.execute(
-            """UPDATE collections SET name=:name, conf=:conf, algoconf=:algoconf, updated_at=:now WHERE id=:id""",
-            {"name": collection.name, "conf": json.dumps(collection.conf.model_dump()),
-             "algoconf": json.dumps(collection.algoconf.model_dump()), "now": now, "id": collection.id},
-        )
-
-    def delete(self, id: str) -> None:
-        self.db.execute("DELETE FROM collections WHERE id = :id", {"id": id})
+    def delete(self, user_id: str, id: str) -> None:
+            self.db.execute(
+                "DELETE FROM collections WHERE id = :id AND user_id = :user_id",
+                {"id": id, "user_id": user_id}
+            )
 
     def list(self, user_id: str) -> list[Collection]:
         rows = self.db.fetch_all(

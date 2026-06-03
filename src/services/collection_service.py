@@ -39,8 +39,8 @@ class CollectionService:
             id=id,
         )
 
-    def get_collection(self, collection_id: str) -> Collection:
-        collection = self._repo.get(collection_id)
+    def get_collection(self, user_id: str, collection_id: str) -> Collection:
+        collection = self._repo.get(user_id, collection_id)
         if collection is None:
             raise NoCollectionFound(collection_id)
         return collection
@@ -48,11 +48,11 @@ class CollectionService:
     def get_collections(self, user_id: str) -> list[Collection]:
         return self._repo.list(user_id)
 
-    def delete_collection(self, collection_id: str) -> None:
-        self._repo.delete(collection_id)
+    def delete_collection(self, user_id: str, collection_id: str) -> None:
+        self._repo.delete(user_id, collection_id)
 
-    def get_algo_conf(self, collection_id: str) -> AlgoConf:
-        collection = self._repo.get(collection_id)
+    def get_algo_conf(self, user_id: str, collection_id: str) -> AlgoConf:
+        collection = self._repo.get(user_id, collection_id)
         if not collection:
             raise ValueError("Collection not found")
         return collection.algoconf
@@ -69,8 +69,8 @@ class CollectionService:
     def to_views(self, collections: list[Collection]) -> list[CollectionView]:
         return [self.to_view(c) for c in collections]
 
-    def update(self, collection_id: str, updates: CollectionUpdate) -> Collection:
-        collection = self.get_collection(collection_id)
+    def update(self, user_id: str, collection_id: str, updates: CollectionUpdate) -> Collection:
+        collection = self.get_collection(user_id, collection_id)
         
         # Fields explicitly provided in updates (even if set to None) will overwrite existing values (due to model_fiels_set).
         # To prevent setting a field to None, do not include it in the update payload.
@@ -78,5 +78,5 @@ class CollectionService:
             value = getattr(updates, field)
             setattr(collection, field, value)
 
-        self._repo.update(collection)
+        self._repo.update(user_id, collection)
         return collection

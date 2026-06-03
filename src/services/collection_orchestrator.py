@@ -18,6 +18,6 @@ class CollectionOrchestrator:
         collections = self._collection_service.get_collections(user_id)
         return self._collection_service.to_views(collections)
 
-    def update_collection(self, collection_id: str, updates: CollectionUpdate) -> CollectionView:
-        collection = self._collection_service.update(collection_id=collection_id, updates=updates)
+    def update_collection(self, user_id: str, collection_id: str, updates: CollectionUpdate) -> CollectionView:
+        collection = self._collection_service.update(user_id=user_id, collection_id=collection_id, updates=updates)
         return self._collection_service.to_view(collection)

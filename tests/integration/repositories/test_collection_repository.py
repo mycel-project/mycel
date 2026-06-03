@@ -19,7 +19,7 @@ def test_collection_create_and_get(db_fixture, default_user):
     assert created.id is not None
     assert created.name == "Deck"
 
-    fetched = repo.get(created.id)
+    fetched = repo.get(default_user, created.id)
     
     assert fetched is not None
     assert fetched.id == created.id
@@ -37,9 +37,9 @@ def test_collection_partial_update(db_fixture, default_user):
     )
     
     created.name = "New Name"
-    repo.update(created)
+    repo.update(default_user, created)
     
-    updated = repo.get(created.id)
+    updated = repo.get(default_user, created.id)
     assert updated is not None
     assert updated.name == "New Name"
     assert updated.conf is not None
@@ -52,9 +52,9 @@ def test_collection_delete(db_fixture, default_user):
     
     created = repo.create(user_id=default_user, name="To Delete", conf=conf, algoconf=algoconf)
 
-    repo.delete(created.id)
+    repo.delete(default_user, created.id)
 
-    fetched = repo.get(created.id)
+    fetched = repo.get(default_user, created.id)
     assert fetched is None
 
 def test_collection_list_ordering(db_fixture, default_user):
