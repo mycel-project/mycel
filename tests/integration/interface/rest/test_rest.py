@@ -202,8 +202,40 @@ class TestNode:
         user = create_user()
         col = create_col(user_id=user.id)
         node = create_node(col_id=col.id, content="# Title\n## Section")
-        response = api.post(f"/collections/{col.id}/nodes/{node.id}/split", body={"level": 1, "tz_offset": 0})
+        response = api.post(f"/collections/{col.id}/nodes/{node.id}/split", body={"level": 2, "tz_offset": 0})
         assert response.status_code == 200
         data = response.json()["data"]
         assert isinstance(data, list)
         assert len(data) >= 1
+
+class TestReview:
+    def test_get_next_review(self, api, create_user, create_col, create_node):
+        user = create_user()
+        col = create_col(user_id=user.id)
+        response = api.get(f"/collections/{col.id}/reviews/next")
+        assert response.status_code == 200
+        data = response.json()["data"]
+        assert data is None or "id" in data
+
+    def test_undo_review_no_pending(self, api, create_user, create_col):
+        user = create_user()
+        col = create_col(user_id=user.id)
+        response = api.post(f"/collections/{col.id}/reviews/undo")
+        assert response.status_code == 409
+
+    def test_review_node_no_pending(self, api, create_user, create_col, create_node):
+        user = create_user()
+        col = create_col(user_id=user.id)
+        node = create_node(col_id=col.id)
+        response = api.post(
+            f"/collections/{col.id}/nodes/{node.id}/review",
+            body={"duration": 5000, "type_review_data": {"type": "spore", "rating": 3}, "tz_offset": 0}
+        )
+        assert response.status_code == 409
+        
+    def test_get_calendar(self, api, create_user, create_col):
+        user = create_user()
+        col = create_col(user_id=user.id)
+        response = api.get(f"/collections/{col.id}/reviews/calendar")
+        assert response.status_code == 200
+        assert isinstance(response.json()["data"], list)

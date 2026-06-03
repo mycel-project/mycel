@@ -5,6 +5,7 @@ from src.models.type_review_data.base_type_review_data import BaseTypeReviewData
 
 
 class SporeReviewData(BaseTypeReviewData):
+    type: Literal["spore"] = "spore"
     rating: int
 
     @field_validator("rating")

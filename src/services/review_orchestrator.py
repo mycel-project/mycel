@@ -7,6 +7,7 @@ from src.models.review import Review
 from src.models.type_review_data import TypeReviewData
 from src.models.type_review_data.fragment_review_data import FragmentReviewData
 from src.models.type_review_data.spore_review_data import SporeReviewData
+from src.schemas.node_detail_view import NodeDetailView
 from src.schemas.node_update import NodeUpdate
 from src.schemas.node_view import NodeView
 from src.services.node_service import NodeService
@@ -23,7 +24,7 @@ class ReviewOrchestrator:
         self._review_service = review_service
         self._node_view_builder = node_view_builder
 
-    def review_to_view(self, col_id: int, node_id: int, duration: int, data: TypeReviewData, tz_offset_min: int = 0) -> NodeView:
+    def review_to_detail_view(self, col_id: int, node_id: int, duration: int, data: TypeReviewData, tz_offset_min: int = 0) -> NodeDetailView:
         pending_review_id = self._review_service.get_pending_node_id()
         if pending_review_id is None:
             raise NoPendingNodeError(node_id)
@@ -35,7 +36,7 @@ class ReviewOrchestrator:
             node = self._review_service.review_fragment(col_id, node_id, duration, data, tz_offset_min)
         else:
             raise UnknownReviewTypeError(data.__class__.__name__)
-        return self._node_view_builder.to_view(node)
+        return self._node_view_builder.to_detail_view(node)
 
     def _restore_node_from_snapshot(self, review: Review) -> None:
         self._node_service.update(
@@ -48,14 +49,14 @@ class ReviewOrchestrator:
             True
         )
 
-    def get_next_review(self, col_id: int, tz_offset: int = 0) -> NodeView | None:
+    def get_next_review(self, col_id: int, tz_offset: int = 0) -> NodeDetailView | None:
         node = self._review_service.get_next_review(col_id, tz_offset)
         if node:
-            return self._node_view_builder.to_view(node)
+            return self._node_view_builder.to_detail_view(node)
         else:
             return None
 
-    def undo_review(self, col_id: int) -> NodeView:
+    def undo_review(self, col_id: int) -> NodeDetailView:
         max_undo_age = self._user_service.get_undo_max_age_min(1)
         last_review = self._review_service.undo_review(col_id, max_undo_age)
         try:
@@ -68,7 +69,7 @@ class ReviewOrchestrator:
         self._restore_node_from_snapshot(last_review)
         self._review_service.set_pending_node_id(node_from_undone_review.id)
         node = self._node_service.get_node(node_from_undone_review.id)
-        return self._node_view_builder.to_view(node)
+        return self._node_view_builder.to_detail_view(node)
 
     def get_calendar(
         self,

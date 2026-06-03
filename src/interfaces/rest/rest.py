@@ -18,6 +18,7 @@ from src.domain.domain_exceptions import DomainException, Unauthorized
 from src.event_bus import EventBus
 from src.interfaces.base_interface import BaseInterface
 from src.interfaces.uvicorn import UvicornServer
+from src.models.day_review_overview import DayReviewOverview
 from src.models.extract_result import ExtractResult
 from src.models.node_create import NodeCreate
 from src.models.collection import Collection
@@ -120,8 +121,7 @@ class Rest(BaseInterface):
 
         @self.app.exception_handler(DomainException)
         async def domain_exception_handler(request: Request, exc: DomainException):
-            logger.error(exc.message)
-            logger.error(exc.code)
+            logger.warning(f"{exc.code}: {exc.message}")
             return JSONResponse(
                 status_code=exc.status_code,
                 content={
@@ -130,6 +130,9 @@ class Rest(BaseInterface):
                 },
             )
 
+        @self.app.get("/scalar", include_in_schema=False)
+        async def scalar_html():
+            return get_scalar_api_reference(openapi_url="/openapi.json", title="Mon API")
 
         # SYSTEM
         
@@ -322,48 +325,38 @@ class Rest(BaseInterface):
         async def split_node(col_id: int, node_id: int, data: SplitNodeRequest, user_id = Depends(self.get_user)) -> ApiResponse[list[NodeDetailView]]:
             return ApiResponse(data=self.node_orchestrator.split_node_to_detail_views(col_id, node_id, data.tz_offset, data.level))
 
+        # REVIEWS
 
+        @self.app.get("/collections/{col_id}/reviews/next", tags=["reviews"])
+        async def get_next_review(col_id: int, tz_offset: int = 0, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView | None]:
+            return ApiResponse(data=self.review_orchestrator.get_next_review(col_id, tz_offset))
+
+        @self.app.post("/collections/{col_id}/reviews/undo", tags=["reviews"])
+        async def undo_review(col_id: int, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
+            return ApiResponse(data=self.review_orchestrator.undo_review(col_id))
+
+        @self.app.get("/collections/{col_id}/reviews/calendar", tags=["reviews"])
+        async def get_calendar(col_id: int, tz_offset: int = 0, user_id = Depends(self.get_user)) -> ApiResponse[list[DayReviewOverview]]:
+            # Goal : ?start=2025-01-01&end=2025-05-31&include=reviewed,due
+            return ApiResponse(data=self.review_orchestrator.get_calendar(
+                col_id,
+                tz_offset_minutes=tz_offset,
+                done=False
+            ))
+
+        class ReviewRequest(BaseModel):
+            duration: int # generic data for all reviews no matter the node type
+            type_review_data: TypeReviewData # data specific to node type
+            tz_offset: int = 0
+        @self.app.post("/collections/{col_id}/nodes/{node_id}/review", tags=["reviews"])
+        async def review_node(col_id: int, node_id: int, data: ReviewRequest, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
+            return ApiResponse(data=self.review_orchestrator.review_to_detail_view(
+                col_id, node_id, data.duration, data.type_review_data, tz_offset_min=data.tz_offset
+            ))
+        
 
         
         # @self.app.post("/collections/{col_id}/reindex")
         # async def reindex(col_id: int):
         #     self.node_service.reindex_all(col_id)
         #     return {"status": "ok"}
-
-        class ReviewData(BaseModel):
-            duration: int # generic data for all reviews no matter the node type
-            type_review_data: TypeReviewData # data specific to node type
-            tz_offset: int = 0
-        @self.app.post("/collections/{col_id}/nodes/{node_id}/spore-review")
-        async def review_spore(col_id: int, node_id: int, data: ReviewData, user_id = Depends(self.get_user)):
-            node = self.review_orchestrator.review_to_view(col_id, node_id, data.duration, data.type_review_data, tz_offset_min=data.tz_offset)
-            return {"node": node}
-
-        @self.app.post("/collections/{col_id}/nodes/{node_id}/fragment-review")
-        async def review_fragment(col_id: int, node_id: int, data: ReviewData, user_id = Depends(self.get_user)):
-            node = self.review_orchestrator.review_to_view(col_id, node_id, data.duration, data.type_review_data, tz_offset_min=data.tz_offset)
-            return {"node": node}
-
-        @self.app.get("/collections/{col_id}/reviews/calendar")
-        async def get_calendar(col_id: int, tz_offset: int = 0, user_id = Depends(self.get_user)):
-            # Goal : ?start=2025-01-01&end=2025-05-31&include=reviewed,due
-            calendar = self.review_orchestrator.get_calendar(
-                col_id,
-                tz_offset_minutes=tz_offset,
-                done = False
-            )
-            return {"calendar": calendar}
-
-        @self.app.post("/collections/{col_id}/reviews/undo")
-        async def undo_review(col_id: int, user_id = Depends(self.get_user)):
-            node_from_undone_review = self.review_orchestrator.undo_review(col_id)
-            return {"node": node_from_undone_review}
-
-        @self.app.get("/collections/{col_id}/reviews/next")
-        async def get_next_review(col_id: int, tz_offset: int = 0, user_id = Depends(self.get_user)):
-            node = self.review_orchestrator.get_next_review(col_id, tz_offset)
-            return {"node": node}
-
-        @self.app.get("/scalar", include_in_schema=False)
-        async def scalar_html():
-            return get_scalar_api_reference(openapi_url="/openapi.json", title="Mon API")
