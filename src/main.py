@@ -25,6 +25,7 @@ from src.services.auth.auth_service import AuthService
 from src.services.cleanup_service import CleanupService
 from src.services.collection_orchestrator import CollectionOrchestrator
 from src.services.idempotency_service import IdempotencyService
+from src.services.import_export_service import ImportExportService
 from src.services.node_format_service import NodeFormatService
 from src.services.priority_service import PriorityService
 from src.services.user_orchestrator import UserOrchestrator
@@ -107,6 +108,8 @@ class Application():
         idempotency_repository = IdempotencyRepository(self.db)
         idempotency_service = IdempotencyService(idempotency_repository)
 
+        ie_service = ImportExportService(self.db)
+
         self.cleanup_service = CleanupService(node_service, collection_service, user_service)
         
         self.services = {
@@ -120,6 +123,7 @@ class Application():
             "priority_service": priority_service,
             "auth_service": auth_service,
             "idempotency_service": idempotency_service,
+            "ie_service": ie_service,
         }
 
         self.orchestrators = {

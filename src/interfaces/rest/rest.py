@@ -20,6 +20,7 @@ from src.event_bus import EventBus
 from src.interfaces.base_interface import BaseInterface
 from src.interfaces.uvicorn import UvicornServer
 from src.models.day_review_overview import DayReviewOverview
+from src.models.export import FullExport
 from src.models.extract_result import ExtractResult
 from src.models.node_create import NodeCreate
 from src.models.outline import Outline
@@ -36,6 +37,7 @@ from src.services.auth.auth_service import AuthService
 from src.services.collection_orchestrator import CollectionOrchestrator
 from src.services.collection_service import CollectionService
 from src.services.idempotency_service import IdempotencyService
+from src.services.import_export_service import ImportExportService
 from src.services.node_orchestrator import NodeOrchestrator
 from src.services.node_service import NodeService
 from src.services.priority_service import PriorityService
@@ -80,6 +82,7 @@ class Rest(BaseInterface):
         self.review_service: ReviewService = services["review_service"]
         self.priority_service: PriorityService = services["priority_service"]
         self.idempotency_service: IdempotencyService = services["idempotency_service"]
+        self.ie_service: ImportExportService = services["ie_service"]
         self.user_orchestrator: UserOrchestrator = orchestrators["user_orchestrator"]
         self.collection_orchestrator: CollectionOrchestrator = orchestrators["collection_orchestrator"]
         self.node_orchestrator: NodeOrchestrator = orchestrators["node_orchestrator"]
@@ -216,6 +219,13 @@ class Rest(BaseInterface):
                 raise ForbiddenError()
             user = self.user_orchestrator.update_user(user_id, data)
             return ApiResponse(data=user)
+
+        @self.app.get("/users/{user_id}/export", tags=["users"])
+        async def export_user_data(user_id: str, auth_user_id = Depends(self.get_user)) -> ApiResponse[FullExport]:
+            if user_id != auth_user_id:
+                raise ForbiddenError()
+            user_data = self.ie_service.export_data(user_id)
+            return ApiResponse(data=user_data)
 
         # COLLECTIONS
 
