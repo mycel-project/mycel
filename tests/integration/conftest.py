@@ -9,6 +9,7 @@ import jwt
 from src.main import Application
 from src.repositories.import_export_repository import ImportExportRepository
 from src.repositories.node_repository import NodeRepository
+from src.repositories.review_repository import ReviewRepository
 from src.types.node_type import NodeType
 
 def generate_token(user_id: str, expires_in_seconds: int = 3600) -> str:
@@ -151,3 +152,7 @@ def default_collection(app, default_user, generate_id):
         {"id": col_id, "user_id": default_user}
     )
     return col_id
+
+@pytest.fixture
+def review_repo(app) -> ReviewRepository:
+    return ReviewRepository(db=app.db)

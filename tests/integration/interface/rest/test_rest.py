@@ -11,7 +11,7 @@ class TestUser:
 
     def test_get_user_details(self, api, create_user):
         user, token = create_user()
-        response = api.get(f"/users/{user.id}", token)
+        response = api.get(f"/users", token)
         assert response.status_code == 200
         data = response.json()
         assert isinstance(data["data"]["created_at"], int)
@@ -19,7 +19,7 @@ class TestUser:
 
     def test_update_user(self, api, create_user):
         user, token = create_user()
-        response = api.patch(f"/users/{user.id}", token, body={"name": "new name"})
+        response = api.patch(f"/users", token, body={"name": "new name"})
         assert response.status_code == 200
         assert response.json()["data"]["name"] == "new name"
 
