@@ -298,3 +298,28 @@ class InvalidToken(Unauthorized):
             code=code,
             message=message,
         )
+
+# ImportExport
+class DataError(DomainException):
+    def __init__(self, code: str = "DATA_ERROR", message: str = "An error occurred during import or export.", status_code: int = 400):
+        super().__init__(
+            code=code,
+            message=message,
+            status_code=status_code,
+        )
+
+class DataImportError(DataError):
+    def __init__(self, code: str = "IMPORT_ERROR", message: str = "Data import failed.", status_code: int = 422):
+        super().__init__(
+            code=code,
+            message=message,
+            status_code=status_code,
+        )
+
+class DataExportError(DataError):
+    def __init__(self, code: str = "EXPORT_ERROR", message: str = "Data export failed.", status_code: int = 400):
+        super().__init__(
+            code=code,
+            message=message,
+            status_code=status_code,
+        )

@@ -25,8 +25,13 @@ class TestUser:
 
     def test_export_user_data(self, api, create_user):
         user, token = create_user()
-        response = api.get(f"/users/{user.id}/export", token)
+        response = api.get(f"/users/export", token)
         assert response.status_code == 200
+
+    def test_import_user_data(self, api, create_user):
+        user, token = create_user()
+        response = api.post(f"/users/import", token, body={"payload": ""})
+        assert response.status_code == 422
         
 class TestCollection:
     def test_list_collections(self, api, create_user, create_col):

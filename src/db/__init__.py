@@ -1,7 +1,8 @@
 import os
 import time
 from typing import Any
-from sqlalchemy import create_engine, text
+from sqlalchemy import Engine, create_engine, text
+from sqlalchemy.engine.create import event
 from sqlalchemy.orm import sessionmaker
 
 from src.utils.env import is_testing
@@ -12,6 +13,13 @@ from dotenv import load_dotenv
 load_dotenv()
 
 DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000001"
+
+@event.listens_for(Engine, "connect")
+def set_sqlite_pragma(dbapi_connection, connection_record):
+    if "sqlite" in type(dbapi_connection).__module__.lower():
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
 
 class Db:
     def __init__(self, db_path: str):
@@ -60,6 +68,12 @@ class Db:
             for table in reversed(Base.metadata.sorted_tables):
                 session.execute(table.delete())
             session.commit()
+
+    def execute_transaction(self, statements: list[tuple[str, dict]]) -> None:
+        with self.session_factory() as session:
+            with session.begin():
+                for query, params in statements:
+                    session.execute(text(query), self._to_dict(params))
             
     def _to_dict(self, params: tuple | dict) -> dict:
         if isinstance(params, dict):

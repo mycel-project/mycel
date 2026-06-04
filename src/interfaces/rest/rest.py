@@ -194,25 +194,23 @@ class Rest(BaseInterface):
             user = self.user_orchestrator.create_user(data.name)
             return ApiResponse(data=user)
 
-        @self.app.get("/users/{user_id}", tags=["users"])
-        async def get_user(user_id: str, auth_user_id = Depends(self.get_user)) -> ApiResponse[UserView]:
-            if user_id != auth_user_id:
-                raise ForbiddenError()
+        @self.app.get("/users", tags=["users"])
+        async def get_user(user_id = Depends(self.get_user)) -> ApiResponse[UserView]:
             return ApiResponse(data=self.user_orchestrator.get_user(user_id))
 
-        @self.app.patch("/users/{user_id}", tags=["users"])
-        async def update_user(user_id: str, data: UserUpdate, auth_user_id = Depends(self.get_user)) -> ApiResponse[UserView]:
-            if user_id != auth_user_id:
-                raise ForbiddenError()
+        @self.app.patch("/users", tags=["users"])
+        async def update_user(data: UserUpdate, user_id = Depends(self.get_user)) -> ApiResponse[UserView]:
             user = self.user_orchestrator.update_user(user_id, data)
             return ApiResponse(data=user)
 
-        @self.app.get("/users/{user_id}/export", tags=["users"])
-        async def export_user_data(user_id: str, auth_user_id = Depends(self.get_user)) -> ApiResponse[FullExport]:
-            if user_id != auth_user_id:
-                raise ForbiddenError()
+        @self.app.get("/users/export", tags=["users"])
+        async def export_user_data(user_id = Depends(self.get_user)) -> ApiResponse[FullExport]:
             user_data = self.ie_service.export_data(user_id)
             return ApiResponse(data=user_data)
+
+        @self.app.post("/users/import", status_code=204, tags=["users"])
+        async def import_user_data(payload: FullExport, user_id = Depends(self.get_user)):
+            self.ie_service.import_data(user_id, payload)
 
         # COLLECTIONS
 
