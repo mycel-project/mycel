@@ -12,6 +12,7 @@ from src.types.node_type import NodeType
 class NodeRepository:
     def __init__(self, db: Db):
         self.db = db
+        self.collation = "" if self.db.is_sqlite else 'COLLATE "C"'
 
     def _row_to_model(self, row) -> Node:
         return Node(
@@ -114,39 +115,42 @@ class NodeRepository:
         return self._row_to_model(row) if row else None
 
     def get_by_collection(self, user_id: str, collection_id: str, limit: Optional[int] = None) -> list[Node]:
-            if limit:
-                rows = self.db.fetch_all(
-                    """
-                    SELECT n.* FROM nodes n
-                    JOIN collections c ON n.collection_id = c.id
-                    WHERE n.collection_id = :col_id AND c.user_id = :user_id
-                    ORDER BY n.position 
-                    LIMIT :limit
-                    """,
-                    {"col_id": collection_id, "user_id": user_id, "limit": limit},
-                )
-            else:
-                rows = self.db.fetch_all(
-                    """
-                    SELECT n.* FROM nodes n
-                    JOIN collections c ON n.collection_id = c.id
-                    WHERE n.collection_id = :col_id AND c.user_id = :user_id
-                    ORDER BY n.position
-                    """,
-                    {"col_id": collection_id, "user_id": user_id},
-                )
-            return [self._row_to_model(r) for r in rows]
+        if limit:
+            rows = self.db.fetch_all(
+                f"""
+                SELECT n.* FROM nodes n
+                JOIN collections c ON n.collection_id = c.id
+                WHERE n.collection_id = :col_id AND c.user_id = :user_id
+                ORDER BY n.position {self.collation}
+                LIMIT :limit
+                """,
+                {"col_id": collection_id, "user_id": user_id, "limit": limit},
+            )
+        else:
+            rows = self.db.fetch_all(
+                f"""
+                SELECT n.* FROM nodes n
+                JOIN collections c ON n.collection_id = c.id
+                WHERE n.collection_id = :col_id AND c.user_id = :user_id
+                ORDER BY n.position {self.collation}
+                """,
+                {"col_id": collection_id, "user_id": user_id},
+            )
+        return [self._row_to_model(r) for r in rows]
 
     def get_by_type(self, collection_id: str, type: int) -> list[Node]:
         rows = self.db.fetch_all(
-            "SELECT * FROM nodes WHERE collection_id = :col_id AND type = :type ORDER BY position",
+            f"""
+            SELECT * FROM nodes WHERE collection_id = :col_id AND type = :type ORDER BY position {self.collation}
+            """,
             {"col_id": collection_id, "type": type},
         )
         return [self._row_to_model(r) for r in rows]
 
     def get_by_state(self, collection_id: str, state: int) -> list[Node]:
         rows = self.db.fetch_all(
-            "SELECT * FROM nodes WHERE collection_id = :col_id AND state = :state ORDER BY position",
+            f"""SELECT * FROM nodes WHERE collection_id = :col_id AND state = :state ORDER BY position {self.collation}
+            """,
             {"col_id": collection_id, "state": state},
         )
         return [self._row_to_model(r) for r in rows]
@@ -182,7 +186,7 @@ class NodeRepository:
 
     def get_children(self, node_id: str) -> list[Node]:
         rows = self.db.fetch_all(
-            "SELECT * FROM nodes WHERE parent_id = :node_id ORDER BY position",
+            f"SELECT * FROM nodes WHERE parent_id = :node_id ORDER BY position {self.collation}",
             {"node_id": node_id},
         )
         return [self._row_to_model(r) for r in rows]
@@ -217,14 +221,14 @@ class NodeRepository:
 
     def get_all_positions(self, collection_id: str) -> list[tuple[str, str]]:
         rows = self.db.fetch_all(
-            "SELECT id, position FROM nodes WHERE collection_id = :col_id AND deleted_at IS NULL ORDER BY position",
+            f"SELECT id, position FROM nodes WHERE collection_id = :col_id AND deleted_at IS NULL ORDER BY position {self.collation}",
             {"col_id": collection_id},
         )
         return [(row["id"], row["position"]) for row in rows]
 
     def count_before_position(self, collection_id: str, position: str) -> int:
         row = self.db.fetch_one(
-            "SELECT COUNT(*) as count FROM nodes WHERE collection_id = :col_id AND position < :position AND deleted_at IS NULL",
+            f"SELECT COUNT(*) as count FROM nodes WHERE collection_id = :col_id AND position {self.collation} < :position AND deleted_at IS NULL",
             {"col_id": collection_id, "position": position},
         )
         return row["count"] if row else 0
@@ -238,25 +242,25 @@ class NodeRepository:
 
     def get_position_at_offset(self, collection_id: str, offset: int) -> Optional[str]:
         row = self.db.fetch_one(
-            "SELECT position FROM nodes WHERE collection_id = :col_id AND deleted_at IS NULL ORDER BY position LIMIT 1 OFFSET :offset",
+            f"SELECT position FROM nodes WHERE collection_id = :col_id AND deleted_at IS NULL ORDER BY position {self.collation} LIMIT 1 OFFSET :offset",
             {"col_id": collection_id, "offset": offset},
         )
         return row["position"] if row else None
 
     def get_predecessor_position(self, collection_id: str, position: str, exclude_id: str) -> Optional[str]:
         row = self.db.fetch_one(
-            """SELECT position FROM nodes
-               WHERE collection_id = :col_id AND position < :position AND id != :exclude_id AND deleted_at IS NULL
-               ORDER BY position DESC LIMIT 1""",
+            f"""SELECT position FROM nodes
+            WHERE collection_id = :col_id AND position {self.collation} < :position AND id != :exclude_id AND deleted_at IS NULL
+            ORDER BY position {self.collation} DESC LIMIT 1""",
             {"col_id": collection_id, "position": position, "exclude_id": exclude_id},
         )
         return row["position"] if row else None
 
     def get_successor_position(self, collection_id: str, position: str, exclude_id: str) -> Optional[str]:
         row = self.db.fetch_one(
-            """SELECT position FROM nodes
-               WHERE collection_id = :col_id AND position > :position AND id != :exclude_id AND deleted_at IS NULL
-               ORDER BY position ASC LIMIT 1""",
+            f"""SELECT position FROM nodes
+               WHERE collection_id = :col_id AND position {self.collation} > :position AND id != :exclude_id AND deleted_at IS NULL
+               ORDER BY position {self.collation} ASC LIMIT 1""",
             {"col_id": collection_id, "position": position, "exclude_id": exclude_id},
         )
         return row["position"] if row else None
@@ -264,7 +268,7 @@ class NodeRepository:
     def get_tail_key(self, collection_id: str) -> Optional[str]:
         """Get the last position in the collection, ordered lexicographically."""
         row = self.db.fetch_one(
-            "SELECT position FROM nodes WHERE collection_id = :col_id AND deleted_at IS NULL ORDER BY position DESC LIMIT 1",
+            f"SELECT position FROM nodes WHERE collection_id = :col_id AND deleted_at IS NULL ORDER BY position {self.collation} DESC LIMIT 1",
             {"col_id": collection_id},
         )
         return row["position"] if row else None
