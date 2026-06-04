@@ -75,3 +75,16 @@ def test_user_list_ordering(db_fixture):
     assert results[-3].id == u1.id
     assert results[-2].id == u2.id
     assert results[-1].id == u3.id
+
+
+def test_pending_node(db_fixture):
+    repo = UserRepository(db=db_fixture)
+    user = repo.create(name="Test", conf=UserConf())
+    
+    assert repo.get_pending_node_id(user.id) is None
+    
+    repo.set_pending_node_id(user.id, "some-node-uuid")
+    assert repo.get_pending_node_id(user.id) == "some-node-uuid"
+    
+    repo.set_pending_node_id(user.id, None)
+    assert repo.get_pending_node_id(user.id) is None

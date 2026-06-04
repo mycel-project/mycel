@@ -176,7 +176,7 @@ class NodeOrchestrator:
 
     def reschedule_node_to_detail_view(self, user_id: str, col_id: str, node_id: str, local_date_iso: str, tz_offset_min: int) -> NodeDetailView:
         self._node_service.get_node_for_user(user_id, col_id, node_id)
-        node = self._reschedule_node_usecase.execute(col_id, node_id, local_date_iso, tz_offset_min)
+        node = self._reschedule_node_usecase.execute(user_id, col_id, node_id, local_date_iso, tz_offset_min)
         return self._node_view_builder.to_detail_view(node)
 
     def remove_links_to_detail_view(self, user_id: str, col_id: str, node_id: str, text: str, field: int, start_index: int, end_index: int) -> NodeDetailView:

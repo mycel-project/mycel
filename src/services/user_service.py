@@ -83,3 +83,12 @@ class UserService:
             
         self._repo.update(user)
         return user
+
+    def get_pending_node(self, user_id: str) -> str | None:
+        return self._repo.get_pending_node_id(user_id)
+
+    def set_pending_node(self, user_id: str, node_id: str) -> None:
+        self._repo.set_pending_node_id(user_id, node_id)
+
+    def clear_pending_node(self, user_id: str) -> None:
+        self._repo.set_pending_node_id(user_id, None)

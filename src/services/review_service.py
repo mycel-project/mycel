@@ -12,7 +12,6 @@ from src.models.type_review_data.spore_review_data import SporeReviewData
 from src.repositories.review_repository import ReviewRepository
 from src.core.scheduling_engine import SchedulingEngine
 from src.schemas.node_update import NodeUpdate
-from src.services.cache.pending_review_cache import PendingReviewCache
 from src.services.fsrs_service import FsrsService
 from src.types.node_type import NodeType
 from .node_service import NodeService
@@ -24,12 +23,11 @@ class ReviewService:
     """
     No date/datetime object
     """
-    def __init__(self, db: Db, scheduling_engine: SchedulingEngine, fsrs_service: FsrsService, node_service: NodeService, pending_review_cache: PendingReviewCache):
+    def __init__(self, db: Db, scheduling_engine: SchedulingEngine, fsrs_service: FsrsService, node_service: NodeService):
         self._repo = ReviewRepository(db)
         self._fsrs_service = fsrs_service
         self._node_service = node_service
         self._scheduling_engine = scheduling_engine
-        self._pending_review_cache = pending_review_cache
 
     def _build_node_state_before(self, node: Node) -> NodeStateBefore:
         return NodeStateBefore(
@@ -140,14 +138,7 @@ class ReviewService:
         if not next_node_id:
             return None
         node = self._node_service.get_node(next_node_id)
-        self._pending_review_cache.set(next_node_id)
         return node
-
-    def set_pending_node_id(self, node_id: str):
-        self._pending_review_cache.set(node_id)
-
-    def get_pending_node_id(self) -> str | None: 
-        return self._pending_review_cache.get()
 
     def undo_review(self, col_id: str, max_age_min: int | None = None) -> Review:
         last_review = self._repo.get_last_review_by_collection(col_id)

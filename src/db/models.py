@@ -12,6 +12,7 @@ class UserORM(Base):
     name: Mapped[str] = mapped_column(String, nullable=False)
     created_at: Mapped[int] = mapped_column(BigInteger, nullable=False)
     conf: Mapped[str] = mapped_column(String, nullable=False, server_default="{}")
+    pending_node_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
 
 
 class CollectionORM(Base):

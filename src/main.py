@@ -21,7 +21,6 @@ from src.event_bus import EventBus
 from src.core.scheduling_engine import SchedulingEngine
 from src.repositories import NodeRepository, CollectionRepository
 from src.services.auth.auth_service import AuthService
-from src.services.cache.pending_review_cache import PendingReviewCache
 from src.services.cleanup_service import CleanupService
 from src.services.collection_orchestrator import CollectionOrchestrator
 from src.services.node_format_service import NodeFormatService
@@ -88,12 +87,11 @@ class Application():
 
         node_view_builder = NodeViewBuilder(node_service, priority_service)
 
-        pending_review_cache = PendingReviewCache()
-        review_service = ReviewService(self.db, scheduling_engine, fsrs_service, node_service, pending_review_cache)
+        review_service = ReviewService(self.db, scheduling_engine, fsrs_service, node_service)
 
         create_node_from_url_usecase = CreateNodeFromUrlUseCase(create_fragment_usecase, ressource_service)
 
-        reschedule_node_usecase = RescheduleNodeUseCase(node_service, pending_review_cache)
+        reschedule_node_usecase = RescheduleNodeUseCase(user_service, node_service)
 
         get_outline_usecase = GetOutlineUseCase()
         split_node_usecase = SplitNodeUseCase(node_service, create_fragment_usecase, get_outline_usecase)

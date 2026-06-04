@@ -28,7 +28,7 @@ class ReviewOrchestrator:
 
     def review_to_detail_view(self, user_id: str, col_id: str, node_id: str, duration: int, data: TypeReviewData, tz_offset_min: int = 0) -> NodeDetailView:
         self._collection_service.get_collection(user_id, col_id)
-        pending_review_id = self._review_service.get_pending_node_id()
+        pending_review_id = self._user_service.get_pending_node(user_id)
         if pending_review_id is None:
             raise NoPendingNodeError(node_id)
         if pending_review_id != node_id:
@@ -55,6 +55,7 @@ class ReviewOrchestrator:
     def get_next_review(self, user_id: str, col_id: str, tz_offset: int = 0) -> NodeDetailView | None:
         node = self._review_service.get_next_review(user_id, col_id, tz_offset)
         if node:
+            self._user_service.set_pending_node(user_id, node.id)
             return self._node_view_builder.to_detail_view(node)
         else:
             return None
@@ -71,7 +72,7 @@ class ReviewOrchestrator:
         except NoNodeFound as e:
             raise ReviewUndoNodeInaccessible(last_review.node_id, last_review.id) from e
         self._restore_node_from_snapshot(last_review)
-        self._review_service.set_pending_node_id(node_from_undone_review.id)
+        self._user_service.set_pending_node(user_id, node_from_undone_review.id)
         node = self._node_service.get_node(node_from_undone_review.id)
         return self._node_view_builder.to_detail_view(node)
 
