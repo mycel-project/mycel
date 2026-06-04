@@ -1,8 +1,10 @@
 import json
 import time
 
+from src.db import Db
+
 class IdempotencyRepository:
-    def __init__(self, db):
+    def __init__(self, db: Db):
         self.db = db
         
     def get(self, user_id: str, key: str) -> dict | None:

@@ -2,11 +2,12 @@ import json
 import time
 from typing import Optional
 from uuid import uuid4
+from src.db import Db
 from src.models.user import User
 from src.models.user_conf import UserConf
 
 class UserRepository:
-    def __init__(self, db):
+    def __init__(self, db: Db):
         self.db = db
 
     def create(self, name: str, conf: UserConf, id: Optional[str] = None) -> User:
