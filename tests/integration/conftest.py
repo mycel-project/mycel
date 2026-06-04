@@ -7,6 +7,7 @@ from uuid import uuid4
 import jwt
 
 from src.main import Application
+from src.repositories.node_repository import NodeRepository
 from src.types.node_type import NodeType
 
 def generate_token(user_id: str, expires_in_seconds: int = 3600) -> str:
@@ -118,12 +119,21 @@ def create_node_use_case(app):
 
 @pytest.fixture
 def create_node(create_node_use_case):
-    def _create_node(col_id, user_id, type=NodeType.FRAGMENT, content="Test content", parent_id=None):
+    def _create_node(col_id, user_id, type=NodeType.FRAGMENT, content="Test content", parent_id=None, position=None):
         return create_node_use_case.execute(
             user_id=user_id,
             collection_id=col_id,
             type=type,
             content=content,
             parent_id=parent_id,
+            position=position,
         )
     return _create_node
+
+@pytest.fixture
+def priority_service(app):
+    return app.services["priority_service"]
+
+@pytest.fixture
+def node_repo(db_fixture):
+    return NodeRepository(db=db_fixture)
