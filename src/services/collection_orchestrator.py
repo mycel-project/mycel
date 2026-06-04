@@ -21,3 +21,6 @@ class CollectionOrchestrator:
     def update_collection(self, user_id: str, collection_id: str, updates: CollectionUpdate) -> CollectionView:
         collection = self._collection_service.update(user_id=user_id, collection_id=collection_id, updates=updates)
         return self._collection_service.to_view(collection)
+
+    def delete_collection(self, user_id: str, collection_id: str) -> None:
+        self._collection_service.delete_collection(user_id, collection_id)

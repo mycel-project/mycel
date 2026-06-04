@@ -16,7 +16,6 @@ from src.core.app_infos import AppInfos
 from src.core.config import MycelConfig, DeploymentMode
 from src.core.regex import CLOZE_REGEX
 from src.domain.domain_exceptions import DomainException, ForbiddenError
-from src.event_bus import EventBus
 from src.interfaces.base_interface import BaseInterface
 from src.interfaces.uvicorn import UvicornServer
 from src.models.day_review_overview import DayReviewOverview
@@ -35,16 +34,11 @@ from src.schemas.node_update import NodeUpdate
 from src.schemas.user_view import UserView
 from src.services.auth.auth_service import AuthService
 from src.services.collection_orchestrator import CollectionOrchestrator
-from src.services.collection_service import CollectionService
 from src.services.idempotency_service import IdempotencyService
 from src.services.import_export_service import ImportExportService
 from src.services.node_orchestrator import NodeOrchestrator
-from src.services.node_service import NodeService
-from src.services.priority_service import PriorityService
 from src.services.review_orchestrator import ReviewOrchestrator
-from src.services.review_service import ReviewService
 from src.services.user_orchestrator import UserOrchestrator
-from src.services.user_service import UserService
 from src.types.node_type import NodeType
 from src.utils.env import is_testing
 
@@ -73,14 +67,7 @@ class Rest(BaseInterface):
         self._register_routes()
 
     async def init(self, config: MycelConfig, bus, services, orchestrators):
-        # Would be better if interfaces only had access to orchestrators?
         self.config = config
-        self.bus: EventBus = bus
-        self.user_service: UserService = services["user_service"]
-        self.node_service: NodeService = services["node_service"]
-        self.collection_service: CollectionService = services["collection_service"]
-        self.review_service: ReviewService = services["review_service"]
-        self.priority_service: PriorityService = services["priority_service"]
         self.idempotency_service: IdempotencyService = services["idempotency_service"]
         self.ie_service: ImportExportService = services["ie_service"]
         self.user_orchestrator: UserOrchestrator = orchestrators["user_orchestrator"]
@@ -243,7 +230,7 @@ class Rest(BaseInterface):
 
         @self.app.delete("/collections/{col_id}", status_code = 204, tags=["collections"])
         async def delete_collection(col_id: str, user_id = Depends(self.get_user)):
-            self.collection_service.delete_collection(user_id, col_id)
+            self.collection_orchestrator.delete_collection(user_id, col_id)
 
         @self.app.patch("/collections/{col_id}", tags=["collections"])
         async def update_collection(col_id: str, data: CollectionUpdate, user_id = Depends(self.get_user)) -> ApiResponse[CollectionView]:
