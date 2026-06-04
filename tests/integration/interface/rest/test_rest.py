@@ -1,4 +1,5 @@
 import time
+from uuid import uuid4
 
 from src.types.node_type import NodeType
 
@@ -243,3 +244,27 @@ class TestReview:
         response = api.get(f"/collections/{col.id}/reviews/calendar", token)
         assert response.status_code == 200
         assert isinstance(response.json()["data"], list)
+
+class TestIdempotency:
+    def test_idempotent_post(self, api, create_user, create_col, create_node):
+        user, token = create_user()
+        col = create_col(user_id=user.id)
+        node = create_node(user_id= user.id, col_id=col.id)
+        key = str(uuid4())
+
+        r1 = api.post(
+            f"/collections/{col.id}/nodes/{node.id}/reschedule",
+            token,
+            body={"date": "2099-05-20", "tz_offset": 0},
+            headers={"Idempotency-Key": key}
+        )
+        r2 = api.post(
+            f"/collections/{col.id}/nodes/{node.id}/reschedule",
+            token,
+            body={"date": "2020-05-20", "tz_offset": 0},
+            headers={"Idempotency-Key": key}
+        ) # simulate incoherent request to make sure it reuse the first one
+
+        assert r1.status_code == 200
+        assert r2.status_code == 200
+        assert r1.json() == r2.json()

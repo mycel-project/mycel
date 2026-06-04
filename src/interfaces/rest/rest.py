@@ -1,9 +1,10 @@
 from typing import cast
+import json
 from scalar_fastapi import get_scalar_api_reference
 
 import logging
 
-from fastapi import Depends, FastAPI, Request
+from fastapi import Depends, FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from fastapi.exceptions import RequestValidationError
@@ -34,6 +35,7 @@ from src.schemas.user_view import UserView
 from src.services.auth.auth_service import AuthService
 from src.services.collection_orchestrator import CollectionOrchestrator
 from src.services.collection_service import CollectionService
+from src.services.idempotency_service import IdempotencyService
 from src.services.node_orchestrator import NodeOrchestrator
 from src.services.node_service import NodeService
 from src.services.priority_service import PriorityService
@@ -77,6 +79,7 @@ class Rest(BaseInterface):
         self.collection_service: CollectionService = services["collection_service"]
         self.review_service: ReviewService = services["review_service"]
         self.priority_service: PriorityService = services["priority_service"]
+        self.idempotency_service: IdempotencyService = services["idempotency_service"]
         self.user_orchestrator: UserOrchestrator = orchestrators["user_orchestrator"]
         self.collection_orchestrator: CollectionOrchestrator = orchestrators["collection_orchestrator"]
         self.node_orchestrator: NodeOrchestrator = orchestrators["node_orchestrator"]
@@ -127,6 +130,30 @@ class Rest(BaseInterface):
                     "message": exc.message,
                 },
             )
+
+        @self.app.middleware("http")
+        async def idempotency_middleware(request: Request, call_next):
+            key = request.headers.get("Idempotency-Key")
+
+            if not key or request.method not in ("POST", "PATCH"):
+                return await call_next(request)
+
+            user_id = await self.get_user(request)
+
+            cached = self.idempotency_service.get(user_id, key)
+            if cached:
+                return JSONResponse(content=cached)
+
+            response = await call_next(request)
+
+            if response.status_code < 300:
+                body = b""
+                async for chunk in response.body_iterator:
+                    body += chunk
+                self.idempotency_service.set(user_id, key, json.loads(body))
+                return Response(content=body, status_code=response.status_code, media_type=response.media_type)
+
+            return response
 
         @self.app.get("/scalar", include_in_schema=False)
         async def scalar_html():
@@ -316,6 +343,9 @@ class Rest(BaseInterface):
             tz_offset: int = 0
         @self.app.post("/collections/{col_id}/nodes/{node_id}/extracts", tags=["nodes"])
         async def create_node_extract(col_id: str, node_id: str, data: NodeExtractRequest, user_id = Depends(self.get_user)) -> ApiResponse[ExtractResult]:
+            """
+            Note: non-idempotent: see Mycel documentation.
+            """
             return ApiResponse(data=self.node_orchestrator.create_extract(
                 user_id, col_id, data.extract_type, node_id, data.text, data.field, data.start_index, data.end_index, data.tz_offset
             ))
@@ -325,6 +355,10 @@ class Rest(BaseInterface):
             tz_offset: int = 0
         @self.app.post("/collections/{col_id}/nodes/{node_id}/split", tags=["nodes"])
         async def split_node(col_id: str, node_id: str, data: SplitNodeRequest, user_id = Depends(self.get_user)) -> ApiResponse[list[NodeDetailView]]:
+            """
+            Split node by heading level.
+            Note: non-idempotent: see Mycel documentation.
+            """
             return ApiResponse(data=self.node_orchestrator.split_node_to_detail_views(user_id, col_id, node_id, data.tz_offset, data.level))
 
         # REVIEWS
@@ -337,6 +371,7 @@ class Rest(BaseInterface):
         async def undo_review(col_id: str, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
             """
             Undo the last review. Returns the node from the undone review so the client can navigate back to it.
+            Note: non-idempotent: see Mycel documentation.
             """
             return ApiResponse(data=self.review_orchestrator.undo_review(user_id, col_id))
 

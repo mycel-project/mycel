@@ -40,18 +40,30 @@ def app():
 @pytest.fixture
 def api(client):
     class Api:
-        def get(self, url, token, **kwargs):
-            return client.get(url, headers={"Authorization": f"Bearer {token}"}, **kwargs)
-        
-        def post(self, url, token = None, body=None, **kwargs):
-            return client.post(url, json=body, headers={"Authorization": f"Bearer {token}"}, **kwargs)
-        
-        def patch(self, url, token, body=None, **kwargs):
-            return client.patch(url, json=body, headers={"Authorization": f"Bearer {token}"}, **kwargs)
-        
-        def delete(self, url, token, **kwargs):
-            return client.delete(url, headers={"Authorization": f"Bearer {token}"}, **kwargs)
-    
+        def get(self, url, token, headers=None, **kwargs):
+            auth_headers = {"Authorization": f"Bearer {token}"}
+            if headers:
+                auth_headers.update(headers)
+            return client.get(url, headers=auth_headers, **kwargs)
+
+        def post(self, url, token=None, body=None, headers=None, **kwargs):
+            auth_headers = {"Authorization": f"Bearer {token}"}
+            if headers:
+                auth_headers.update(headers)
+            return client.post(url, json=body, headers=auth_headers, **kwargs)
+
+        def patch(self, url, token, body=None, headers=None, **kwargs):
+            auth_headers = {"Authorization": f"Bearer {token}"}
+            if headers:
+                auth_headers.update(headers)
+            return client.patch(url, json=body, headers=auth_headers, **kwargs)
+
+        def delete(self, url, token, headers=None, **kwargs):
+            auth_headers = {"Authorization": f"Bearer {token}"}
+            if headers:
+                auth_headers.update(headers)
+            return client.delete(url, headers=auth_headers, **kwargs)
+
     return Api()
 
 @pytest.fixture(autouse=True)

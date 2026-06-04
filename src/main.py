@@ -20,9 +20,11 @@ from src.interfaces.interface import Interface
 from src.event_bus import EventBus
 from src.core.scheduling_engine import SchedulingEngine
 from src.repositories import NodeRepository, CollectionRepository
+from src.repositories.idempotency_repository import IdempotencyRepository
 from src.services.auth.auth_service import AuthService
 from src.services.cleanup_service import CleanupService
 from src.services.collection_orchestrator import CollectionOrchestrator
+from src.services.idempotency_service import IdempotencyService
 from src.services.node_format_service import NodeFormatService
 from src.services.priority_service import PriorityService
 from src.services.user_orchestrator import UserOrchestrator
@@ -102,6 +104,9 @@ class Application():
 
         review_orchestrator = ReviewOrchestrator(user_service, node_service, review_service, node_view_builder, collection_service)
 
+        idempotency_repository = IdempotencyRepository(self.db)
+        idempotency_service = IdempotencyService(idempotency_repository)
+
         self.cleanup_service = CleanupService(node_service, collection_service, user_service)
         
         self.services = {
@@ -114,6 +119,7 @@ class Application():
             "spore_service": spore_service,
             "priority_service": priority_service,
             "auth_service": auth_service,
+            "idempotency_service": idempotency_service,
         }
 
         self.orchestrators = {

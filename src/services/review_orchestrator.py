@@ -39,6 +39,7 @@ class ReviewOrchestrator:
             node = self._review_service.review_fragment(col_id, node_id, duration, data, tz_offset_min)
         else:
             raise UnknownReviewTypeError(data.__class__.__name__)
+        self._user_service.clear_pending_node(user_id)
         return self._node_view_builder.to_detail_view(node)
 
     def _restore_node_from_snapshot(self, review: Review) -> None:

@@ -64,3 +64,12 @@ class ReviewORM(Base):
     __table_args__ = (
         Index("idx_reviews_node", "node_id"),
     )
+
+    
+class IdempotencyKeyORM(Base):
+    __tablename__ = "idempotency_keys"
+    
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    response_body: Mapped[str] = mapped_column(String, nullable=False)
+    created_at: Mapped[int] = mapped_column(BigInteger, nullable=False)
