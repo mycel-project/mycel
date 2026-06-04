@@ -120,7 +120,7 @@ class NodeOrchestrator:
         elif extract_type == NodeType.SPORE:
             due = start_of_local_tomorrow_ms(tz_offset_min)
             source_content = next(iter(source_node.content.fields.values()))
-            spore = self._spore_service.create_spore(col_id, due, source_content, source_node_id)
+            spore = self._spore_service.create_spore(user_id, col_id, due, source_content, source_node_id)
             try:
                 clozed_spore = self._spore_service.cloze_region(spore.id, text, str(field), start_index, end_index)
                 extract = self._spore_service.remove_extract_formatting(clozed_spore.id, str(field))
