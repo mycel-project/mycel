@@ -7,6 +7,7 @@ from uuid import uuid4
 import jwt
 
 from src.main import Application
+from src.repositories.import_export_repository import ImportExportRepository
 from src.repositories.node_repository import NodeRepository
 from src.types.node_type import NodeType
 
@@ -135,5 +136,18 @@ def priority_service(app):
     return app.services["priority_service"]
 
 @pytest.fixture
-def node_repo(db_fixture):
-    return NodeRepository(db=db_fixture)
+def node_repo(app) -> NodeRepository:
+    return NodeRepository(db=app.db)
+
+@pytest.fixture
+def import_export_repo(app):
+    return ImportExportRepository(db=app.db)
+
+@pytest.fixture
+def default_collection(app, default_user, generate_id):
+    col_id = generate_id()
+    app.db.execute(
+        "INSERT INTO collections (id, user_id, name, created_at, updated_at, conf, algoconf) VALUES (:id, :user_id, 'Test', 0, 0, '{}', '{}')",
+        {"id": col_id, "user_id": default_user}
+    )
+    return col_id

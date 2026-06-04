@@ -23,6 +23,10 @@ class TestUser:
         assert response.status_code == 200
         assert response.json()["data"]["name"] == "new name"
 
+    def test_export_user_data(self, api, create_user):
+        user, token = create_user()
+        response = api.get(f"/users/{user.id}/export", token)
+        assert response.status_code == 200
         
 class TestCollection:
     def test_list_collections(self, api, create_user, create_col):

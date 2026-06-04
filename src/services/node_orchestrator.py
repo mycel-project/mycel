@@ -57,7 +57,7 @@ class NodeOrchestrator:
     def _ensure_col(self, user_id: str, col_id: str) -> None:
         """
         Ensure the collection is owned by the user.
-        Used by methods that do not directly work with nodes, where ownership is not checked.
+        Used by methods that do not directly work with nodes, where ownership is not checked (by get_node_for_user for instance).
         """
         self._collection_service.get_collection(user_id, col_id)
 
@@ -67,6 +67,7 @@ class NodeOrchestrator:
             raise ExtractMismatchError(rebuilt_text, text)
 
     def get_nodes_view(self, user_id: str, collection_id: str, limit: int = 1000) -> list[NodeView]:
+        self._ensure_col(user_id, collection_id)
         nodes = self._node_service.get_nodes(user_id, collection_id, limit)
         return self._node_view_builder.to_views(nodes)
 
@@ -202,5 +203,6 @@ class NodeOrchestrator:
         return self._node_view_builder.to_detail_views(nodes)
 
     def get_deleted_nodes_view(self, user_id: str, collection_id: str) -> list[NodeView]:
+        self._ensure_col(user_id, collection_id)
         nodes = self._node_service.get_nodes(user_id, collection_id, include_alive=False, include_deleted=True)
         return self._node_view_builder.to_views(nodes)

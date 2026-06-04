@@ -26,8 +26,11 @@ class ReviewOrchestrator:
         self._node_view_builder = node_view_builder
         self._collection_service = collection_service
 
-    def review_to_detail_view(self, user_id: str, col_id: str, node_id: str, duration: int, data: TypeReviewData, tz_offset_min: int = 0) -> NodeDetailView:
+    def _ensure_col(self, user_id: str, col_id: str) -> None:
         self._collection_service.get_collection(user_id, col_id)
+
+    def review_to_detail_view(self, user_id: str, col_id: str, node_id: str, duration: int, data: TypeReviewData, tz_offset_min: int = 0) -> NodeDetailView:
+        self._ensure_col(user_id, col_id)
         pending_review_id = self._user_service.get_pending_node(user_id)
         if pending_review_id is None:
             raise NoPendingNodeError(node_id)
@@ -54,6 +57,7 @@ class ReviewOrchestrator:
         )
 
     def get_next_review(self, user_id: str, col_id: str, tz_offset: int = 0) -> NodeDetailView | None:
+        self._ensure_col(user_id, col_id)
         node = self._review_service.get_next_review(user_id, col_id, tz_offset)
         if node:
             self._user_service.set_pending_node(user_id, node.id)
@@ -62,7 +66,7 @@ class ReviewOrchestrator:
             return None
 
     def undo_review(self, user_id: str, col_id: str) -> NodeDetailView:
-        self._collection_service.get_collection(user_id, col_id)
+        self._ensure_col(user_id, col_id)
         max_undo_age = self._user_service.get_undo_max_age_min(user_id)
         last_review = self._review_service.undo_review(col_id, max_undo_age)
         try:
@@ -87,7 +91,7 @@ class ReviewOrchestrator:
         end=None,
         tz_offset_minutes: int = 0,
     ) -> list[DayReviewOverview]:
-        self._collection_service.get_collection(user_id, col_id)
+        self._ensure_col(user_id, col_id)
         # Use review service to get done for that period
         # Must determine which format to use to handle due/done. Timestamps ? iso ? What is cleaner for frontend ? maybe iso as we send back iso and it's only day specific ?
 

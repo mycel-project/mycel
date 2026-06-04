@@ -2,11 +2,11 @@ import time
 
 from src.db import Db
 from src.models.export import FullExport
-from src.repositories.export_repository import ExportRepository
+from src.repositories.import_export_repository import ImportExportRepository
 
 class ImportExportService:
     def __init__(self, db: Db):
-        self._export_repo = ExportRepository(db)
+        self._export_repo = ImportExportRepository(db)
 
     def export_data(self, user_id: str) -> FullExport:
         raw_data = self._export_repo.get_full_user_data(user_id)
@@ -36,3 +36,7 @@ class ImportExportService:
                     user=raw_data["user"],
                     collections=list(collections_map.values())
                 )
+
+    def import_data(self, data):
+        # user transaction to rollback if error and to not corrupt db
+        pass

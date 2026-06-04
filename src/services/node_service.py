@@ -52,7 +52,7 @@ class NodeService:
     ) -> list[Node]:
         if not include_alive and not include_deleted:
             raise ValueError("At least one of include_alive or include_deleted must be True")
-        nodes = self._repo.get_by_collection(user_id, collection_id, limit)
+        nodes = self._repo.get_by_collection(collection_id, limit)
         if include_alive and include_deleted:
             return nodes
         if include_alive:

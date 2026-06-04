@@ -97,27 +97,27 @@ class NodeRepository:
         )
         return Node.from_db(row) if row else None
 
-    def get_by_collection(self, user_id: str, collection_id: str, limit: Optional[int] = None) -> list[Node]:
+    def get_by_collection(self, collection_id: str, limit: Optional[int] = None) -> list[Node]:
         if limit:
             rows = self.db.fetch_all(
                 f"""
                 SELECT n.* FROM nodes n
                 JOIN collections c ON n.collection_id = c.id
-                WHERE n.collection_id = :col_id AND c.user_id = :user_id
+                WHERE n.collection_id = :col_id 
                 ORDER BY n.position {self.collation}
                 LIMIT :limit
                 """,
-                {"col_id": collection_id, "user_id": user_id, "limit": limit},
+                {"col_id": collection_id, "limit": limit},
             )
         else:
             rows = self.db.fetch_all(
                 f"""
                 SELECT n.* FROM nodes n
                 JOIN collections c ON n.collection_id = c.id
-                WHERE n.collection_id = :col_id AND c.user_id = :user_id
+                WHERE n.collection_id = :col_id 
                 ORDER BY n.position {self.collation}
                 """,
-                {"col_id": collection_id, "user_id": user_id},
+                {"col_id": collection_id},
             )
         return [Node.from_db(r) for r in rows]
 

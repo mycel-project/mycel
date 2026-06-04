@@ -44,15 +44,15 @@ class TestNodeRepositoryBasic:
         assert node_repo.get(node.id) is None
 
 class TestNodeRepositoryQueries:
-    def test_get_by_collection(self, node_repo, default_collection, default_user):
+    def test_get_by_collection(self, node_repo, default_collection):
         node_repo.create(default_collection, NodeContent(), NodeType.SPORE, "01")
         node_repo.create(default_collection, NodeContent(), NodeType.SPORE, "02")
-
-        results = node_repo.get_by_collection(default_user, default_collection)
+        
+        results = node_repo.get_by_collection(default_collection)
         assert len(results) == 2
         assert results[0].position == "01"
 
-        limited = node_repo.get_by_collection(default_user, default_collection, limit=1)
+        limited = node_repo.get_by_collection(default_collection, limit=1)
         assert len(limited) == 1
 
     def test_get_by_type(self, node_repo, default_collection):
