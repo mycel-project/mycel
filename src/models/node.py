@@ -53,3 +53,23 @@ class Node(BaseModel):
         values["type_data"] = factory.model_validate(raw)
 
         return values
+
+    @classmethod
+    def from_db(cls, row: dict) -> 'Node':
+        row_dict = dict(row) if hasattr(row, 'keys') else row.__dict__
+        
+        return cls(
+            id=row_dict["id"],
+            collection_id=row_dict["collection_id"],
+            parent_id=row_dict["parent_id"],
+            type=row_dict["type"],
+            created_at=row_dict["created_at"],
+            updated_at=row_dict["updated_at"],
+            deleted_at=row_dict["deleted_at"],
+            data=NodeData.from_db(row_dict["data"]),
+            due=row_dict["due"],
+            content=NodeContent.from_db(row_dict["content"]),
+            last_review=row_dict["last_review"],
+            type_data=row_dict["type_data"],
+            position=row_dict["position"],
+        )

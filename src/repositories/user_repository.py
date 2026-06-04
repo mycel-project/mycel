@@ -9,16 +9,6 @@ class UserRepository:
     def __init__(self, db):
         self.db = db
 
-    def _row_to_model(self, row) -> User:
-        return User(
-            id=row["id"],
-            name=row["name"],
-            created_at=row["created_at"],
-            conf=UserConf.model_validate(
-                json.loads(row["conf"]) if isinstance(row["conf"], str) else row["conf"]
-            ),
-        )
-
     def create(self, name: str, conf: UserConf, id: Optional[str] = None) -> User:
         now = int(time.time() * 1000)
         if id is None:
@@ -31,7 +21,7 @@ class UserRepository:
 
     def get(self, id: str) -> Optional[User]:
         row = self.db.fetch_one("SELECT * FROM users WHERE id = :id", {"id": id})
-        return self._row_to_model(row) if row else None
+        return User.from_db(row) if row else None
 
     def update(self, user: User) -> None:
         self.db.execute(
@@ -44,7 +34,7 @@ class UserRepository:
 
     def list(self) -> list[User]:
         rows = self.db.fetch_all("SELECT * FROM users ORDER BY created_at")
-        return [self._row_to_model(r) for r in rows]
+        return [User.from_db(r) for r in rows]
 
     def get_pending_node_id(self, user_id: str) -> str | None:
         row = self.db.fetch_one("SELECT pending_node_id FROM users WHERE id = :id", {"id": user_id})

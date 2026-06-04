@@ -49,3 +49,22 @@ class Review(BaseModel):
             values["node_state_before"] = NodeStateBefore.from_dict(raw_snapshot, NodeType(node_type))
 
         return values
+
+    @classmethod
+    def from_db(cls, row: dict) -> 'Review':
+        row_dict = dict(row) if hasattr(row, 'keys') else row.__dict__
+        
+        return cls(
+            id=row_dict["id"],
+            node_id=row_dict["node_id"],
+            time=row_dict["time"],
+            duration=row_dict["duration"],
+            type_review_data=row_dict["type_review_data"],
+            type=row_dict["type"],
+            node_state_before=(
+                NodeStateBefore.from_dict(
+                    json.loads(row_dict["node_state_before"]),
+                    NodeType(row_dict["type"])
+                )
+            ),
+        )

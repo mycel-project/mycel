@@ -11,21 +11,6 @@ class CollectionRepository:
     def __init__(self, db: Db):
         self.db = db
 
-    def _row_to_model(self, row) -> Collection:
-        return Collection(
-            id=row["id"],
-            user_id=row["user_id"],
-            name=row["name"],
-            created_at=row["created_at"],
-            updated_at=row["updated_at"],
-            conf=CollectionConf.model_validate(
-                json.loads(row["conf"]) if isinstance(row["conf"], str) else row["conf"]
-            ),
-            algoconf=AlgoConf.model_validate(
-                json.loads(row["algoconf"]) if isinstance(row["algoconf"], str) else row["algoconf"]
-            ),
-        )
-
     def create(self, user_id: str, name: str, conf: CollectionConf, algoconf: AlgoConf, id: Optional[str] = None) -> Collection:
         now = int(time.time() * 1000)
         if id is None:
@@ -40,7 +25,7 @@ class CollectionRepository:
 
     def get(self, user_id: str, id: str) -> Optional[Collection]:
             row = self.db.fetch_one("SELECT * FROM collections WHERE id = :id AND user_id = :user_id", {"id": id, "user_id": user_id})
-            return self._row_to_model(row) if row else None
+            return Collection.from_db(row) if row else None
 
     def update(self, user_id: str, collection: Collection) -> None:
             now = int(time.time() * 1000)
@@ -61,4 +46,4 @@ class CollectionRepository:
             "SELECT * FROM collections WHERE user_id = :user_id ORDER BY created_at",
             {"user_id": user_id}
         )
-        return [self._row_to_model(r) for r in rows]
+        return [Collection.from_db(r) for r in rows]
