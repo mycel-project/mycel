@@ -10,12 +10,14 @@ from pydantic import BaseModel
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi import Security, HTTPException
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import jwt
 
 from src.core.app_infos import AppInfos
 from src.core.config import MycelConfig, DeploymentMode
 from src.core.regex import CLOZE_REGEX
-from src.domain.domain_exceptions import DomainException, ForbiddenError
+from src.domain.domain_exceptions import DomainException, ForbiddenError, NoUserFound
 from src.interfaces.base_interface import BaseInterface
 from src.interfaces.uvicorn import UvicornServer
 from src.models.day_review_overview import DayReviewOverview
@@ -50,6 +52,8 @@ class ApiResponse(BaseModel, Generic[T]):
     data: T
 
 logger = logging.getLogger(__name__)
+
+bearer_scheme = HTTPBearer(auto_error=False)
 
 class Rest(BaseInterface):
     def __init__(self, app_infos):
@@ -86,13 +90,19 @@ class Rest(BaseInterface):
         if self.uvicorn.active:
             await self.uvicorn.stop()
 
-    async def get_user(self, request: Request) -> str:
+    async def get_user(self, request: Request, credentials: HTTPAuthorizationCredentials = Security(bearer_scheme)) -> str:
         if is_testing():
             token = request.headers.get("Authorization", "").split(" ")[1]
             return cast(str, jwt.decode(token, "test_key", algorithms=["HS256"], audience="authenticated").get("sub"))
         if self.config.deployment_mode == DeploymentMode.CLOUD:
             assert self.auth_service != None
-            return await self.auth_service.get_user_id(request.headers.get("Authorization", "")) # For now MycelCloud is single user.
+            user_id = await self.auth_service.get_user_id(request.headers.get("Authorization", "")) # For now MycelCloud is single user.
+            try:
+                self.user_orchestrator.get_user(user_id)
+            except NoUserFound:
+                name = await self.auth_service.get_user_name(user_id)
+                self.user_orchestrator.create_user(name, user_id)
+            return user_id
         else:
             from src.db import DEFAULT_USER_ID
             return DEFAULT_USER_ID # Defaut User for self-hosting
@@ -188,10 +198,14 @@ class Rest(BaseInterface):
         # USERS
 
         class UserCreateRequest(BaseModel):
-            name: str
+            user_id: str | None = None
+            name: str 
         @self.app.post("/users", tags=["users"])
         async def create_user(data: UserCreateRequest) -> ApiResponse[UserView]:
-            user = self.user_orchestrator.create_user(data.name)
+            """
+            Note: This route is only accessible in self-hosted deployments. It is blocked at the infrastructure level in MycelCloud, as users are created internally during account registration.
+            """
+            user = self.user_orchestrator.create_user(data.name, data.user_id)
             return ApiResponse(data=user)
 
         @self.app.get("/users", tags=["users"])

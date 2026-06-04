@@ -10,10 +10,10 @@ class UserOrchestrator:
     ):
         self._user_service = user_service
 
-    def create_user(self, name: str = "Mycel") -> UserView:
-        user = self._user_service.create_user(name=name)
+    def create_user(self, name: str = "Mycel", user_id = None) -> UserView:
+        user = self._user_service.create_user(name=name, id=user_id)
         return self._user_service.to_view(user)
-
+    
     def get_user(self, user_id: str) -> UserView:
         user = self._user_service.get_user(user_id=user_id)
         return self._user_service.to_view(user)
