@@ -29,7 +29,7 @@ class CreateNodeUseCase:
     ) -> Node:
         if position is None:
             if parent_id is None:
-                position = self._priority_service.prioritise_random_between_percentage(collection_id, 5, 15)
+                position = self._priority_service.prioritise_random_between_percentage(collection_id, 85, 95)
             else:
                 position = self._priority_service.prioritise_random_near_node(collection_id, parent_id, 10)
         return self._node_service.create_node(

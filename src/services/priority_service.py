@@ -33,6 +33,7 @@ class PriorityService:
         }
     
     def get_position_for_priority(self, collection_id: str, percentage: float) -> str:
+        # Could be just named set_priority?
         if not 0 <= percentage <= 100:
             raise ValueError("Percentage must be between 0 and 100")
  
@@ -42,14 +43,14 @@ class PriorityService:
             return self._lexical_order.insert_between(None, None)
 
         # two special cases to force insertion at start or at end 
-        if percentage == 100:
+        if percentage == 0:
             tail_key = self._repo.get_tail_key(collection_id)
             return self._lexical_order.insert_between(tail_key, None)
-        if percentage == 0:
+        if percentage == 100:
             head_key = self._repo.get_position_at_offset(collection_id, 0)
             return self._lexical_order.insert_between(None, head_key)
  
-        target_index = round((percentage / 100) * (total - 1))
+        target_index = round(((100 - percentage) / 100) * (total - 1)) 
         target_index = max(0, min(target_index, total - 1))
 
         left_key = self._repo.get_position_at_offset(collection_id, target_index)
@@ -77,7 +78,10 @@ class PriorityService:
         node_id: str,
         percentage_range: float,
     ) -> str:
-        """Places a node within a priority window near the given node, sliding the window when close to 100"""
+        """
+        Places a node within a priority window near the given node, sliding the window when close to 100
+        Children are placed above source. (more prioritised)
+        """
         current = self.get_priority(collection_id, node_id)
         min_pct = min(current, 100 - percentage_range)
         max_pct = min_pct + percentage_range
