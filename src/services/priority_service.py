@@ -18,9 +18,9 @@ class PriorityService:
         total = self._repo.count_by_collection(collection_id)
  
         if total <= 1:
-            return 0
+            return 100
 
-        return (rank / (total - 1)) * 100
+        return 100 - (rank / (total - 1)) * 100
 
     def get_priorities(self, collection_id: str) -> dict[str, float]:
         total = self._repo.count_by_collection(collection_id)
@@ -33,7 +33,6 @@ class PriorityService:
         }
     
     def get_position_for_priority(self, collection_id: str, percentage: float) -> str:
-        # Could be just named set_priority?
         if not 0 <= percentage <= 100:
             raise ValueError("Percentage must be between 0 and 100")
  
@@ -79,11 +78,12 @@ class PriorityService:
         percentage_range: float,
     ) -> str:
         """
-        Places a node within a priority window near the given node, sliding the window when close to 100
+        Places a node within a priority window near the given node, sliding the window when close to 100 to avoid accumulation to very high priority.
         Children are placed above source. (more prioritised)
         """
+        epsilon = 0.5
         current = self.get_priority(collection_id, node_id)
-        min_pct = min(current, 100 - percentage_range)
+        min_pct = min(current + epsilon, 100 - percentage_range)
         max_pct = min_pct + percentage_range
         return self.prioritise_random_between_percentage(collection_id, min_pct, max_pct)
     
