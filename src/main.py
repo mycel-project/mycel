@@ -108,7 +108,7 @@ class Application():
         idempotency_repository = IdempotencyRepository(self.db)
         idempotency_service = IdempotencyService(idempotency_repository)
 
-        ie_service = ImportExportService(self.db)
+        ie_service = ImportExportService(self.db, self.app_infos)
 
         self.cleanup_service = CleanupService(node_service, collection_service, user_service)
         

@@ -10,6 +10,6 @@ class CollectionExport(Collection):
 
 class FullExport(BaseModel):
     version: str
-    exported_at: int
+    exported_at: str
     user: User
     collections: list[CollectionExport]
