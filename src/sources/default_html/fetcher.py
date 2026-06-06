@@ -17,8 +17,7 @@ class DefaultHtmlFetcher(Fetcher):
             "User-Agent": self.user_agent
         }
 
-        response = requests.get(source, headers=headers, timeout=10)
-        response.raise_for_status()
+        response = self.safe_get(source, headers=headers)
 
         html = response.text
 

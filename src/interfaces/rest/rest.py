@@ -15,6 +15,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import jwt
 
 from src.core.app_infos import AppInfos
+from src.core.config import MycelConfig
 from src.core.regex import CLOZE_REGEX
 from src.domain.domain_exceptions import DomainException, ForbiddenError, NoUserFound
 from src.interfaces.base_interface import BaseInterface

@@ -192,6 +192,14 @@ class UnsafeUrl(RessourceError):
             status_code=400
         )
 
+class PageTooLarge(RessourceError):
+    def __init__(self, url: str, max_size_bytes: int):
+        super().__init__(
+            code="PAGE_TOO_LARGE",
+            message=f"Page at '{url}' is too large (max {max_size_bytes // (1024 * 1024)}MB)",
+            status_code=400
+        )
+
 
 # Reviews Errors
 

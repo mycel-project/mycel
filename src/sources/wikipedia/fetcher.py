@@ -18,7 +18,7 @@ class WikipediaFetcher(Fetcher):
         headers = {
             "User-Agent": self.user_agent
         }
-        response = requests.get(url, headers=headers)
+        response = self.safe_get(url, headers=headers)
         response.raise_for_status()
         data = response.json()
         html = data["html"]
