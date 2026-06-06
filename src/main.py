@@ -61,7 +61,7 @@ class Application():
 
         print(f"Running Mycel {self.app_infos.version}")
 
-        source_registry = SourceRegistry(self.config.network_user_agent)
+        source_registry = SourceRegistry(self.config.network_user_agent, self.config.allow_private_urls_fetch)
         html_to_markdown_registry = HtmlToMdRegistry()
 
         node_repository = NodeRepository(self.db)

@@ -11,4 +11,5 @@ class MycelConfig(BaseModel):
     db_path: str
     log_level: str
     deployment_mode: DeploymentMode = DeploymentMode.SELF_HOSTED
+    allow_private_urls_fetch: bool
 

@@ -1,5 +1,8 @@
 import importlib
+import ipaddress, socket, urllib.parse
 
+
+from src.domain.domain_exceptions import UnsafeUrl
 from src.types.fetch_result import FetchResult
 from src.types.clean_result import CleanResult
 
@@ -11,7 +14,9 @@ import logging
 logger = logging.getLogger(__name__)
 
 class SourceRegistry:
-    def __init__(self, user_agent):
+    def __init__(self, user_agent, allow_private_urls):
+        self._allow_private_urls = allow_private_urls
+        
         self._fetchers: list[Fetcher] = []
         self._cleaners: list[Cleaner] = []
         
@@ -75,9 +80,22 @@ class SourceRegistry:
         return self._default_fetcher
 
     def fetch(self, source: str) -> FetchResult:
+        if not self._allow_private_urls and not self._is_safe_url(source):
+            raise UnsafeUrl(source)
         fetcher = self.get_fetcher(source)
         return fetcher.fetch(source)
 
+    def _is_safe_url(self, url: str) -> bool:
+        try:
+            host = urllib.parse.urlparse(url).hostname
+            if host is None:
+                return False
+            ip = socket.gethostbyname(host)
+            addr = ipaddress.ip_address(ip)
+            return not (addr.is_private or addr.is_loopback or addr.is_link_local)
+        except Exception:
+            return False
+        
     def get_cleaners(self, content: str) -> list[Cleaner]:
         applicable_cleaners = []
 

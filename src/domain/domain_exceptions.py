@@ -184,6 +184,15 @@ class InvalidUrl(RessourceError):
             status_code=400
         )
 
+class UnsafeUrl(RessourceError):
+    def __init__(self, url: str):
+        super().__init__(
+            code="UNSAFE_URL",
+            message=f"'{url}' is not a safe URL to fetch",
+            status_code=400
+        )
+
+
 # Reviews Errors
 
 class ReviewError(DomainException):
