@@ -15,7 +15,6 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import jwt
 
 from src.core.app_infos import AppInfos
-from src.core.config import MycelConfig, DeploymentMode
 from src.core.regex import CLOZE_REGEX
 from src.domain.domain_exceptions import DomainException, ForbiddenError, NoUserFound
 from src.interfaces.base_interface import BaseInterface
@@ -94,18 +93,16 @@ class Rest(BaseInterface):
         if is_testing():
             token = request.headers.get("Authorization", "").split(" ")[1]
             return cast(str, jwt.decode(token, "test_key", algorithms=["HS256"], audience="authenticated").get("sub"))
-        if self.config.deployment_mode == DeploymentMode.CLOUD:
-            assert self.auth_service != None
-            user_id = await self.auth_service.get_user_id(request.headers.get("Authorization", "")) # For now MycelCloud is single user.
+        if self.auth_service is not None:
+            user_id = await self.auth_service.get_user_id(request.headers.get("Authorization", ""))
             try:
                 self.user_orchestrator.get_user(user_id)
             except NoUserFound:
                 name = await self.auth_service.get_user_name(user_id)
                 self.user_orchestrator.create_user(name, user_id)
             return user_id
-        else:
-            from src.db import DEFAULT_USER_ID
-            return DEFAULT_USER_ID # Defaut User for self-hosting
+        from src.db import DEFAULT_USER_ID
+        return DEFAULT_USER_ID
 
     def _register_routes(self):
         @self.app.exception_handler(RequestValidationError)
