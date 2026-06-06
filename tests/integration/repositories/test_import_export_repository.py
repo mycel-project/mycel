@@ -1,4 +1,5 @@
 import time
+from datetime import datetime, timezone
 from src.models.export import FullExport, CollectionExport
 
 def test_repo_export_and_import(import_export_repo, create_user, create_col, create_node, user_service):
@@ -18,7 +19,7 @@ def test_repo_export_and_import(import_export_repo, create_user, create_col, cre
 
     export_payload = FullExport(
         version="1.0",
-        exported_at=int(time.time() * 1000),
+        exported_at=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         user=raw_source_data["user"],
         collections=collections_export
     )
