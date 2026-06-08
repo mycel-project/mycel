@@ -30,25 +30,30 @@ class CollectionORM(Base):
 
 class NodeORM(Base):
     __tablename__ = "nodes"
-
+    
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
     collection_id: Mapped[str] = mapped_column(String(36), ForeignKey("collections.id", ondelete="CASCADE"), nullable=False)
+    template_id: Mapped[str] = mapped_column(String(36), nullable=False)
     parent_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
-    type: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    content: Mapped[str] = mapped_column(String, nullable=False, server_default="{}")
+    base_for: Mapped[str] = mapped_column(String(20), nullable=False)
+    fields: Mapped[str] = mapped_column(String, nullable=False, server_default="{}")
+    data: Mapped[str] = mapped_column(String, nullable=False, server_default="{}")
+    status: Mapped[str] = mapped_column(String(20), nullable=False, server_default="Active")
     created_at: Mapped[int] = mapped_column(BigInteger, nullable=False)
     updated_at: Mapped[int] = mapped_column(BigInteger, nullable=False)
     deleted_at: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
-    data: Mapped[str] = mapped_column(String, nullable=False, server_default="{}")
-    type_data: Mapped[str] = mapped_column(String, nullable=False, server_default="{}")
-    due: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default="0")
-    last_review: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
-    position: Mapped[str | None] = mapped_column(String, nullable=True)
 
-    __table_args__ = (
-        Index("idx_nodes_due", "due"),
-        Index("idx_nodes_collection", "collection_id"),
-    )
+    
+class LearningUnitORM(Base):
+    __tablename__ = "learning_units"
+    
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    node_id: Mapped[str] = mapped_column(String(36), ForeignKey("nodes.id", ondelete="CASCADE"), nullable=False)
+    unit_type: Mapped[str] = mapped_column(String(20), nullable=False)
+    position: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default="0")
+    due: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    last_review: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    unit_data: Mapped[str] = mapped_column(String, nullable=False, server_default="{}")
 
 
 class ReviewORM(Base):
