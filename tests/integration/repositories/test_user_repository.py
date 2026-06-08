@@ -1,16 +1,13 @@
 import time
 
-from src.models.user_conf import UserConf
 from src.repositories.user_repository import UserRepository
 
 
 def test_user_create_and_get(db_fixture):
     repo = UserRepository(db=db_fixture)
-    conf = UserConf()
 
     created = repo.create(
         name="Alice",
-        conf=conf
     )
 
     assert created.id is not None
@@ -26,11 +23,9 @@ def test_user_create_and_get(db_fixture):
 
 def test_user_update(db_fixture):
     repo = UserRepository(db=db_fixture)
-    conf = UserConf()
     
     created = repo.create(
         name="Bob Old",
-        conf=conf
     )
 
     created.name = "Bob New"
@@ -46,11 +41,9 @@ def test_user_update(db_fixture):
 
 def test_user_delete(db_fixture):
     repo = UserRepository(db=db_fixture)
-    conf = UserConf()
     
     created = repo.create(
         name="Charlie To Delete",
-        conf=conf
     )
 
     repo.delete(created.id)
@@ -62,11 +55,11 @@ def test_user_delete(db_fixture):
 def test_user_list_ordering(db_fixture):
     repo = UserRepository(db=db_fixture)
         
-    u1 = repo.create(name="Dave", conf=UserConf())
+    u1 = repo.create(name="Dave")
     time.sleep(0.002) 
-    u2 = repo.create(name="Eve", conf=UserConf())
+    u2 = repo.create(name="Eve")
     time.sleep(0.002)
-    u3 = repo.create(name="Frank", conf=UserConf())
+    u3 = repo.create(name="Frank")
     
     results = repo.list()
 
@@ -79,7 +72,7 @@ def test_user_list_ordering(db_fixture):
 
 def test_pending_node(db_fixture):
     repo = UserRepository(db=db_fixture)
-    user = repo.create(name="Test", conf=UserConf())
+    user = repo.create(name="Test")
     
     assert repo.get_pending_node_id(user.id) is None
     

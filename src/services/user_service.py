@@ -1,11 +1,9 @@
 from typing import Optional
 
-from pydantic import ValidationError
 from src.db import Db
 from src.domain.domain_exceptions import NoUserFound
 from src.models.user import User
 from src.models.user_conf import UserConf
-from src.schemas.user_conf_update import UserConfUpdate
 from src.schemas.user_update import UserUpdate
 from src.repositories.user_repository import UserRepository
 from src.schemas.user_view import UserView
@@ -28,14 +26,10 @@ class UserService:
     def create_user(
         self,
         name: str,
-        user_conf: Optional[UserConf] = None,
         id: Optional[str] = None,
     ) -> User:
-        if user_conf is None:
-            user_conf = UserConf()
         return self._repo.create(
             name=name,
-            conf=user_conf,
             id=id,
         )
 
