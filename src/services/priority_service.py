@@ -1,12 +1,12 @@
 import random
 
 from src.core.lexical_order import LexicalOrder
-from src.repositories.node_repository import NodeRepository
+from src.repositories.learning_unit_repository import LearningUnitRepository
  
  
 class PriorityService:
-    def __init__(self, node_repository: NodeRepository, lexical_order: LexicalOrder):
-        self._repo = node_repository
+    def __init__(self, learning_unit_repository: LearningUnitRepository, lexical_order: LexicalOrder):
+        self._repo = learning_unit_repository
         self._lexical_order = lexical_order
  
     def get_priority(self, collection_id: str, node_id: str) -> float:

@@ -3,6 +3,7 @@ import logging
 from src.domain.create_node_from_url_usecase import CreateNodeFromUrlUseCase
 from src.domain.domain_exceptions import EmptyField, ExtractError, ExtractMismatchError, InvalidSourceNodeType, NotAKnownType, UnknownRessourceTypeError
 from src.domain.get_outline_usecase import GetOutlineUseCase
+from src.domain.reprioritise_usecase import ReprioritiseUseCase
 from src.domain.reschedule_node_usecase import RescheduleNodeUseCase
 from src.domain.split_node_usecase import SplitNodeUseCase
 from src.models.extract_result import ExtractResult
@@ -37,6 +38,7 @@ class NodeOrchestrator:
         node_format_service: NodeFormatService,
         create_node_from_url_usecase: CreateNodeFromUrlUseCase,
         reschedule_node_usecase: RescheduleNodeUseCase,
+        reprioritise_usecase: ReprioritiseUseCase,
         get_outline_usecase: GetOutlineUseCase,
         split_node_usecase: SplitNodeUseCase,
         collection_service: CollectionService,
@@ -50,6 +52,7 @@ class NodeOrchestrator:
         self._node_view_builder = node_view_builder
         self._node_format_service = node_format_service
         self._reschedule_node_usecase = reschedule_node_usecase
+        self._reprioritise_usecase = reprioritise_usecase
         self._get_outline_usecase = get_outline_usecase
         self._split_node = split_node_usecase
         self._collection_service = collection_service
@@ -98,8 +101,7 @@ class NodeOrchestrator:
 
     def reprioritise_node_to_detail_view(self, user_id: str, collection_id: str, node_id: str, target_node_priority: float) -> NodeDetailView:
         self._node_service.get_node_for_user(user_id, collection_id, node_id)
-        self._priority_service.reprioritise_node(collection_id, node_id, target_node_priority)
-        node = self._node_service.get_node(node_id)
+        node = self._reprioritise_usecase.execute(collection_id, node_id, target_node_priority)
         return self._node_view_builder.to_detail_view(node)
 
     def soft_delete_subtree(self, user_id: str, col_id: str, node_id: str) -> list[str]:

@@ -14,6 +14,7 @@ from src.domain.create_fragment_usecase import CreateFragmentUseCase
 from src.domain.create_node_from_url_usecase import CreateNodeFromUrlUseCase
 from src.domain.create_node_usecase import CreateNodeUseCase
 from src.domain.get_outline_usecase import GetOutlineUseCase
+from src.domain.reprioritise_usecase import ReprioritiseUseCase
 from src.domain.reschedule_node_usecase import RescheduleNodeUseCase
 from src.domain.split_node_usecase import SplitNodeUseCase
 from src.interfaces.interface import Interface
@@ -95,13 +96,14 @@ class Application():
         create_node_from_url_usecase = CreateNodeFromUrlUseCase(create_fragment_usecase, ressource_service)
 
         reschedule_node_usecase = RescheduleNodeUseCase(user_service, node_service)
+        reprioritise_usecase = ReprioritiseUseCase(node_service, priority_service)
 
         get_outline_usecase = GetOutlineUseCase()
         split_node_usecase = SplitNodeUseCase(node_service, create_fragment_usecase, get_outline_usecase)
 
         collection_orchestrator = CollectionOrchestrator(collection_service)
         
-        node_orchestrator = NodeOrchestrator(node_service, fragment_service, spore_service, priority_service, ressource_service, node_view_builder, node_format_service, create_node_from_url_usecase, reschedule_node_usecase, get_outline_usecase, split_node_usecase, collection_service)
+        node_orchestrator = NodeOrchestrator(node_service, fragment_service, spore_service, priority_service, ressource_service, node_view_builder, node_format_service, create_node_from_url_usecase, reschedule_node_usecase, reprioritise_usecase, get_outline_usecase, split_node_usecase, collection_service)
 
         review_orchestrator = ReviewOrchestrator(user_service, node_service, review_service, node_view_builder, collection_service)
 
