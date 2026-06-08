@@ -24,6 +24,7 @@ class NodeUpdate(BaseModel):
     last_review: Optional[int] = None
     type_data: Optional[TypeData] = None
     deleted_at: Optional[int] = None
+    updated_at: Optional[int] = None
 
     @field_validator("type")
     def validate_int_values(cls, v):

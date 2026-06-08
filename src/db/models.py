@@ -50,7 +50,7 @@ class LearningUnitORM(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
     node_id: Mapped[str] = mapped_column(String(36), ForeignKey("nodes.id", ondelete="CASCADE"), nullable=False)
     unit_type: Mapped[str] = mapped_column(String(20), nullable=False)
-    position: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default="0")
+    position: Mapped[str] = mapped_column(String, nullable=False, server_default="0")
     due: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     last_review: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     unit_data: Mapped[str] = mapped_column(String, nullable=False, server_default="{}")

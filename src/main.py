@@ -20,7 +20,7 @@ from src.domain.split_node_usecase import SplitNodeUseCase
 from src.interfaces.interface import Interface
 from src.event_bus import EventBus
 from src.core.scheduling_engine import SchedulingEngine
-from src.repositories import NodeRepository, CollectionRepository
+from src.repositories import NodeRepository, CollectionRepository, LearningUnitRepository
 from src.repositories.idempotency_repository import IdempotencyRepository
 from src.services.auth.auth_service import AuthService
 from src.services.cleanup_service import CleanupService
@@ -66,11 +66,12 @@ class Application():
         html_to_markdown_registry = HtmlToMdRegistry()
 
         node_repository = NodeRepository(self.db)
+        learning_unit_repository = LearningUnitRepository(self.db)
         lexical_order = LexicalOrder()
         
         ressource_service = RessourceService(source_registry, html_to_markdown_registry)
         node_format_service = NodeFormatService()
-        priority_service = PriorityService(node_repository, lexical_order)
+        priority_service = PriorityService(learning_unit_repository, lexical_order)
         node_service = NodeService(node_repository)
 
         user_service = UserService(self.db)

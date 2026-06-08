@@ -1,10 +1,14 @@
+import json
 from enum import Enum
-from pydantic import BaseModel, ConfigDict, Field
+from uuid import uuid4
+from pydantic import BaseModel, ConfigDict, Field, RootModel, field_validator
 from typing import Optional, TypeAlias
 
 from src.models.node_data import NodeData
+from src.utils.time import now_ms
 
-NodeFields: TypeAlias = dict[str, str]
+class NodeFields(RootModel[dict[str, str]]):
+    pass
 
 class NodeType(str, Enum):
     FRAGMENT = "fragment"
@@ -16,14 +20,24 @@ class NodeStatus(str, Enum):
     
 class Node(BaseModel):
     model_config = ConfigDict(validate_assignment=True, from_attributes=True)
-    id: str
+    id: str = Field(default_factory=lambda: str(uuid4()))
     collection_id: str
     template_id: str
-    created_at: int
-    updated_at: int
+    created_at: int = Field(default_factory=lambda: now_ms())
+    updated_at: int = Field(default_factory=lambda: now_ms())
     base_for: NodeType
     fields: NodeFields
     data: NodeData = Field(default_factory=NodeData)  
     status: NodeStatus = NodeStatus.ACTIVE
     deleted_at: Optional[int] = None
     parent_id: Optional[str] = None
+
+    @field_validator("fields", "data", mode="before")
+    @classmethod
+    def deserialize_json_strings(cls, v):
+        if isinstance(v, str):
+            try:
+                return json.loads(v)
+            except json.JSONDecodeError:
+                return v
+        return v
