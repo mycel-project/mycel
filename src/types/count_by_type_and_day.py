@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from datetime import date
 
-from src.types.node_type import NodeType
+from src.models.node import NodeType
 
 class CountByTypeAndDay(BaseModel):
     # used to transfer between service/orch, no reale date object

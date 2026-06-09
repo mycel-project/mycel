@@ -1,10 +1,10 @@
 import math
 
 from typing import cast, Optional
-from src.core.node_scheduling_context import NodeSchedulingContext
 from src.core.review_context import ReviewContext
+from src.core.scheduling_context import SchedulingContext
+from src.models.node import NodeType
 from src.services.user_service import UserService
-from src.types.node_type import NodeType
 from src.utils.time import MS_PER_DAY, ms_to_datetime, now_ms, start_of_local_day_ms
 
 from collections import Counter
@@ -46,53 +46,47 @@ class SchedulingEngine:
             interval = int(min(interval + step, 365))
         return interval
 
-    def next_linear_interval(self, node: NodeSchedulingContext) -> int:
-        if node.encounter_count is not None:
-            return node.encounter_count + 1
-        else:
-            raise ValueError("No encounter count data for node.")
-
-    def get_next_node(
+    def get_next_learning_unit_id(
         self,
         user_id: str,
-        nodes: list[NodeSchedulingContext],
+        learning_units: list[SchedulingContext],
         today_reviews: list[ReviewContext],
         tz_offset_minutes: int = 0,
     ) -> Optional[str]:
         """
-        nodes are already sorted by priority, and filtering by due day keep this priority
+        units are already sorted by priority, and filtering by due day keep this priority
 
-        Nodes are filtered to those due today (in the user's local timezone), then split into ready (due timestamp already passed) and not_yet. Not_yet nodes only surface when nothing ready remains: this prevents a freshly-reviewed spore fromreappearing immediately just because it falls within the current day. The spore/fragment ratio is then applied to balance the session.
+        Units are filtered to those due today (in the user's local timezone), then split into ready (due timestamp already passed) and not_yet. Not_yet nodes only surface when nothing ready remains: this prevents a freshly-reviewed spore fromreappearing immediately just because it falls within the current day. The spore/fragment ratio is then applied to balance the session.
         
         return node id
         """
-        due_nodes = [
-            n for n in nodes
-            if n.due is not None
-            and not (n.type == NodeType.FRAGMENT and getattr(n.type_data, 'dismiss', False))
+        due = [
+            lu for lu in learning_units
+            if lu.due is not None
+            and not (lu.type == NodeType.FRAGMENT and getattr(lu, 'dismiss', False))
         ]
 
-        if not due_nodes:
+        if not due:
             return None
 
-        earliest_due = min(due_nodes, key=lambda n: cast(int, n.due))
+        earliest_due = min(due, key=lambda lu: cast(int, lu.due))
 
         day_start = start_of_local_day_ms(cast(int, earliest_due.due), tz_offset_minutes)
         if day_start > now_ms():
             # No more reviews
             return None
         logger.debug(f"Treating day {ms_to_datetime(day_start)}")
-        nodes_due_that_day = self.get_node_due_on_day(day_start, due_nodes)
+        due_that_day = self.get_due_on_day(day_start, due)
 
-        if not nodes_due_that_day:
+        if not due_that_day:
             return None
 
         now = now_ms()
         if self.user_service.get_wait_for_due_time(user_id):
-            ready = [n for n in nodes_due_that_day if n.due <= now]
-            pool = ready or nodes_due_that_day
+            ready = [lu for lu in due_that_day if lu.due <= now]
+            pool = ready or due_that_day
         else:
-            pool = nodes_due_that_day
+            pool = due_that_day
 
         ratio = self.fragment_spore_ratio(today_reviews)
 
@@ -102,12 +96,12 @@ class SchedulingEngine:
             else NodeType.FRAGMENT
         )
 
-        requested_nodes = [
-            n for n in pool
-            if n.type == requested_type.value
+        requested_learning_units = [
+            lu for lu in pool
+            if lu.type == requested_type.value
         ]
 
-        return (requested_nodes or pool)[0].id
+        return (requested_learning_units or pool)[0].id
     
 
     def fragment_spore_ratio(self, reviews) -> float:
@@ -136,12 +130,12 @@ class SchedulingEngine:
         return fragments / spores
         
 
-    def get_node_due_on_day(self, day_start: int, nodes: list[NodeSchedulingContext]) -> list[NodeSchedulingContext]:
+    def get_due_on_day(self, day_start: int, learning_units: list[SchedulingContext]) -> list[SchedulingContext]:
         """
         day_start in ms timestamp
         """
         day_end = day_start + MS_PER_DAY
         return [
-            node for node in nodes
-            if node.due is not None and day_start <= node.due < day_end
+            lu for lu in learning_units
+            if lu.due is not None and day_start <= lu.due < day_end
         ]
