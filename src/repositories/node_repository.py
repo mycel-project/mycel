@@ -8,7 +8,6 @@ from src.models.node_data import NodeData
 class NodeRepository:
     def __init__(self, db: Db):
         self.db = db
-        self.collation = "" if self.db.is_sqlite else 'COLLATE "C"'
 
     # BASIC CRUD
         
@@ -103,7 +102,7 @@ class NodeRepository:
                 SELECT n.* FROM nodes n
                 JOIN collections c ON n.collection_id = c.id
                 WHERE n.collection_id = :col_id 
-                ORDER BY n.position {self.collation}
+                ORDER BY n.created_at
                 LIMIT :limit
                 """,
                 {"col_id": collection_id, "limit": limit},
@@ -114,7 +113,7 @@ class NodeRepository:
                 SELECT n.* FROM nodes n
                 JOIN collections c ON n.collection_id = c.id
                 WHERE n.collection_id = :col_id 
-                ORDER BY n.position {self.collation}
+                ORDER BY n.created_at
                 """,
                 {"col_id": collection_id},
             )
@@ -123,7 +122,7 @@ class NodeRepository:
     def get_by_type(self, collection_id: str, type: int) -> list[Node]:
         rows = self.db.fetch_all(
             f"""
-            SELECT * FROM nodes WHERE collection_id = :col_id AND type = :type ORDER BY position {self.collation}
+            SELECT * FROM nodes WHERE collection_id = :col_id AND base_for = :type ORDER BY created_at
             """,
             {"col_id": collection_id, "type": type},
         )
@@ -131,7 +130,7 @@ class NodeRepository:
 
     def get_children(self, node_id: str) -> list[Node]:
         rows = self.db.fetch_all(
-            f"SELECT * FROM nodes WHERE parent_id = :node_id ORDER BY position {self.collation}",
+            f"SELECT * FROM nodes WHERE parent_id = :node_id ORDER BY created_at",
             {"node_id": node_id},
         )
         return [Node.model_validate(r) for r in rows]

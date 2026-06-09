@@ -73,7 +73,7 @@ class Application():
         ressource_service = RessourceService(source_registry, html_to_markdown_registry)
         node_format_service = NodeFormatService()
         priority_service = PriorityService(learning_unit_repository, lexical_order)
-        node_service = NodeService(node_repository)
+        node_service = NodeService(node_repository, learning_unit_repository)
 
         user_service = UserService(self.db)
         user_orchestrator = UserOrchestrator(user_service)

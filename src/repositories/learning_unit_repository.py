@@ -1,9 +1,13 @@
 import time
+import json
 
 from fractional_indexing import Optional
+from pydantic import TypeAdapter
 from src.db import Db
 from src.models.base_learning_unit import BaseLearningUnit
 from src.models.learning_unit import LearningUnit
+from src.models.learning_unit_position import LearningUnitPosition
+from src.models.node_slot_key import NodeSlotKey
 
 
 class LearningUnitRepository:
@@ -11,11 +15,18 @@ class LearningUnitRepository:
         self.db = db
         self.collation = "" if self.db.is_sqlite else 'COLLATE "C"'
 
+    def _row_to_unit(self, row) -> LearningUnit:
+        data = dict(row)
+        unit_data = json.loads(data.pop("unit_data", "{}"))
+        return TypeAdapter(LearningUnit).validate_python({
+            "type": data.pop("unit_type"),
+            **data,
+            **unit_data
+        })
+
     # BASIC CRUD
 
-    def create(self, unit: LearningUnit) -> LearningUnit:                
-        unit_data = unit.model_dump(exclude=set(BaseLearningUnit.model_fields.keys()))
-                
+    def create(self, unit: LearningUnit) -> LearningUnit:                                
         self.db.execute(
             """INSERT INTO learning_units (id, node_id, unit_type, position, due, last_review, unit_data)
                VALUES (:id, :node_id, :unit_type, :position, :due, :last_review, :unit_data)""",
@@ -24,30 +35,40 @@ class LearningUnitRepository:
                 "node_id": unit.node_id,
                 "unit_type": unit.type,
                 "position": unit.position,
+                "slot": unit.slot,
                 "due": unit.due,
                 "last_review": unit.last_review,
-                "unit_data": unit_data,
+                "unit_data": unit.model_dump_json(exclude=set(BaseLearningUnit.model_fields.keys())),
             },
         )
         return unit
 
-    def get(self, node_id: str) -> Optional[LearningUnit]:
+    def get(self, unit_id: str) -> Optional[LearningUnit]:
         row = self.db.fetch_one(
-            "SELECT * FROM learning_units WHERE node_id = :node_id", 
-            {"node_id": node_id}
+            "SELECT * FROM learning_units WHERE id = :id", 
+            {"id": unit_id}
         )
-        return LearningUnit.model_validate(row) if row else None
+        return self._row_to_unit(row) if row else None
 
     def get_by_node(self, node_id: str) -> list[LearningUnit]:
         rows = self.db.fetch_all(
             "SELECT * FROM learning_units WHERE node_id = :id",
             {"id": node_id},
         )
-        return [LearningUnit.model_validate(row) for row in rows]
+        return [self._row_to_unit(row) for row in rows]
+
+    def get_by_nodes(self, node_ids: list[str]) -> list[LearningUnit]:
+        if not node_ids:
+            return []
+        placeholders = ", ".join(f":id_{i}" for i in range(len(node_ids)))
+        params = {f"id_{i}": node_id for i, node_id in enumerate(node_ids)}
+        rows = self.db.fetch_all(
+            f"SELECT * FROM learning_units WHERE node_id IN ({placeholders})",
+            params,
+        )
+        return [self._row_to_unit(row) for row in rows]
 
     def update(self, unit: LearningUnit) -> None:
-        unit_data = unit.root.model_dump(exclude=set(BaseLearningUnit.model_fields.keys()))
-
         self.db.execute(
             """UPDATE learning_units 
                SET unit_type = :unit_type, position = :position, due = :due, 
@@ -59,12 +80,12 @@ class LearningUnitRepository:
                 "position": unit.position,
                 "due": unit.due,
                 "last_review": unit.last_review,
-                "unit_data": unit_data,
+                "unit_data": unit.model_dump_json(exclude=set(BaseLearningUnit.model_fields.keys())),
             },
         )
 
     def delete(self, id: str) -> None:
-        self.db.execute("DELETE FROM learnig_units WHERE id = :id", {"id": id})
+        self.db.execute("DELETE FROM learning_units WHERE id = :id", {"id": id})
 
     # DOMAIN
 
@@ -83,6 +104,24 @@ class LearningUnitRepository:
             rows = self.db.fetch_all(query, {"col_id": collection_id})
 
             return [(row["id"], row["position"]) for row in rows]
+
+    def get_all_positions_with_node(self, collection_id: str) -> list[LearningUnitPosition]:
+        query = """
+            SELECT lu.node_id, lu.slot, lu.position 
+            FROM learning_units lu
+            JOIN nodes n ON lu.node_id = n.id
+            WHERE n.collection_id = :col_id 
+            AND n.deleted_at IS NULL
+            ORDER BY lu.position
+        """
+        rows = self.db.fetch_all(query, {"col_id": collection_id})
+        return [
+            LearningUnitPosition(
+                node_slot_key=NodeSlotKey(node_id=row["node_id"], slot=row["slot"]),
+                position=row["position"]
+            )
+            for row in rows
+        ]
         
     def count_before_position(self, collection_id: str, position: str) -> int:
         query = f"""
@@ -147,7 +186,7 @@ class LearningUnitRepository:
         """
         rows = self.db.fetch_all(query, {"col_id": collection_id, "now_ms": now_ms})
         
-        return [LearningUnit.model_validate(dict(row)) for row in rows]
+        return [self._row_to_unit(dict(row)) for row in rows]
     
     def update_position(self, unit_id: str, position: str) -> None:
         self.db.execute(
