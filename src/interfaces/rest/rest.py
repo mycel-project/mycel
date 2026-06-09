@@ -10,20 +10,24 @@ from pydantic import BaseModel
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi import Security, HTTPException
+from fastapi import Security
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import jwt
 
 from src.core.app_infos import AppInfos
 from src.core.config import MycelConfig
 from src.core.regex import CLOZE_REGEX
-from src.domain.domain_exceptions import DomainException, ForbiddenError, NoUserFound
+from src.domain.domain_exceptions import DomainException, NoUserFound
 from src.interfaces.base_interface import BaseInterface
 from src.interfaces.uvicorn import UvicornServer
 from src.models.day_review_overview import DayReviewOverview
+from src.models.dto.node_slot_priority import NodeSlotPriority
+from src.models.dto.review_target import ReviewTarget
 from src.models.export import FullExport
 from src.models.extract_result import ExtractResult
+from src.models.node import NodeType
 from src.models.node_create import NodeCreate
+from src.models.node_slot_key import NodeSlotKey
 from src.models.outline import Outline
 from src.models.type_review_data import TypeReviewData
 from src.models.user_conf import UserConf
@@ -41,7 +45,6 @@ from src.services.import_export_service import ImportExportService
 from src.services.node_orchestrator import NodeOrchestrator
 from src.services.review_orchestrator import ReviewOrchestrator
 from src.services.user_orchestrator import UserOrchestrator
-from src.types.node_type import NodeType
 from src.utils.env import is_testing
 
 from typing import Generic, TypeVar
@@ -199,7 +202,7 @@ class Rest(BaseInterface):
             user_id: str | None = None
             name: str 
         @self.app.post("/users", tags=["users"])
-        async def create_user(data: UserCreateRequest) -> ApiResponse[UserView]:
+        async def create_user(data: UserCreateRequest) -> ApiResponse[UserView]: 
             """
             Note: This route is only accessible in self-hosted deployments. It is blocked at the infrastructure level in MycelCloud, as users are created internally during account registration.
             """
@@ -225,7 +228,6 @@ class Rest(BaseInterface):
             self.ie_service.import_data(user_id, payload)
 
         # COLLECTIONS
-
         @self.app.get("/collections", tags=["collections"])
         async def list_collections(user_id = Depends(self.get_user)) -> ApiResponse[list[CollectionView]]:
             collections = self.collection_orchestrator.get_collections(user_id)
@@ -260,11 +262,15 @@ class Rest(BaseInterface):
             return ApiResponse(data=node)
         
         @self.app.get("/collections/{col_id}/nodes/priorities", tags=["nodes"])
-        async def get_priorities(col_id: str, user_id = Depends(self.get_user)) -> ApiResponse[dict[str, float]]:
+        async def get_priorities(col_id: str, user_id = Depends(self.get_user)) -> ApiResponse[list[NodeSlotPriority]]:
             """
             Priority is a relative value, so adding or modifying a node invalidates other priorities. This route allows the frontend to refresh all priorities in a collection efficiently.
             """
-            return ApiResponse(data=self.node_orchestrator.get_priorities(user_id, col_id))
+            priorities = self.node_orchestrator.get_priorities(user_id, col_id)
+            return ApiResponse(data=[
+                NodeSlotPriority(node_id=k.node_id, slot=k.slot, priority=v)
+                for k, v in priorities.items()
+            ])
 
         @self.app.get("/collections/{col_id}/nodes/deleted", tags=["nodes"])
         async def get_deleted_nodes(col_id: str, user_id = Depends(self.get_user)) -> ApiResponse[list[NodeView]]:
@@ -288,6 +294,9 @@ class Rest(BaseInterface):
 
         @self.app.patch("/collections/{col_id}/nodes/{node_id}", tags=["nodes"])
         async def update_node(col_id: str, node_id: str, data: NodeUpdate, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
+            """
+            Update Node, not learning units. To update learning units, use dedicated endpoints (reprioritise, reschedule, ...)
+            """
             updated_node = self.node_orchestrator.update_node_to_detail_view(user_id, col_id, node_id, data)
             return ApiResponse(data=updated_node)
 
@@ -306,19 +315,21 @@ class Rest(BaseInterface):
         
         class ReprioritiseNodeRequest(BaseModel):
             priority: float
+            slot: int = 0
         @self.app.patch("/collections/{col_id}/nodes/{node_id}/reprioritise", tags=["nodes"])
         async def reprioritise_node(col_id: str, node_id: str, data: ReprioritiseNodeRequest, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
-            return ApiResponse(data=self.node_orchestrator.reprioritise_node_to_detail_view(user_id, col_id, node_id, data.priority))
+            return ApiResponse(data=self.node_orchestrator.reprioritise_node_to_detail_view(user_id, col_id, node_id, data.slot, data.priority))
     
         class RescheduleNodeRequest(BaseModel):
             date: str       # "2026-05-20"
+            slot: int = 0
             tz_offset: int  # minutes
         @self.app.post("/collections/{col_id}/nodes/{node_id}/reschedule", tags=["nodes"])
         async def reschedule_node(col_id: str, node_id: str, data: RescheduleNodeRequest, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
             """
             Reschedule a node to a specific date.
             """
-            return ApiResponse(data=self.node_orchestrator.reschedule_node_to_detail_view(user_id, col_id, node_id, data.date, data.tz_offset))
+            return ApiResponse(data=self.node_orchestrator.reschedule_to_detail_view(user_id, col_id, node_id, data.slot, data.date, data.tz_offset))
 
         class RestoreNodeRequest(BaseModel):
             restore_ancestors: bool = False
@@ -336,7 +347,7 @@ class Rest(BaseInterface):
         
         class SelectionData(BaseModel):
             text: str
-            field: int
+            field: str = "content" # Default for fragments
             start_index: int
             end_index: int
         @self.app.post("/collections/{col_id}/nodes/{node_id}/remove-links", tags=["nodes"])
@@ -359,6 +370,7 @@ class Rest(BaseInterface):
 
         class SplitNodeRequest(BaseModel):
             level: int
+            field: str = "content"
             tz_offset: int = 0
         @self.app.post("/collections/{col_id}/nodes/{node_id}/split", tags=["nodes"])
         async def split_node(col_id: str, node_id: str, data: SplitNodeRequest, user_id = Depends(self.get_user)) -> ApiResponse[list[NodeDetailView]]:
@@ -366,16 +378,16 @@ class Rest(BaseInterface):
             Split node by heading level.
             Note: non-idempotent: see Mycel documentation.
             """
-            return ApiResponse(data=self.node_orchestrator.split_node_to_detail_views(user_id, col_id, node_id, data.tz_offset, data.level))
+            return ApiResponse(data=self.node_orchestrator.split_node_to_detail_views(user_id, col_id, node_id, data.field, data.tz_offset, data.level))
 
         # REVIEWS
 
         @self.app.get("/collections/{col_id}/reviews/next", tags=["reviews"])
-        async def get_next_review(col_id: str, tz_offset: int = 0, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView | None]:
+        async def get_next_review(col_id: str, tz_offset: int = 0, user_id = Depends(self.get_user)) -> ApiResponse[ReviewTarget | None]:
             return ApiResponse(data=self.review_orchestrator.get_next_review(user_id, col_id, tz_offset))
 
         @self.app.post("/collections/{col_id}/reviews/undo", tags=["reviews"])
-        async def undo_review(col_id: str, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
+        async def undo_review(col_id: str, user_id = Depends(self.get_user)) -> ApiResponse[ReviewTarget]:
             """
             Undo the last review. Returns the node from the undone review so the client can navigate back to it.
             Note: non-idempotent: see Mycel documentation.
@@ -395,10 +407,11 @@ class Rest(BaseInterface):
             duration: int # generic data for all reviews no matter the node type
             type_review_data: TypeReviewData # data specific to node type
             tz_offset: int = 0
+            slot: int = 0
         @self.app.post("/collections/{col_id}/nodes/{node_id}/review", tags=["reviews"])
         async def review_node(col_id: str, node_id: str, data: ReviewRequest, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
             return ApiResponse(data=self.review_orchestrator.review_to_detail_view(user_id, 
-                col_id, node_id, data.duration, data.type_review_data, tz_offset_min=data.tz_offset
+                                                                                   col_id, node_id, data.slot, data.duration, data.type_review_data, tz_offset_min=data.tz_offset
             ))
         
 
