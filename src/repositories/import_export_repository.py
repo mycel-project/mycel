@@ -1,5 +1,3 @@
-import json
-
 from src.db import Db
 from src.models.export import FullExport
 from src.models.user import User
@@ -12,41 +10,53 @@ class ImportExportRepository:
         self.db = db
 
     def get_full_user_data(self, user_id: str) -> dict:
-            user_row = self.db.fetch_one(
-                "SELECT * FROM users WHERE id = :user_id", 
-                {"user_id": user_id}
-            )
+        user_row = self.db.fetch_one(
+            "SELECT * FROM users WHERE id = :user_id", 
+            {"user_id": user_id}
+        )
 
-            collections_rows = self.db.fetch_all(
-                "SELECT * FROM collections WHERE user_id = :user_id", 
-                {"user_id": user_id}
-            )
+        collections_rows = self.db.fetch_all(
+            "SELECT * FROM collections WHERE user_id = :user_id", 
+            {"user_id": user_id}
+        )
 
-            nodes_rows = self.db.fetch_all(
-                """
-                SELECT n.* FROM nodes n
-                JOIN collections c ON n.collection_id = c.id
-                WHERE c.user_id = :user_id
-                """, 
-                {"user_id": user_id}
-            )
+        nodes_rows = self.db.fetch_all(
+            """
+            SELECT n.* FROM nodes n
+            JOIN collections c ON n.collection_id = c.id
+            WHERE c.user_id = :user_id
+            """, 
+            {"user_id": user_id}
+        )
 
-            reviews_rows = self.db.fetch_all(
-                """
-                SELECT r.* FROM reviews r
-                JOIN nodes n ON r.node_id = n.id
-                JOIN collections c ON n.collection_id = c.id
-                WHERE c.user_id = :user_id
-                """, 
-                {"user_id": user_id}
-            )
+        learning_units_rows = self.db.fetch_all(
+            """
+            SELECT lu.* FROM learning_units lu
+            JOIN nodes n ON lu.node_id = n.id
+            JOIN collections c ON n.collection_id = c.id
+            WHERE c.user_id = :user_id
+            """,
+            {"user_id": user_id}
+        )
 
-            return {
-                "user": User.from_db(user_row) if user_row else None,
-                "collections": [Collection.from_db(c) for c in collections_rows],
-                "nodes": [Node.from_db(n) for n in nodes_rows],
-                "reviews": [Review.from_db(r) for r in reviews_rows]
-            }
+        reviews_rows = self.db.fetch_all(
+            """
+            SELECT r.* FROM reviews r
+            JOIN learning_units lu ON r.learning_unit_id = lu.id
+            JOIN nodes n ON lu.node_id = n.id
+            JOIN collections c ON n.collection_id = c.id
+            WHERE c.user_id = :user_id
+            """, 
+            {"user_id": user_id}
+        )
+
+        return {
+            "user": User.model_validate(user_row) if user_row else None,
+            "collections": [Collection.model_validate(c) for c in collections_rows],
+            "nodes": [Node.model_validate(n) for n in nodes_rows],
+            "learning_units": [dict(lu) for lu in learning_units_rows],
+            "reviews": [Review.model_validate(r) for r in reviews_rows]
+        }
 
     def import_full_user_data(self, data: FullExport) -> None:
         statements = []
@@ -76,36 +86,52 @@ class ImportExportRepository:
 
             for node in col.nodes:
                 statements.append((
-                    """INSERT INTO nodes (id, collection_id, parent_id, type, created_at, updated_at, deleted_at, data, type_data, due, content, position, last_review)
-                       VALUES (:id, :collection_id, :parent_id, :type, :created_at, :updated_at, :deleted_at, :data, :type_data, :due, :content, :position, :last_review)""",
+                    """INSERT INTO nodes (id, collection_id, parent_id, base_for, template_id, created_at, updated_at, deleted_at, fields, data, status)
+                       VALUES (:id, :collection_id, :parent_id, :base_for, :template_id, :created_at, :updated_at, :deleted_at, :fields, :data, :status)""",
                     {
                         "id": node.id, 
                         "collection_id": node.collection_id,
                         "parent_id": node.parent_id,
-                        "type": node.type, "created_at": node.created_at, "updated_at": node.updated_at,
-                        "deleted_at": node.deleted_at, "data": node.data.to_db(),
-                        "type_data": node.type_data if isinstance(node.type_data, str) else (
-                            node.type_data.model_dump_json() if hasattr(node.type_data, "model_dump_json") else json.dumps(node.type_data)
-                        ), 
-                        "due": node.due, "content": node.content.to_db(), 
-                        "position": node.position, "last_review": node.last_review
+                        "base_for": node.base_for,
+                        "template_id": node.template_id,
+                        "created_at": node.created_at,
+                        "updated_at": node.updated_at,
+                        "deleted_at": node.deleted_at,
+                        "fields": node.fields.model_dump_json(),
+                        "data": node.data.model_dump_json(),
+                        "status": node.status,
+                    }
+                ))
+
+            for lu in col.learning_units:
+                statements.append((
+                    """INSERT INTO learning_units (id, node_id, unit_type, slot, position, due, last_review, unit_data)
+                       VALUES (:id, :node_id, :unit_type, :slot, :position, :due, :last_review, :unit_data)""",
+                    {
+                        "id": lu.id,
+                        "node_id": lu.node_id,
+                        "unit_type": lu.type,
+                        "slot": getattr(lu, 'slot', 0),
+                        "position": lu.position,
+                        "due": lu.due,
+                        "last_review": lu.last_review,
+                        "unit_data": lu.model_dump_json(exclude={"id", "node_id", "position", "due", "last_review", "type"}),
                     }
                 ))
 
             for review in col.reviews:
                 statements.append((
-                    """INSERT INTO reviews (id, node_id, time, duration, type_review_data, type, node_state_before)
-                       VALUES (:id, :node_id, :time, :duration, :type_review_data, :type, :node_state_before)""",
+                    """INSERT INTO reviews (id, learning_unit_id, reviewed_at, duration, type_review_data, type, state_before)
+                       VALUES (:id, :learning_unit_id, :reviewed_at, :duration, :type_review_data, :type, :state_before)""",
                     {
                         "id": review.id, 
-                        "node_id": review.node_id,
-                        "time": review.time,
+                        "learning_unit_id": review.learning_unit_id,
+                        "reviewed_at": review.reviewed_at,
                         "duration": review.duration, 
-                        "type_review_data": review.type_review_data if isinstance(review.type_review_data, str) else (
-                            review.type_review_data.model_dump_json() if hasattr(review.type_review_data, "model_dump_json") else json.dumps(review.type_review_data)
-                        ),
+                        "type_review_data": review.type_review_data.model_dump_json(),
                         "type": review.type, 
-                        "node_state_before": review.node_state_before.model_dump_json() if review.node_state_before else None
+                        "state_before": review.state_before.model_dump_json() if review.state_before else None
                     }
                 ))
+
         self.db.execute_transaction(statements)
