@@ -1,3 +1,4 @@
+from enum import Enum
 import json
 from typing import Annotated, Literal, TypeAlias
 from pydantic import BaseModel, Field, RootModel, field_validator
@@ -5,7 +6,13 @@ from pydantic import BaseModel, Field, RootModel, field_validator
 Mono: TypeAlias = str
 Poly: TypeAlias = dict[str, str]
 Structure: TypeAlias = Mono | Poly
-Ord: TypeAlias = int                 
+Slot: TypeAlias = int
+
+class DefaultTemplate(str, Enum):
+    FRAGMENT_BASIC = "fragment_basic"
+    SPORE_BASIC = "spore_basic"
+    SPORE_DUAL = "spore_dual"
+    SPORE_CLOZE = "spore_cloze"
 
 class BaseTemplate(BaseModel):
     id: str # slug for default templates, else UUID?
@@ -18,7 +25,7 @@ class FragmentTemplate(BaseTemplate):
 
 class SporeStandardTemplate(BaseTemplate):
     kind: Literal["spore_standard"] = "spore_standard" 
-    render_config: dict[Ord, Structure]
+    render_config: dict[Slot, Structure]
 
 class SporeClozeTemplate(BaseTemplate):
     kind: Literal["spore_cloze"] = "spore_cloze"      
@@ -31,15 +38,15 @@ Template = Annotated[
 
 def get_default_templates() -> dict[str, Template]:
     return {
-        "fragment_basic": FragmentTemplate(
-            id="fragment_basic",
+        DefaultTemplate.FRAGMENT_BASIC: FragmentTemplate(
+            id=DefaultTemplate.FRAGMENT_BASIC,
             name="Fragment",
             fields=["content"], 
             render_config="{{content}}" 
         ),
         
-        "basic": SporeStandardTemplate(
-            id="basic",
+        DefaultTemplate.SPORE_BASIC : SporeStandardTemplate(
+            id=DefaultTemplate.SPORE_BASIC,
             name="Basic",
             fields=["recto", "verso"], 
             render_config={
@@ -49,9 +56,8 @@ def get_default_templates() -> dict[str, Template]:
                 }
             }
         ),
-
-        "dual": SporeStandardTemplate(
-            id="dual",
+        DefaultTemplate.SPORE_DUAL: SporeStandardTemplate(
+            id=DefaultTemplate.SPORE_DUAL,
             name="Dual",
             fields=["recto", "verso"], 
             render_config={
@@ -65,11 +71,10 @@ def get_default_templates() -> dict[str, Template]:
                 }
             }
         ),
-        
-        "cloze": SporeClozeTemplate(
-            id="cloze",
+        DefaultTemplate.SPORE_CLOZE: SporeClozeTemplate(
+            id=DefaultTemplate.SPORE_CLOZE,
             name="Texte à trous",
-            fields=["content", "extra"],
+            fields=["cloze", "extra"],
             render_config={
                 "front": "{{cloze:content}}",
                 "back": "{{cloze:content}}" # same but revealed when building cloze render logic
