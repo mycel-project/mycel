@@ -32,7 +32,9 @@ PyJWT==2.13.0
 pytest==9.0.3
 pytest-asyncio==1.3.0
 pytest-dotenv==0.5.2
+pytest-vcr==1.0.2
 python-dotenv==1.2.2
+PyYAML==6.0.3
 requests==2.33.1
 scalar_fastapi==1.8.2
 setuptools==82.0.1
@@ -44,3 +46,5 @@ typing-inspection==0.4.2
 typing_extensions==4.15.0
 urllib3==2.6.3
 uvicorn==0.46.0
+vcrpy==8.1.1
+wrapt==2.2.1

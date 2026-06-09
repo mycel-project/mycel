@@ -1,6 +1,8 @@
 import time
 from uuid import uuid4
 
+import pytest
+
 from src.models.node import NodeType
 from src.schemas.node_detail_view import NodeDetailView
 
@@ -87,6 +89,7 @@ class TestNode:
         data = response.json()
         assert data["data"]["id"] == node.id
 
+    @pytest.mark.vcr 
     def test_create_node(self, api, create_user, create_col):
         user, token = create_user()
         col = create_col(user_id=user.id)
