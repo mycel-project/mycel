@@ -1,5 +1,4 @@
 from typing import Optional
-from dataclasses import  asdict
 
 from src.domain.domain_exceptions import NoCollectionFound
 from src.models.collection import Collection
@@ -8,8 +7,6 @@ from src.schemas.collection_update import CollectionUpdate
 from src.schemas.collection_view import CollectionView
 from src.models.collection_conf import CollectionConf
 from src.models.algo_conf import AlgoConf
-from src.schemas import AlgoConfUpdate, CollectionConfUpdate
-from src.schemas.config_update import ConfigUpdate
 
 
 class CollectionService:

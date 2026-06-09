@@ -1,6 +1,6 @@
 import json
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 from .collection_conf import CollectionConf
 from .algo_conf import AlgoConf
 
@@ -33,3 +33,10 @@ class Collection(BaseModel):
             conf=CollectionConf.model_validate(parsed_conf),
             algoconf=AlgoConf.model_validate(parsed_algo),
         )
+
+    @field_validator("conf", "algoconf", mode="before")
+    @classmethod
+    def deserialize_json_strings(cls, v):
+        if isinstance(v, str):
+            return json.loads(v)
+        return v

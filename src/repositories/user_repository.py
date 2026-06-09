@@ -41,12 +41,12 @@ class UserRepository:
         rows = self.db.fetch_all("SELECT * FROM users ORDER BY created_at")
         return [User.model_validate(r) for r in rows]
 
-    def get_pending_node_id(self, user_id: str) -> str | None:
-        row = self.db.fetch_one("SELECT pending_node_id FROM users WHERE id = :id", {"id": user_id})
-        return row["pending_node_id"] if row else None
+    def get_pending_review_id(self, user_id: str) -> str | None:
+        row = self.db.fetch_one("SELECT pending_review_id FROM users WHERE id = :id", {"id": user_id})
+        return row["pending_review_id"] if row else None
 
-    def set_pending_node_id(self, user_id: str, node_id: str | None) -> None:
+    def set_pending_review_id(self, user_id: str, node_id: str | None) -> None:
         self.db.execute(
-            "UPDATE users SET pending_node_id = :node_id WHERE id = :id",
+            "UPDATE users SET pending_review_id = :node_id WHERE id = :id",
             {"node_id": node_id, "id": user_id},
         )
