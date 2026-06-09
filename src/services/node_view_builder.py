@@ -11,17 +11,19 @@ class NodeViewBuilder:
         self._priority_service = priority_service
 
     def to_view(self, node: Node) -> NodeView:
-        priority = self._priority_service.get_priority(node.collection_id, node.id)
-        preview = node.content.get_first_field() if node.content else None
-        content_preview = preview[:150] if preview else None
-        assert content_preview != None
-        return self._node_service.node_to_view(node, priority, content_preview)
+        priorities = []
+        for unit in node.learning_units:
+            priorities.append(self._priority_service.position_to_priority(node.collection_id, unit.position))
+        preview = node.fields.get_preview() or "No preview for this node"
+        return self._node_service.node_to_view(node, priorities, preview)
 
     def to_detail_view(self, node: Node) -> NodeDetailView:
         view = self.to_view(node)
         return NodeDetailView(
             **view.model_dump(),
-            content=node.content,
+            fields=node.fields,
+            learning_units=node.learning_units,
+            data=node.data,
         )
 
     def to_detail_views(self, nodes: list[Node]) -> list[NodeDetailView]:

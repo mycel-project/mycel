@@ -2,9 +2,8 @@ from typing import Optional
 
 from pydantic import BaseModel, field_validator
 
-from src.models.node_content import NodeContent
+from src.models.node import NodeFields, NodeStatus
 from src.models.node_data import NodeData
-from src.models.type_data import TypeData
 
 class NodeUpdate(BaseModel):
     """
@@ -16,23 +15,8 @@ class NodeUpdate(BaseModel):
     Fields not included in the update will remain unchanged.
     """
     parent_id: Optional[str] = None
-    content: Optional[NodeContent] = None
+    fields: Optional[NodeFields] = None
     data: Optional[NodeData] = None
-    type: Optional[int] = None
-    due: Optional[int] = None
-    position: Optional[str] = None   
-    last_review: Optional[int] = None
-    type_data: Optional[TypeData] = None
+    status: Optional[NodeStatus] = None
     deleted_at: Optional[int] = None
     updated_at: Optional[int] = None
-
-    @field_validator("type")
-    def validate_int_values(cls, v):
-        if v is not None and v < 0:
-            raise ValueError("Must be positive")
-        return v
-
-    @field_validator("content", mode="before") 
-    def parse_content(cls, v):
-        return NodeContent.from_input(v)
-

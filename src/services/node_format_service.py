@@ -2,8 +2,7 @@ import re
 from typing import Optional
 import re
 
-from src.models.node import Node
-from src.models.node_content import NodeContent
+from src.models.node import Node, NodeFields
 from src.types.text_segment import TextSegment
 from src.utils.debug import preview_extract
 from src.utils.format import ensure_double_newline_left, ensure_double_newline_right
@@ -24,7 +23,7 @@ class NodeFormatService:
     ) -> Node:
 
         segment = self.get_content_portions(
-            node.content,
+            node.fields,
             field,
             start,
             end,
@@ -34,7 +33,7 @@ class NodeFormatService:
         cleaned = segment.target.replace("`", "")
         inline = f"`{cleaned}`"
 
-        node.content.fields[field] = (
+        node.fields[field] = (
             segment.before + inline + segment.after
         )
 
@@ -51,7 +50,7 @@ class NodeFormatService:
     ) -> Node:
 
         segment = self.get_content_portions(
-            node.content,
+            node.fields,
             field,
             start,
             end,
@@ -60,7 +59,7 @@ class NodeFormatService:
 
         cloze = self.build_cloze(segment.target, cloze_index)
 
-        node.content.fields[field] = (
+        node.fields[field] = (
             segment.before + cloze + segment.after
         )
 
@@ -76,7 +75,7 @@ class NodeFormatService:
         expected_text: Optional[str] = None
     ) -> Node:
         segment = self.get_content_portions(
-            node.content,
+            node.fields,
             field,
             start,
             end,
@@ -90,24 +89,24 @@ class NodeFormatService:
         before = ensure_double_newline_left(segment.before.rstrip())
         after = ensure_double_newline_right(segment.after.lstrip())
 
-        node.content.fields[field] = before + quoted + after
+        node.fields[field] = before + quoted + after
 
         return node
     
 
     def get_content_portions(
         self,
-        node_content: NodeContent,
+        node_content: NodeFields,
         field: str,
         start: int,
         end: int,
         expected_text: Optional[str] = None
     ) -> TextSegment:
 
-        if field not in node_content.fields:
+        if field not in node_content:
             raise ValueError(f"Field '{field}' not found in node content")
 
-        text = node_content.fields[field]
+        text = node_content[field]
 
         if start < 0 or end > len(text) or start >= end:
             raise ValueError("Invalid selection range")
@@ -184,9 +183,9 @@ class NodeFormatService:
 
     def remove_links(self, node: Node, field: str, start: int, end: int, expected_text: str) -> Node:
         # Not using regex as it does not handle nested (). Maybe check how markdown-mycel-fork handle this?
-        segment = self.get_content_portions(node.content, field, start, end, expected_text)
+        segment = self.get_content_portions(node.fields, field, start, end, expected_text)
         cleaned = self._strip_links(segment.target)
-        node.content.fields[field] = segment.before + cleaned + segment.after
+        node.fields[field] = segment.before + cleaned + segment.after
         return node
 
     def _strip_links(self, text: str) -> str:

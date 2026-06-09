@@ -20,7 +20,7 @@ class NodeView(BaseModel):
     deleted_at: Optional[int] = None
     content_preview: Optional[str] = None # data.title or strip
     dues: list[int] # one per learning_unit, 
-    priorities: list[int]  # //
+    priorities: list[float] 
     # Could add same logic for last_reviews
 
     model_config = ConfigDict(from_attributes=True)
