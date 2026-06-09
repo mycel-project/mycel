@@ -1,22 +1,17 @@
-from typing import Optional, cast
-from src.core.node_scheduling_context import NodeSchedulingContext
 from src.core.review_context import ReviewContext
 from src.db import Db
-from src.domain.domain_exceptions import NoReviewToUndo, NotAFragment, NotASpore, ReviewUndoNotAllowedError
-from src.models.node_state_before import NodeStateBefore
+from src.domain.domain_exceptions import NoReviewToUndo, ReviewUndoNotAllowedError
+from src.models.learning_unit import LearningUnit
 from src.models.review import Review
-from src.models.type_data.fragment_data import FragmentData
-from src.models.type_data.spore_data import SporeData
+from src.models.spore import FsrsData
 from src.models.type_review_data.fragment_review_data import FragmentReviewData
 from src.models.type_review_data.spore_review_data import SporeReviewData
 from src.repositories.review_repository import ReviewRepository
 from src.core.scheduling_engine import SchedulingEngine
-from src.schemas.node_update import NodeUpdate
 from src.services.fsrs_service import FsrsService
-from src.types.node_type import NodeType
 from .node_service import NodeService
-from src.utils.time import MS_PER_DAY, datetime_to_ms, now_ms, now_s, start_of_local_day_ms, start_of_local_today_ms
-from src.models.node import Node
+from src.utils.time import MS_PER_DAY, now_ms, now_s, start_of_local_day_ms, start_of_local_today_ms
+from src.models.node import Node, NodeType
 
 class ReviewService:
     # No caching at the moment
@@ -29,116 +24,94 @@ class ReviewService:
         self._node_service = node_service
         self._scheduling_engine = scheduling_engine
 
-    def _build_node_state_before(self, node: Node) -> NodeStateBefore:
-        return NodeStateBefore(
-            due=node.due,
-            last_review=node.last_review,
-            type_data=node.type_data,
-        )
-
     def review_spore(
             self,
+            user_id: str,
             col_id: str,
-            node_id: str,
+            spore_id: str,
             duration: int,
             data: SporeReviewData,
     ) -> Node:
-        node = self._node_service.get_node(node_id)
-        if not node.type == NodeType.SPORE:
-            raise NotASpore(node_id)
-        card, review_log = self._fsrs_service.review_node(col_id, node_id, data.rating, duration)
-        now = int(review_log.review_datetime.timestamp() * 1000)
-        type_data = SporeData(
+        node = self._node_service.get_node_from_learning_unit(spore_id)
+        spore = node.get_spore(spore_id)
+        card, _ = self._fsrs_service.review(user_id, col_id, spore_id, data.rating, duration)
+        type_data = FsrsData(
             stability=card.stability,
             difficulty=card.difficulty,
             state=int(card.state.value),
             step=card.step,
         )
-        node_state_before = self._build_node_state_before(node)
         self._repo.create(
-            node_id=node_id,
-            type=node.type,
+            learning_unit_id=spore_id,
+            type=NodeType.SPORE,
             type_review_data=data,
             duration=duration,
-            now=now,
-            node_state_before=node_state_before
+            state_before=spore
         )
-        return self._node_service.update(
-            node_id,
-            NodeUpdate(
-                type_data=type_data,
-                due=datetime_to_ms(card.due),
-                last_review=now
-            )
-        )
+        spore.learning_data = type_data
+        self._node_service.update_learning_unit(spore)
+        return self._node_service.get_node(node.id)
 
     def review_fragment(
             self,
             col_id: str,
-            node_id: str,
+            fragment_id: str,
             duration: int,
             data: FragmentReviewData,
             tz_offset: int = 0,
     ) -> Node:
-        node = self._node_service.get_node(node_id)
-        if not node.type == NodeType.FRAGMENT:
-            raise NotAFragment(node_id)
-        rep_index = self.get_encounter_count(node_id) + 1
-        depth = self._node_service.get_depth(node_id)
+        node = self._node_service.get_node_from_learning_unit(fragment_id)
+        fragment = node.get_fragment()
+        rep_index = self.get_encounter_count(fragment_id) + 1
+        depth = self._node_service.get_depth(node.id)
         next_interval = self._scheduling_engine.compute_fragment_next_interval(depth, rep_index)
         now = now_ms()
-        node_state_before = self._build_node_state_before(node)
         self._repo.create(
-            node_id=node_id,
-            type=node.type,
+            learning_unit_id=fragment_id,
+            type=NodeType.FRAGMENT,
             type_review_data=data,
             duration=duration,
-            now=now,
-            node_state_before=node_state_before
+            state_before=fragment
         )
-        return self._node_service.update(
-            node.id,
-            NodeUpdate(
-                type_data=FragmentData(),
-                due=start_of_local_day_ms(now + next_interval * MS_PER_DAY, tz_offset),
-                last_review=now
-            )
-        )
+        fragment.due = start_of_local_day_ms(now + next_interval * MS_PER_DAY, tz_offset)
+        fragment.last_review = now
+        self._node_service.update_learning_unit(fragment)
+        return self._node_service.get_node(node.id)
 
-    def get_encounter_count(self, node_id: str) -> int:
-        return self._repo.get_encounter_count(node_id)
+    def get_encounter_count(self, learning_unit_id: str) -> int:
+        return self._repo.get_encounter_count(learning_unit_id)
 
     def get_reviews_for_today(self, col_id: str, tz_offset_minutes: int = 0) -> list[Review]:
         today_start = start_of_local_today_ms(tz_offset_minutes)
         today_end = today_start + MS_PER_DAY
         return self._repo.get_by_period(today_start, today_end, col_id)
 
-    def get_next_review_id(self, user_id: str, col_id: str, tz_offset: int = 0) -> str | None:
-        nodes = self._node_service.get_nodes_scheduling_context(user_id, col_id)
+    def get_next_learning_unit_id(self, user_id: str, col_id: str, tz_offset: int = 0) -> str | None:
+        nodes = self._node_service.get_scheduling_context(user_id, col_id)
         today_reviews = self.get_reviews_for_today(col_id, tz_offset)
         today_reviews_context = []
 
         for r in today_reviews:
-            node = self._node_service.get_node(r.node_id, True)
+            learning_unit = self._node_service.get_learning_unit(r.learning_unit_id, True)
 
-            if not node:
+            if not learning_unit:
                 continue
 
             today_reviews_context.append(
                 ReviewContext(
                     id=r.id,
-                    node_type=node.type,
+                    learning_unit_type=NodeType(learning_unit.type),
                 )
             )
 
-        return self._scheduling_engine.get_next_node(user_id, nodes, today_reviews_context, tz_offset)
+        return self._scheduling_engine.get_next_learning_unit_id(user_id, nodes, today_reviews_context, tz_offset)
 
-    def get_next_review(self, user_id: str, col_id: str, tz_offset: int = 0) -> Node | None:
-        next_node_id = self.get_next_review_id(user_id, col_id, tz_offset)
-        if not next_node_id:
+    def get_next_learning_unit(self, user_id: str, col_id: str, tz_offset: int = 0) -> LearningUnit | None:
+        next_review_id = self.get_next_learning_unit_id(user_id, col_id, tz_offset)
+        if not next_review_id:
             return None
-        node = self._node_service.get_node(next_node_id)
-        return node
+        learning_unit = self._node_service.get_learning_unit(next_review_id)
+        return learning_unit
 
     def undo_review(self, col_id: str, max_age_min: int | None = None) -> Review:
         last_review = self._repo.get_last_review_by_collection(col_id)
@@ -147,7 +120,7 @@ class ReviewService:
             raise NoReviewToUndo()
 
         if max_age_min is not None:
-            age = now_s() - (last_review.time // 1000)
+            age = now_s() - (last_review.reviewed_at // 1000)
             max_age_s = max_age_min * 60
             if age > max_age_s:
                 raise ReviewUndoNotAllowedError(age, max_age_s)

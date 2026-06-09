@@ -1,4 +1,4 @@
-from typing import Optional, Literal
+from typing import Literal
 from pydantic import field_validator
 
 from src.models.type_review_data.base_type_review_data import BaseTypeReviewData

@@ -1,21 +1,20 @@
 from datetime import date
 from datetime import timezone, timedelta, datetime
 
-from src.domain.domain_exceptions import NoNodeFound, NoPendingNodeError, NodeDeleted, PendingReviewMismatchError, ReviewUndoNodeInaccessible, UnknownReviewTypeError
+from src.domain.domain_exceptions import NoNodeFound, NoPendingReviewError, NodeDeleted, PendingReviewMismatchError, ReviewUndoLearningUnitInaccessible
 from src.models.day_review_overview import DayReviewOverview
+from src.models.dto.review_target import ReviewTarget
+from src.models.node import NodeType
 from src.models.review import Review
 from src.models.type_review_data import TypeReviewData
 from src.models.type_review_data.fragment_review_data import FragmentReviewData
 from src.models.type_review_data.spore_review_data import SporeReviewData
 from src.schemas.node_detail_view import NodeDetailView
-from src.schemas.node_update import NodeUpdate
-from src.schemas.node_view import NodeView
 from src.services.collection_service import CollectionService
 from src.services.node_service import NodeService
 from src.services.node_view_builder import NodeViewBuilder
 from src.services.review_service import ReviewService
 from src.services.user_service import UserService
-from src.types.node_type import NodeType
 
 
 class ReviewOrchestrator:
@@ -29,57 +28,55 @@ class ReviewOrchestrator:
     def _ensure_col(self, user_id: str, col_id: str) -> None:
         self._collection_service.get_collection(user_id, col_id)
 
-    def review_to_detail_view(self, user_id: str, col_id: str, node_id: str, duration: int, data: TypeReviewData, tz_offset_min: int = 0) -> NodeDetailView:
-        self._ensure_col(user_id, col_id)
-        pending_review_id = self._user_service.get_pending_node(user_id)
+    def review_to_detail_view(self, user_id: str, col_id: str, node_id: str, slot: int, duration: int, data: TypeReviewData, tz_offset_min: int = 0) -> NodeDetailView:
+        node = self._node_service.get_node_for_user(user_id, col_id, node_id)
+        learning_unit = node.get_unit_by_slot(slot)
+        pending_review_id = self._user_service.get_pending_review(user_id)
         if pending_review_id is None:
-            raise NoPendingNodeError(node_id)
-        if pending_review_id != node_id:
-            raise PendingReviewMismatchError(node_id, pending_review_id)
+            raise NoPendingReviewError(learning_unit.id)
+        if pending_review_id != learning_unit.id:
+            raise PendingReviewMismatchError(learning_unit.id, pending_review_id)
         if isinstance(data, SporeReviewData):
-            node = self._review_service.review_spore(col_id, node_id, duration, data)
+            node = self._review_service.review_spore(user_id, col_id, learning_unit.id, duration, data)
         elif isinstance(data, FragmentReviewData):
-            node = self._review_service.review_fragment(col_id, node_id, duration, data, tz_offset_min)
-        else:
-            raise UnknownReviewTypeError(data.__class__.__name__)
-        self._user_service.clear_pending_node(user_id)
+            node = self._review_service.review_fragment(col_id, learning_unit.id, duration, data, tz_offset_min)
+        self._user_service.clear_pending_review(user_id)
         return self._node_view_builder.to_detail_view(node)
 
-    def _restore_node_from_snapshot(self, review: Review) -> None:
-        self._node_service.update(
-            review.node_id,
-            NodeUpdate(
-                last_review=review.node_state_before.last_review,
-                due=review.node_state_before.due,
-                type_data=review.node_state_before.type_data,
-            ),
-            True
+    def _restore_from_snapshot(self, review: Review) -> None:
+        self._node_service.update_learning_unit(review.state_before)
+
+    def get_next_review(self, user_id: str, col_id: str, tz_offset: int = 0) -> ReviewTarget | None:
+        self._ensure_col(user_id, col_id)
+        learning_unit = self._review_service.get_next_learning_unit(user_id, col_id, tz_offset)
+        if learning_unit is None:
+            return None
+        self._user_service.set_pending_review(user_id, learning_unit.id)
+        node = self._node_service.get_node_from_learning_unit(learning_unit.id)
+        return ReviewTarget(
+            node=self._node_view_builder.to_detail_view(node),
+            slot=getattr(learning_unit, 'slot', 0)
         )
 
-    def get_next_review(self, user_id: str, col_id: str, tz_offset: int = 0) -> NodeDetailView | None:
-        self._ensure_col(user_id, col_id)
-        node = self._review_service.get_next_review(user_id, col_id, tz_offset)
-        if node:
-            self._user_service.set_pending_node(user_id, node.id)
-            return self._node_view_builder.to_detail_view(node)
-        else:
-            return None
-
-    def undo_review(self, user_id: str, col_id: str) -> NodeDetailView:
+    def undo_review(self, user_id: str, col_id: str) -> ReviewTarget:
         self._ensure_col(user_id, col_id)
         max_undo_age = self._user_service.get_undo_max_age_min(user_id)
         last_review = self._review_service.undo_review(col_id, max_undo_age)
         try:
-            node_from_undone_review = self._node_service.get_node(last_review.node_id)
+            node_from_undone_review = self._node_service.get_node_from_learning_unit(last_review.learning_unit_id)
         except NodeDeleted as e:
-            self._restore_node_from_snapshot(last_review)
-            raise ReviewUndoNodeInaccessible(last_review.node_id, last_review.id) from e
+            self._restore_from_snapshot(last_review)
+            raise ReviewUndoLearningUnitInaccessible(last_review.learning_unit_id, last_review.id) from e
         except NoNodeFound as e:
-            raise ReviewUndoNodeInaccessible(last_review.node_id, last_review.id) from e
-        self._restore_node_from_snapshot(last_review)
-        self._user_service.set_pending_node(user_id, node_from_undone_review.id)
+            raise ReviewUndoLearningUnitInaccessible(last_review.learning_unit_id, last_review.id) from e
+        self._restore_from_snapshot(last_review)
+        self._user_service.set_pending_review(user_id, node_from_undone_review.id)
         node = self._node_service.get_node(node_from_undone_review.id)
-        return self._node_view_builder.to_detail_view(node)
+        learning_unit = self._node_service.get_learning_unit(last_review.learning_unit_id)
+        return ReviewTarget(
+            node=self._node_view_builder.to_detail_view(node),
+            slot=getattr(learning_unit, 'slot', 0)
+        )
 
     def get_calendar(
         self,

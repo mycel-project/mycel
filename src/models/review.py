@@ -1,70 +1,29 @@
 import json
 
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, field_validator
 from typing import Optional
 
-from src.models.node_state_before import NodeStateBefore
+from src.models.learning_unit import LearningUnit
+from src.models.node import NodeType
 from src.models.type_review_data import TypeReviewData
-from src.models.type_review_data.fragment_review_data import FragmentReviewData
-from src.models.type_review_data.spore_review_data import SporeReviewData
-from src.types.node_type import NodeType
 
-TYPE_REVIEW_DATA_MAP = {
-    NodeType.SPORE: SporeReviewData,
-    NodeType.FRAGMENT: FragmentReviewData,
-}
 
 class Review(BaseModel):
-    model_config = ConfigDict(validate_assignment=True)
+    model_config = ConfigDict(validate_assignment=True, from_attributes=True)
     id: str
-    node_id: str
+    learning_unit_id: str
     type: NodeType = NodeType.FRAGMENT
-    time: int
-    type_review_data: TypeReviewData
+    reviewed_at: int
+    type_review_data: TypeReviewData # Data specific to the type of learning unit
     duration: Optional[int] = None
-    node_state_before: NodeStateBefore
+    state_before: LearningUnit
 
-    @model_validator(mode="before")
+    @field_validator("type_review_data", "state_before", mode="before")
     @classmethod
-    def build_typed_fields(cls, values):
-        node_type = values.get("type")
-
-        # type_review_data
-        raw = values.get("type_review_data")
-        factory = TYPE_REVIEW_DATA_MAP.get(node_type)
-        if factory is None:
-            raise ValueError(f"Unknown node type: {node_type}")
-        if raw is None:
-            values["type_review_data"] = factory()
-        else:
-            if isinstance(raw, str):
-                raw = json.loads(raw)
-            values["type_review_data"] = factory.model_validate(raw)
-
-        # node_state_before
-        raw_snapshot = values.get("node_state_before")
-        if isinstance(raw_snapshot, str):
-            raw_snapshot = json.loads(raw_snapshot)
-        if isinstance(raw_snapshot, dict):
-            values["node_state_before"] = NodeStateBefore.from_dict(raw_snapshot, NodeType(node_type))
-
-        return values
-
-    @classmethod
-    def from_db(cls, row: dict) -> 'Review':
-        row_dict = dict(row) if hasattr(row, 'keys') else row.__dict__
-        
-        return cls(
-            id=row_dict["id"],
-            node_id=row_dict["node_id"],
-            time=row_dict["time"],
-            duration=row_dict["duration"],
-            type_review_data=row_dict["type_review_data"],
-            type=row_dict["type"],
-            node_state_before=(
-                NodeStateBefore.from_dict(
-                    json.loads(row_dict["node_state_before"]),
-                    NodeType(row_dict["type"])
-                )
-            ),
-        )
+    def deserialize_json_strings(cls, v):
+        if isinstance(v, str):
+            try:
+                return json.loads(v)
+            except json.JSONDecodeError:
+                return v
+        return v
