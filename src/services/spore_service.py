@@ -49,17 +49,18 @@ class SporeService:
                     raise InvalidNodeUpdate(node_id, node.base_for, fields, str(e)) from ClozeValidationError()
         return self._node_service.update(node_id, data)
 
-    def validate_spore_content(self, content: NodeContent):
-        field = content.get_first_field()
+    def validate_spore_content(self, text: str):
+        if not self.has_cloze(text):
+            raise NoClozeFieldError(text)
 
-        if field is None:
-            raise ValueError("Content is empty")
-
-        if not self.has_cloze(field):
-            raise NoClozeFieldError(field)
-
-    def has_cloze(self, content: str) -> bool:
-        return CLOZE_PATTERN.search(content) is not None
+    def has_cloze(self, content: str, slot: Optional[int] = None) -> bool:
+        """
+        if slot is none, search for any slot, at least one
+        """
+        matches = CLOZE_PATTERN.finditer(content)
+        if slot is None:
+            return any(True for _ in matches)
+        return any(int(m.group(1)) == slot for m in matches)
 
     def cloze_region(self, node_id: str, text: str, field: str, start: int, end: int) -> Node:
         node = self._node_service.get_node(node_id)
