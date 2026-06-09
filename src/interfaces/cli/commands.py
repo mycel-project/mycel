@@ -22,6 +22,6 @@ def create_cli_group(node_service: NodeService, collection_service: CollectionSe
     @click.argument("url")
     def get(url):
         ressource = ressource_service.get_ressource_from_url(url)
-        click.echo(ressource["markdown"])
+        click.echo(ressource.content)
 
     return cli
