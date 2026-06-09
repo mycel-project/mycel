@@ -39,5 +39,5 @@ def test_cloze_pattern(text, expected_groups):
         assert match is None
     else:
         assert match is not None
-        assert match.group(1) == expected_groups[0]
-        assert match.group(2) == expected_groups[1]
+        assert match.group(2) == expected_groups[0]
+        assert match.group(3) == expected_groups[1]

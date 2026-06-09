@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from src.types.node_type import NodeType
+from src.models.node import NodeType
 from src.types.count_by_type_and_day import CountByTypeAndDay
 
 class TestNodeService:
@@ -8,7 +8,7 @@ class TestNodeService:
         def test_both_types_same_day(self, node_service):
             ts = int(datetime(2026, 5, 18, tzinfo=timezone.utc).timestamp() * 1000)
 
-            node_service._repo.due_count_by_type_and_day.return_value = [
+            node_service._lu_repo.due_count_by_type_and_day.return_value = [
                 (ts, NodeType.SPORE.value, 3),
                 (ts, NodeType.FRAGMENT.value, 7),
             ]
@@ -23,7 +23,7 @@ class TestNodeService:
         def test_only_spores(self, node_service):
             ts = int(datetime(2026, 5, 18, tzinfo=timezone.utc).timestamp() * 1000)
 
-            node_service._repo.due_count_by_type_and_day.return_value = [
+            node_service._lu_repo.due_count_by_type_and_day.return_value = [
                 (ts, NodeType.SPORE.value, 5),
             ]
 
@@ -36,7 +36,7 @@ class TestNodeService:
         def test_only_fragments(self, node_service):
             ts = int(datetime(2026, 5, 18, tzinfo=timezone.utc).timestamp() * 1000)
 
-            node_service._repo.due_count_by_type_and_day.return_value = [
+            node_service._lu_repo.due_count_by_type_and_day.return_value = [
                 (ts, NodeType.FRAGMENT.value, 9),
             ]
 
@@ -50,7 +50,7 @@ class TestNodeService:
             ts1 = int(datetime(2026, 5, 18, tzinfo=timezone.utc).timestamp() * 1000)
             ts2 = int(datetime(2026, 5, 19, tzinfo=timezone.utc).timestamp() * 1000)
 
-            node_service._repo.due_count_by_type_and_day.return_value = [
+            node_service._lu_repo.due_count_by_type_and_day.return_value = [
                 (ts1, NodeType.SPORE.value, 2),
                 (ts2, NodeType.FRAGMENT.value, 4),
                 (ts2, NodeType.SPORE.value, 1),
@@ -65,7 +65,7 @@ class TestNodeService:
             ]
 
         def test_empty(self, node_service):
-            node_service._repo.due_count_by_type_and_day.return_value = []
+            node_service._lu_repo.due_count_by_type_and_day.return_value = []
 
             result = node_service.get_due_count_by_type_and_day(1)
 

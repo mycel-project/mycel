@@ -1,7 +1,8 @@
 import time
 from uuid import uuid4
 
-from src.types.node_type import NodeType
+from src.models.node import NodeType
+from src.schemas.node_detail_view import NodeDetailView
 
 class TestUser:
     def test_create_user(self, api):
@@ -97,9 +98,12 @@ class TestNode:
         user, token = create_user()
         col = create_col(user_id=user.id)
         node = create_node(col_id=col.id, user_id=user.id)
-        response = api.patch(f"/collections/{col.id}/nodes/{node.id}", token, body={"due": 9999999999})
+        new_parent = create_node(col_id=col.id, user_id=user.id)
+        response = api.patch(f"/collections/{col.id}/nodes/{node.id}", token, body={"parent_id": new_parent.id})
+        data = response.json()["data"]
+        assert isinstance(data, dict)
         assert response.status_code == 200
-        assert response.json()["data"]["due"] == 9999999999
+        assert response.json()["data"]["parent_id"] == new_parent.id
         
     def test_delete_node(self, api, create_user, create_col, create_node):
         user, token = create_user()
@@ -118,9 +122,10 @@ class TestNode:
         response = api.get(f"/collections/{col.id}/nodes/priorities", token)
         assert response.status_code == 200
         data = response.json()["data"]
-        assert isinstance(data, dict)
-        assert str(node1.id) in data
-        assert str(node2.id) in data
+        assert isinstance(data, list)
+        node_ids = [item["node_id"] for item in data]
+        assert str(node1.id) in node_ids
+        assert str(node2.id) in node_ids
 
     def test_get_deleted_nodes(self, api, create_user, create_col, create_node):
         user, token = create_user()
@@ -187,7 +192,6 @@ class TestNode:
             token,
             body={
                 "text": "Hello",
-                "field": 0,
                 "start_index": 0,
                 "end_index": 5,
                 "extract_type": NodeType.FRAGMENT,
@@ -206,7 +210,7 @@ class TestNode:
         response = api.post(
             f"/collections/{col.id}/nodes/{node.id}/remove-links",
             token,
-            body={"text": "Hello", "field": 0, "start_index": 0, "end_index": 5}
+            body={"text": "Hello", "start_index": 0, "end_index": 5}
         )
         assert response.status_code == 200
         assert response.json()["data"]["id"] == node.id

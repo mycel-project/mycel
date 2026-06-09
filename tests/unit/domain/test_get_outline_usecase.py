@@ -1,28 +1,7 @@
 import pytest
-from src.models.node import Node
-from src.models.node_content import NodeContent
-from src.models.node_data import NodeData
 from src.models.outline import Outline, OutlineEntry
 from src.domain.get_outline_usecase import GetOutlineUseCase
-from src.models.type_data.fragment_data import FragmentData
-from src.types.node_type import NodeType
 
-@pytest.fixture
-def make_node(generate_id):
-    def _make_node(text: str) -> Node:
-        return Node(
-            id=generate_id(),
-            collection_id=generate_id(),
-            type=NodeType.FRAGMENT,
-            content=NodeContent(fields={"0": text}),
-            created_at=0,
-            updated_at=0,
-            due=0,
-            position="a",
-            data=NodeData(),
-            type_data=FragmentData(),
-        )
-    return _make_node
 
 @pytest.fixture
 def usecase():

@@ -74,10 +74,10 @@ def test_pending_node(db_fixture):
     repo = UserRepository(db=db_fixture)
     user = repo.create(name="Test")
     
-    assert repo.get_pending_node_id(user.id) is None
+    assert repo.get_pending_review_id(user.id) is None
     
-    repo.set_pending_node_id(user.id, "some-node-uuid")
-    assert repo.get_pending_node_id(user.id) == "some-node-uuid"
+    repo.set_pending_review_id(user.id, "some-node-uuid")
+    assert repo.get_pending_review_id(user.id) == "some-node-uuid"
     
-    repo.set_pending_node_id(user.id, None)
-    assert repo.get_pending_node_id(user.id) is None
+    repo.set_pending_review_id(user.id, None)
+    assert repo.get_pending_review_id(user.id) is None

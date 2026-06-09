@@ -7,40 +7,18 @@ from src.domain.split_node_usecase import SplitNodeUseCase
 
 
 @pytest.fixture
-def generate_id():
-    def _make_id():
-        return str(uuid4())
-    return _make_id
-
-
-@pytest.fixture
-def make_node(generate_id):
-    def _make_node(node_id: str, text: str):
-        from src.models.node import Node
-        from src.models.node_content import NodeContent
-        from src.models.node_data import NodeData
-        from src.models.type_data.fragment_data import FragmentData
-        from src.types.node_type import NodeType
-        return Node(
-            id=node_id,
-            collection_id=generate_id(),
-            type=NodeType.FRAGMENT,
-            content=NodeContent(fields={"0": text}),
-            created_at=0, updated_at=0, due=0,
-            position="a",
-            data=NodeData(),
-            type_data=FragmentData(),
-        )
-    return _make_node
-
-
-@pytest.fixture
-def make_use_case(generate_id, make_node):
+def make_use_case(make_node):
     def _make_use_case(node_text: str, node_id: str | None = None):
-        if node_id is None:
-            node_id = generate_id()
         node_service = MagicMock()
-        node_service.get_node.return_value = make_node(node_id, node_text)
+        node = make_node(node_text)
+        
+        if node_id is not None:
+            if hasattr(node, "model_copy"):
+                node = node.model_copy(update={"id": node_id})
+            else:
+                node.id = node_id
+                
+        node_service.get_node.return_value = node
 
         create_fragment = MagicMock()
         create_fragment.execute = MagicMock(return_value=MagicMock())
@@ -52,9 +30,11 @@ def make_use_case(generate_id, make_node):
         return uc, create_fragment.execute
     return _make_use_case
 
-
 def get_content(cf, index: int) -> str:
-    return cf.call_args_list[index][0][2]
+    fields = cf.call_args_list[index][0][2]
+    if hasattr(fields, "root") and isinstance(fields.root, dict):
+        return fields.root.get("content", "")
+    return fields
 
 
 class TestSplitNodeUseCase:

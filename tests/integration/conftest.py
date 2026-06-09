@@ -6,11 +6,20 @@ import pytest
 from uuid import uuid4
 import jwt
 
+from src.domain.create_fragment_usecase import CreateFragmentUseCase
+from src.domain.create_node_usecase import CreateNodeUseCase
+from src.domain.create_spore_usecase import CreateSporeUseCase
 from src.main import Application
+from src.models.fragment import Fragment
+from src.models.node import NodeFields, NodeType
 from src.repositories.import_export_repository import ImportExportRepository
+from src.repositories.learning_unit_repository import LearningUnitRepository
 from src.repositories.node_repository import NodeRepository
 from src.repositories.review_repository import ReviewRepository
-from src.types.node_type import NodeType
+from src.services.collection_service import CollectionService
+from src.services.node_service import NodeService
+from src.services.priority_service import PriorityService
+from src.services.user_service import UserService
 
 def generate_token(user_id: str, expires_in_seconds: int = 3600) -> str:
     secret_key_test = "test_key"
@@ -84,11 +93,11 @@ def clean_db(app):
     app.db.clear_all()
 
 @pytest.fixture()
-def col_service(app):
+def col_service(app) -> CollectionService:
     return app.services["collection_service"]
 
 @pytest.fixture()
-def user_service(app):
+def user_service(app) -> UserService:
     return app.services["user_service"]
 
 @pytest.fixture
@@ -112,28 +121,46 @@ def create_col(col_service):
     return _create_col
 
 @pytest.fixture()
-def node_service(app):
+def node_service(app) -> NodeService:
     return app.services["node_service"]
 
 @pytest.fixture()
-def create_node_use_case(app):
+def create_node_use_case(app) -> CreateNodeUseCase:
     return app.create_node_usecase
 
+@pytest.fixture()
+def create_fragment_use_case(app) -> CreateFragmentUseCase:
+    return app.create_fragment_usecase
+
+@pytest.fixture()
+def create_spore_use_case(app) -> CreateSporeUseCase:
+    return app.create_spore_usecase
+
 @pytest.fixture
-def create_node(create_node_use_case):
-    def _create_node(col_id, user_id, type=NodeType.FRAGMENT, content="Test content", parent_id=None, position=None):
-        return create_node_use_case.execute(
-            user_id=user_id,
-            collection_id=col_id,
-            type=type,
-            content=content,
-            parent_id=parent_id,
-            position=position,
-        )
+def create_node(create_fragment_use_case: CreateFragmentUseCase, create_spore_use_case: CreateSporeUseCase):
+    def _create_node(col_id, user_id, type=NodeType.FRAGMENT, content="Test content", parent_id=None, position=None, due=None):
+        if type == NodeType.FRAGMENT:
+            return create_fragment_use_case.execute(
+                user_id=user_id,
+                collection_id=col_id,
+                fields=NodeFields.from_dict({"content": content}),
+                parent_id=parent_id,
+                position=position,
+                due=due,
+            )
+        if type == NodeType.SPORE:
+            return create_spore_use_case.execute(
+                user_id=user_id,
+                collection_id=col_id,
+                fields=NodeFields.from_dict({"cloze": content}),
+                parent_id=parent_id,
+                position=position,
+                due=due,
+            )
     return _create_node
 
 @pytest.fixture
-def priority_service(app):
+def priority_service(app) -> PriorityService:
     return app.services["priority_service"]
 
 @pytest.fixture
@@ -141,11 +168,11 @@ def node_repo(app) -> NodeRepository:
     return NodeRepository(db=app.db)
 
 @pytest.fixture
-def import_export_repo(app):
+def import_export_repo(app) -> ImportExportRepository:
     return ImportExportRepository(db=app.db)
 
 @pytest.fixture
-def default_collection(app, default_user, generate_id):
+def default_collection(app, default_user, generate_id) -> str:
     col_id = generate_id()
     app.db.execute(
         "INSERT INTO collections (id, user_id, name, created_at, updated_at, conf, algoconf) VALUES (:id, :user_id, 'Test', 0, 0, '{}', '{}')",
@@ -156,3 +183,7 @@ def default_collection(app, default_user, generate_id):
 @pytest.fixture
 def review_repo(app) -> ReviewRepository:
     return ReviewRepository(db=app.db)
+
+@pytest.fixture
+def learning_unit_repo(app) -> LearningUnitRepository:
+    return LearningUnitRepository(db=app.db)
