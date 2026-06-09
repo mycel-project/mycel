@@ -1,4 +1,4 @@
-from sqlalchemy import BigInteger, String, ForeignKey, Index
+from sqlalchemy import BigInteger, Integer, String, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 from src.db.schema import Base
 
@@ -13,7 +13,7 @@ class UserORM(Base):
     created_at: Mapped[int] = mapped_column(BigInteger, nullable=False)
     conf: Mapped[str] = mapped_column(String, nullable=False, server_default="{}")
     templates: Mapped[str] = mapped_column(String, nullable=False, server_default="{}")
-    pending_node_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    pending_review_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
 
 
 class CollectionORM(Base):
@@ -50,26 +50,23 @@ class LearningUnitORM(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
     node_id: Mapped[str] = mapped_column(String(36), ForeignKey("nodes.id", ondelete="CASCADE"), nullable=False)
     unit_type: Mapped[str] = mapped_column(String(20), nullable=False)
-    position: Mapped[str] = mapped_column(String, nullable=False, server_default="0")
+    position: Mapped[str] = mapped_column(String, nullable=False, server_default="a")
     due: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     last_review: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    slot: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
     unit_data: Mapped[str] = mapped_column(String, nullable=False, server_default="{}")
-
+    
 
 class ReviewORM(Base):
     __tablename__ = "reviews"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
-    node_id: Mapped[str] = mapped_column(String(36), ForeignKey("nodes.id", ondelete="CASCADE"), nullable=False)
-    type: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    time: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    learning_unit_id: Mapped[str] = mapped_column(String(36), ForeignKey("learning_units.id", ondelete="CASCADE"), nullable=False)
+    type: Mapped[str] = mapped_column(String(20), nullable=False)
+    reviewed_at: Mapped[int] = mapped_column(BigInteger, nullable=False)
     duration: Mapped[int] = mapped_column(BigInteger, nullable=False)
     type_review_data: Mapped[str] = mapped_column(String, nullable=False, server_default="{}")
-    node_state_before: Mapped[str | None] = mapped_column(String, nullable=True)
-
-    __table_args__ = (
-        Index("idx_reviews_node", "node_id"),
-    )
+    state_before: Mapped[str | None] = mapped_column(String, nullable=True)
 
     
 class IdempotencyKeyORM(Base):
