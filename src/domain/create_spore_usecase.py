@@ -1,17 +1,17 @@
 from typing import Optional
 from src.core.scheduling_engine import SchedulingEngine
 from src.domain.create_node_usecase import CreateNodeUseCase
-from src.models.fragment import Fragment
 from src.models.node import Node, NodeFields, NodeStatus, NodeType
 from src.models.node_data import NodeData
+from src.models.spore import Spore
 from src.models.template import DefaultTemplate
 from src.services.node_service import NodeService
 from typing import Optional
 
-from src.utils.time import MS_PER_DAY, now_ms, start_of_local_day_ms
+from src.utils.time import start_of_local_tomorrow_ms
 
 
-class CreateFragmentUseCase:
+class CreateSporeUseCase:
     def __init__(self, node_service: NodeService, scheduling_engine: SchedulingEngine, create_node_use_case: CreateNodeUseCase):
         self._node_service = node_service
         self._scheduling_engine = scheduling_engine
@@ -23,7 +23,7 @@ class CreateFragmentUseCase:
         collection_id: str,
         fields: NodeFields,
         status: NodeStatus = NodeStatus.ACTIVE,
-        template_id: DefaultTemplate = DefaultTemplate.FRAGMENT_BASIC,
+        template_id: DefaultTemplate = DefaultTemplate.SPORE_CLOZE,
         data: Optional[NodeData] = None,
         parent_id: Optional[str] = None,
         tz_offset: int = 0,
@@ -31,23 +31,15 @@ class CreateFragmentUseCase:
         position: Optional[str] = None,
     ) -> Node:
 
-        if parent_id is not None:
-            parent_depth = self._node_service.get_depth(parent_id)
-            depth = parent_depth + 1
-        else:
-            depth = 0
+        due = start_of_local_tomorrow_ms(tz_offset)
 
-        if due is None:
-            interval = self._scheduling_engine.compute_fragment_next_interval(depth, 0)
-            due = start_of_local_day_ms(now_ms() + interval * MS_PER_DAY, tz_offset)
-
-        fragment_unit = Fragment(due=due)
+        spore_unit = Spore(due=due)
         return self._create_node.execute(
             user_id=user_id,
             collection_id=collection_id,
             template_id=template_id,
             type=NodeType.FRAGMENT,
-            learning_unit=fragment_unit,
+            learning_unit=spore_unit,
             fields=fields,
             data=data,
             status=status,

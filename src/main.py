@@ -13,6 +13,7 @@ from src.db import Db
 from src.domain.create_fragment_usecase import CreateFragmentUseCase
 from src.domain.create_node_from_url_usecase import CreateNodeFromUrlUseCase
 from src.domain.create_node_usecase import CreateNodeUseCase
+from src.domain.create_spore_usecase import CreateSporeUseCase
 from src.domain.get_outline_usecase import GetOutlineUseCase
 from src.domain.reprioritise_usecase import ReprioritiseUseCase
 from src.domain.reschedule_node_usecase import RescheduleNodeUseCase
@@ -80,10 +81,11 @@ class Application():
         scheduling_engine = SchedulingEngine(user_service)
 
         self.create_node_usecase = CreateNodeUseCase(node_service, priority_service)
-        create_fragment_usecase = CreateFragmentUseCase(node_service, scheduling_engine, self.create_node_usecase)
+        self.create_fragment_usecase = CreateFragmentUseCase(node_service, scheduling_engine, self.create_node_usecase)
+        self.create_spore_usecase = CreateSporeUseCase(node_service, scheduling_engine, self.create_node_usecase)
 
-        fragment_service = FragmentService(node_service, node_format_service, create_fragment_usecase)
-        spore_service = SporeService(node_service, node_format_service, self.create_node_usecase)
+        fragment_service = FragmentService(node_service, node_format_service, self.create_fragment_usecase)
+        spore_service = SporeService(user_service, node_service, node_format_service, self.create_spore_usecase)
 
         collection_repository = CollectionRepository(self.db)
         
@@ -94,7 +96,7 @@ class Application():
 
         review_service = ReviewService(self.db, scheduling_engine, fsrs_service, node_service)
 
-        create_node_from_url_usecase = CreateNodeFromUrlUseCase(create_fragment_usecase, ressource_service)
+        create_node_from_url_usecase = CreateNodeFromUrlUseCase(self.create_fragment_usecase, ressource_service)
 
         reschedule_node_usecase = RescheduleNodeUseCase(user_service, node_service)
         reprioritise_usecase = ReprioritiseUseCase(node_service, priority_service)

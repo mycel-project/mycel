@@ -1,13 +1,12 @@
-from typing import Optional, Union
+from typing import Optional
 
 from src.domain.create_fragment_usecase import CreateFragmentUseCase
 from src.domain.domain_exceptions import NotAFragment, NotAKnownType
-from src.models.node import Node
-from src.models.type_data.fragment_data import FragmentData
+from src.models.node import Node, NodeFields, NodeType
+from src.models.template import DefaultTemplate
 from src.schemas.node_update import NodeUpdate
 from src.services.node_format_service import NodeFormatService
 from src.services.node_service import NodeService
-from src.types.node_type import NodeType
 
 
 class FragmentService:
@@ -25,22 +24,23 @@ class FragmentService:
             NodeType.SPORE: self._node_format_service.inline_region,
         }
         
-    def create_fragment(self, user_id: str, col_id: str, content: Union[str, dict], parent_id: Optional[str] = None, tz_offset: int = 0) -> Node:
+    def create_fragment(self, user_id: str, col_id: str, content: str, parent_id: Optional[str] = None, tz_offset: int = 0) -> Node:
         return self._create_fragment.execute(
             user_id=user_id,
             collection_id=col_id,
-            content=content,
+            fields=NodeFields(root={"content": content}),
+            template_id=DefaultTemplate.FRAGMENT_BASIC,
             parent_id=parent_id,
             tz_offset=tz_offset,
         )
 
     def update_fragment(self, node_id: str, data: NodeUpdate) -> Node:
         node = self._node_service.get_node(node_id)
-        if node.type != NodeType.FRAGMENT:
+        if node.base_for != NodeType.FRAGMENT:
             raise NotAFragment(node_id)
         return self._node_service.update(node_id, data)
         
-    def emphasize_region(self, node_id: str, node_region_type: int, field: str, start: int, end: int, text: str | None = None) -> Node:
+    def emphasize_region(self, node_id: str, node_region_type: NodeType, field: str, start: int, end: int, text: str | None = None) -> Node:
         """
         Text is used to see if rebuild text is similar to what is passed in text (it should be)
         """
@@ -54,14 +54,12 @@ class FragmentService:
 
         return self._node_service.update(
             node_id,
-            NodeUpdate(content=node.content)
+            NodeUpdate(fields=node.fields)
         )
 
     def dismiss(self, node_id: str) -> Node:
-        return self._node_service.update(node_id,
-            NodeUpdate(
-                type_data=FragmentData(
-                    dismiss=True
-                )
-            )
-        )
+        node = self._node_service.get_node(node_id)
+        fragment = node.get_fragment()
+        fragment.dismiss = True
+        self._node_service.update_learning_unit(fragment)
+        return node

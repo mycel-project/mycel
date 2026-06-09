@@ -1,46 +1,52 @@
-from typing import Optional, Union
+from typing import Optional
 
 from src.core.regex import CLOZE_PATTERN
-from src.domain.create_node_usecase import CreateNodeUseCase
+from src.domain.create_spore_usecase import CreateSporeUseCase
 from src.domain.domain_exceptions import ClozeValidationError, InvalidNodeUpdate, NoClozeFieldError, NotASpore
-from src.models.node_content import NodeContent
+from src.models.template import DefaultTemplate, SporeClozeTemplate
 from src.schemas.node_update import NodeUpdate
 from src.services.node_format_service import NodeFormatService
 from src.services.node_service import NodeService
-from src.types.node_type import NodeType
-from src.models.node import Node
+from src.models.node import Node, NodeFields, NodeType
+from src.services.user_service import UserService
 
 class SporeService:
     def __init__(
         self,
+        user_service: UserService,
         node_service: NodeService,
         node_format_service: NodeFormatService,
-        create_node_use_case: CreateNodeUseCase,
+        create_spore_use_case: CreateSporeUseCase,
     ):
+        self._user_service = user_service
         self._node_service = node_service
         self._node_format_service = node_format_service
-        self._create_node = create_node_use_case
+        self._create_spore = create_spore_use_case
 
-    def create_spore(self, user_id: str, col_id: str, due: int, content: Union[str, dict], parent_id: Optional[str] = None) -> Node:
-        return self._create_node.execute(
+    def create_spore(self, user_id: str, col_id: str, content: str, due: Optional[int] = None, parent_id: Optional[str] = None, tz_offset: int = 0) -> Node:
+        return self._create_spore.execute(
             user_id=user_id,
             collection_id=col_id,
-            content=content,
+            fields=NodeFields(root={"cloze": content}),
+            template_id=DefaultTemplate.SPORE_CLOZE,
             parent_id=parent_id,
-            type=NodeType.SPORE,
+            tz_offset=tz_offset,
             due=due,
         )
 
-    def update_spore(self, node_id: str, data: NodeUpdate) -> Node:
+    def update_spore(self, user_id: str, node_id: str, data: NodeUpdate) -> Node:
         node = self._node_service.get_node(node_id)
-        if node.type != NodeType.SPORE:
+        user = self._user_service.get_user(user_id)
+        if node.base_for != NodeType.SPORE:
             raise NotASpore(node_id)
-        content = data.content
-        if content is not None:
-            try:
-                self.validate_spore_content(content)
-            except ValueError as e:
-                raise InvalidNodeUpdate(node_id, node.type, content, str(e)) from ClozeValidationError()
+        fields = data.fields
+        if fields is not None:
+            template = user.templates.root[node.template_id]
+            if isinstance(template, SporeClozeTemplate):
+                try:
+                    self.validate_spore_content(fields["cloze"])
+                except ValueError as e:
+                    raise InvalidNodeUpdate(node_id, node.base_for, fields, str(e)) from ClozeValidationError()
         return self._node_service.update(node_id, data)
 
     def validate_spore_content(self, content: NodeContent):
@@ -59,26 +65,24 @@ class SporeService:
         node = self._node_service.get_node(node_id)
 
         clozed_node = self._node_format_service.cloze_region(node, field, start, end, text)
-        content = clozed_node.content.fields[field]
+        content = clozed_node.fields[field]
         if not self.has_cloze(content):
             raise NoClozeFieldError(content)
         return self._node_service.update(
             node_id,
-            NodeUpdate(content=node.content)
+            NodeUpdate(fields=clozed_node.fields)
         )
 
-    def remove_extract_formatting(self, node_id: str, field_key: str = "0") -> Node:
+    def remove_extract_formatting(self, node_id: str, field: str) -> Node:
         node = self._node_service.get_node(node_id)
 
-        field_content = node.content.fields[field_key]
+        field_content = node.fields[field]
         
         text_without_inline = self._node_format_service.remove_inline_code_formatting(field_content)
         fully_cleaned_text = self._node_format_service.remove_blockquote_formatting(text_without_inline, r"\{\{c\d+::\s*")
 
-        node.content.fields[field_key] = fully_cleaned_text
-        self._node_service.update(
+        node.fields[field] = fully_cleaned_text
+        return self._node_service.update(
             node.id,
-            NodeUpdate(content=node.content)
+            NodeUpdate(fields=node.fields)
         )
-        
-        return node

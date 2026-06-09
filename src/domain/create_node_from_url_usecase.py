@@ -1,8 +1,8 @@
 from src.domain.create_fragment_usecase import CreateFragmentUseCase
 from src.domain.domain_exceptions import InvalidUrl
-from src.models.node import Node
-from src.models.node_content import NodeContent
-from src.models.node_data import NodeData
+from src.models.node import Node, NodeFields
+from src.models.node_data import NodeData, NodeSource
+from src.models.template import DefaultTemplate
 from src.services.ressource_service import RessourceService
 from src.utils.url import is_valid_url
 
@@ -25,7 +25,8 @@ class CreateNodeFromUrlUseCase:
         return self._create_fragment.execute(
             user_id=user_id,
             collection_id=collection_id,
-            content=NodeContent.from_input(ressource.content),
-            data=NodeData(title=ressource.title, src=ressource.source),
+            template_id=DefaultTemplate.FRAGMENT_BASIC,
+            fields=NodeFields(root={"content": ressource.content}),
+            data=NodeData(title=ressource.title, source=NodeSource(url=ressource.source)),
             tz_offset=tz_offset,
         )

@@ -1,14 +1,10 @@
-from typing import Optional, Union
-from src.models.node import Node
-from src.models.node_content import NodeContent
+from typing import Optional
+from src.models.learning_unit import LearningUnit
+from src.models.node import Node, NodeFields, NodeStatus, NodeType
 from src.models.node_data import NodeData
-from src.models.type_data import TypeData
 from src.services.node_service import NodeService
 from src.services.priority_service import PriorityService
 from typing import Optional
-
-from src.types.node_type import NodeType
-
 
 class CreateNodeUseCase:
     def __init__(self, node_service: NodeService, priority_service: PriorityService):
@@ -19,27 +15,33 @@ class CreateNodeUseCase:
         self,
         user_id: str,
         collection_id: str,
+        template_id: str,
         type: NodeType,
-        content: Union[str, dict, NodeContent],
-        due: Optional[int] = None,
-        data: Optional[NodeData] = None,
-        type_data: Optional[TypeData] = None,
-        parent_id: Optional[str] = None,
+        fields: NodeFields,
+        learning_unit: LearningUnit,
         position: Optional[str] = None,
+        data: Optional[NodeData] = None,
+        status: NodeStatus = NodeStatus.ACTIVE,
+        parent_id: Optional[str] = None
     ) -> Node:
         if position is None:
             if parent_id is None:
                 position = self._priority_service.prioritise_random_between_percentage(collection_id, 85, 95)
             else:
-                position = self._priority_service.prioritise_random_near_node(collection_id, parent_id, 10)
+                parent = self._node_service.get_node(parent_id)
+                parent_priority = self._priority_service.position_to_priority(collection_id, parent.get_fragment().position)
+                position = self._priority_service.prioritise_random_near_priority(collection_id, parent_priority, 10)
+
+        learning_unit.position = position
+
         return self._node_service.create_node(
             user_id=user_id,
             collection_id=collection_id,
+            template_id=template_id,
             type=type,
-            content=content,
-            position=position,
+            fields=fields,
+            learning_unit=learning_unit,
             data=data,
-            due=due,
-            type_data=type_data,
+            status=status,
             parent_id=parent_id,
         )
