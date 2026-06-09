@@ -1,6 +1,5 @@
 from typing import Any, Optional
 
-
 # We include status_code here even though exception handling is not strictly tied to REST, for convenience.
 class DomainException(Exception):
     def __init__(self, code: str, message: str, status_code: int):
@@ -62,28 +61,33 @@ class NoNodeFound(DomainException):
             message=f"No node found for id {node_id}",
             status_code=404
         )
-        
+
+class NoLearningUnitFound(DomainException):
+    def __init__(self, learning_unit_id: str):
+        super().__init__(
+            code="LEARNING_UNIT_NOT_FOUND",
+            message=f"No learning unit for id {learning_unit_id}",
+            status_code=404
+        )
 
 class NotAFragment(DomainException):
-    def __init__(self, node_id: str):
+    def __init__(self, id: str):
         super().__init__(
             code="NOT_A_FRAGMENT",
-            message=f"Node with id {node_id} is not a fragment",
+            message=f"Node/Learning unit {id} is not a fragment",
             status_code=400
         )
-
 
 class NotASpore(DomainException):
-    def __init__(self, node_id: str):
+    def __init__(self, id: str):
         super().__init__(
             code="NOT_A_SPORE",
-            message=f"Node with id {node_id} is not a spore",
+            message=f"Node/Learning unit {id} is not a spore",
             status_code=400
         )
 
-
 class NotAKnownType(DomainException):
-    def __init__(self, node_id: str, type_value: int):
+    def __init__(self, node_id: str, type_value: str):
         super().__init__(
             code="UNKNOWN_NODE_TYPE",
             message=f"Node with id {node_id} has an unknown type key: {type_value}",
@@ -125,7 +129,7 @@ class ExtractMismatchError(ExtractError):
         )
         
 class InvalidSourceNodeType(ExtractError):
-    def __init__(self, node_id: str, type: int):
+    def __init__(self, node_id: str, type: str):
         super().__init__(
             code="INVALID_SOURCE_NODE_TYPE",
             message=f"You can only create a new node from a fragment, but node with id {node_id} has a type of {type}.",
@@ -138,7 +142,7 @@ class InvalidNodeUpdate(DomainException):
     def __init__(
         self,
         node_id: str,
-        node_type: int,
+        node_type: str,
         node_content: Any,
         reason: Optional[str] = None,
     ):
@@ -219,11 +223,11 @@ class PendingReviewMismatchError(ReviewError):
             status_code=409,
         )
 
-class NoPendingNodeError(ReviewError):
+class NoPendingReviewError(ReviewError):
     def __init__(self, review_id: str):
         super().__init__(
-            code="NO_PENDING_NODE",
-            message=f"No pending review node (received {review_id})",
+            code="NO_PENDING_REVIEW",
+            message=f"No pending review (received {review_id})",
             status_code=409,
         )
 
@@ -247,11 +251,11 @@ class ReviewUndoError(ReviewError):
     def __init__(self, code: str, message: str, status_code=409):
         super().__init__(code=code, message=message, status_code=status_code)
 
-class ReviewUndoNodeInaccessible(ReviewUndoError):
-    def __init__(self, node_id: str, review_id: str):
+class ReviewUndoLearningUnitInaccessible(ReviewUndoError):
+    def __init__(self, learning_unit_id: str, review_id: str):
         super().__init__(
-            code="UNDO_NODE_INACCESSIBLE",
-            message=f"Review {review_id} was undone but node {node_id} is inaccessible",
+            code="UNDO_LEARNING_UNIT_INACCESSIBLE",
+            message=f"Review {review_id} was undone but learning unit {learning_unit_id} is inaccessible",
         )
 
 class ReviewUndoNotAllowedError(ReviewUndoError):
