@@ -1,7 +1,7 @@
 from src.domain.create_fragment_usecase import CreateFragmentUseCase
 from src.domain.domain_exceptions import NoHeadingToSplit
 from src.domain.get_outline_usecase import GetOutlineUseCase
-from src.models.node import Node
+from src.models.node import Node, NodeFields
 from src.services.node_service import NodeService
 from src.utils.time import start_of_local_tomorrow_ms
 
@@ -19,7 +19,7 @@ class SplitNodeUseCase:
 
     def execute(self, user_id: str, collection_id: str, node_id: str, tz_offset: int, level: int) -> list[Node]:
         node = self._node_service.get_node(node_id)
-        text = node.content.get_first_field() or "" if node.content else ""
+        text = node.fields.get_content() or "" 
         outline = self._get_outline.execute(node)
         entries = [e for e in outline.entries if e.level <= level]
 
@@ -34,7 +34,7 @@ class SplitNodeUseCase:
 
         if intro:
             node_result = self._create_fragment.execute(
-                user_id, collection_id, intro, parent_id=node.id, tz_offset=tz_offset
+                user_id, collection_id, NodeFields.from_dict({"content": intro}), parent_id=node.id, tz_offset=tz_offset
             )
             results.append(node_result)
 
@@ -46,7 +46,7 @@ class SplitNodeUseCase:
             content = text[start:end].strip()
             if content:
                 node_result = self._create_fragment.execute(
-                    user_id, collection_id, content, parent_id=node.id, tz_offset=tz_offset, due=due,
+                    user_id, collection_id, NodeFields.from_dict({"content": content}), parent_id=node.id, tz_offset=tz_offset, due=due,
                 )
                 results.append(node_result)
 

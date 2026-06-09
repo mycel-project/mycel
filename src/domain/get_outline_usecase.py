@@ -5,7 +5,7 @@ from src.models.outline import Outline, OutlineEntry
 
 class GetOutlineUseCase:
     def execute(self, node: Node) -> Outline:
-        text = node.content.get_first_field() or "" if node.content else ""
+        text = node.fields.get_content() or ""
         entries = []
         offset = 0
         for line in text.splitlines(keepends=True):
