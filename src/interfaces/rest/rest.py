@@ -17,6 +17,8 @@ import jwt
 from src.core.app_infos import AppInfos
 from src.core.config import MycelConfig
 from src.core.regex import CLOZE_REGEX
+from src.core.version import check_version_compatibility
+from src.core.version_exception import VersionException
 from src.domain.domain_exceptions import DomainException, NoUserFound
 from src.interfaces.base_interface import BaseInterface
 from src.interfaces.uvicorn import UvicornServer
@@ -70,6 +72,13 @@ class Rest(BaseInterface):
         self.app = FastAPI(
             title="Mycel API",
             version=self.app_infos.version,
+            description="""
+## Version compatibility
+
+All requests may include the `X-Mycel-Version` header to indicate the minimum version your implementation requires (e.g. `2.3.0`). If provided, Mycel will verify compatibility and return a `version` error if incompatible.
+
+See the implementation guide for details.
+        """
         )
         self.app.add_middleware(
             CORSMiddleware,
@@ -153,6 +162,19 @@ class Rest(BaseInterface):
                 status_code=500,
                 content={"detail": {"type": "internal", "code": "internal_error", "message": "Internal server error"}},
             )
+
+        @self.app.middleware("http")
+        async def version_check_middleware(request: Request, call_next):
+            required_min_version = request.headers.get("X-Mycel-Version")
+            if required_min_version:
+                try:
+                    check_version_compatibility(required_min_version, self.app_infos.version)
+                except VersionException as e:
+                    return JSONResponse(
+                        status_code=400,
+                        content={"detail": {"type": "version", "code": e.code, "message": e.message}}
+                    )
+            return await call_next(request)
 
         @self.app.middleware("http")
         async def idempotency_middleware(request: Request, call_next):
