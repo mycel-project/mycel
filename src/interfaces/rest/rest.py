@@ -4,7 +4,7 @@ from scalar_fastapi import get_scalar_api_reference
 
 import logging
 
-from fastapi import Depends, FastAPI, Request, Response
+from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from fastapi.exceptions import RequestValidationError
@@ -57,6 +57,12 @@ class ApiResponse(BaseModel, Generic[T]):
 logger = logging.getLogger(__name__)
 
 bearer_scheme = HTTPBearer(auto_error=False)
+
+AUTH_RESPONSES = {
+    401: {"description": "Unauthorized — see Mycel implementation guide."},
+    402: {"description": "Unsubscribed - see Mycel implementation guide."},
+    503: {"description": "Service unavailable - see Mycel implementation guide."},
+}
 
 class Rest(BaseInterface):
     def __init__(self, app_infos):
@@ -115,9 +121,12 @@ class Rest(BaseInterface):
             return JSONResponse(
                 status_code=422,
                 content={
-                    "code": "VALIDATION_ERROR",
-                    "message": "Invalid request",
-                    "errors": exc.errors(),
+                    "detail": {
+                        "type": "internal",
+                        "code": "VALIDATION_ERROR",
+                        "message": "Invalid request",
+                        "errors": exc.errors(),
+                    }
                 },
             )
 
@@ -126,10 +135,23 @@ class Rest(BaseInterface):
             logger.warning(f"{exc.code}: {exc.message}")
             return JSONResponse(
                 status_code=exc.status_code,
-                content={
-                    "code": exc.code,
-                    "message": exc.message,
-                },
+                content={"detail": {"type": "domain", "code": exc.code, "message": exc.message}},
+            )
+
+        @self.app.exception_handler(HTTPException)
+        async def http_exception_handler(request: Request, exc: HTTPException):
+            if isinstance(exc.detail, dict):
+                content = {"detail": {"type": "auth", **exc.detail}}
+            else:
+                content = {"detail": {"type": "auth", "code": "error", "message": str(exc.detail)}}
+            return JSONResponse(status_code=exc.status_code, content=content)
+
+        @self.app.exception_handler(Exception)
+        async def unhandled_exception_handler(request: Request, exc: Exception):
+            logger.error(f"Unhandled exception: {exc}", exc_info=True)
+            return JSONResponse(
+                status_code=500,
+                content={"detail": {"type": "internal", "code": "internal_error", "message": "Internal server error"}},
             )
 
         @self.app.middleware("http")
@@ -209,59 +231,59 @@ class Rest(BaseInterface):
             user = self.user_orchestrator.create_user(data.name, data.user_id)
             return ApiResponse(data=user)
 
-        @self.app.get("/users", tags=["users"])
+        @self.app.get("/users", tags=["users"], responses={**AUTH_RESPONSES})
         async def get_user(user_id = Depends(self.get_user)) -> ApiResponse[UserView]:
             return ApiResponse(data=self.user_orchestrator.get_user(user_id))
 
-        @self.app.patch("/users", tags=["users"])
+        @self.app.patch("/users", tags=["users"], responses={**AUTH_RESPONSES})
         async def update_user(data: UserUpdate, user_id = Depends(self.get_user)) -> ApiResponse[UserView]:
             user = self.user_orchestrator.update_user(user_id, data)
             return ApiResponse(data=user)
 
-        @self.app.get("/users/export", tags=["users"])
+        @self.app.get("/users/export", tags=["users"], responses={**AUTH_RESPONSES})
         async def export_user_data(user_id = Depends(self.get_user)) -> ApiResponse[FullExport]:
             user_data = self.ie_service.export_data(user_id)
             return ApiResponse(data=user_data)
 
-        @self.app.post("/users/import", status_code=204, tags=["users"])
+        @self.app.post("/users/import", status_code=204, tags=["users"], responses={**AUTH_RESPONSES})
         async def import_user_data(payload: FullExport, user_id = Depends(self.get_user)):
             self.ie_service.import_data(user_id, payload)
 
         # COLLECTIONS
-        @self.app.get("/collections", tags=["collections"])
+        @self.app.get("/collections", tags=["collections"], responses={**AUTH_RESPONSES})
         async def list_collections(user_id = Depends(self.get_user)) -> ApiResponse[list[CollectionView]]:
             collections = self.collection_orchestrator.get_collections(user_id)
             return ApiResponse(data=collections)
 
         class CollectionCreateRequest(BaseModel):
             name: str
-        @self.app.post("/collections", tags=["collections"])
+        @self.app.post("/collections", tags=["collections"], responses={**AUTH_RESPONSES})
         async def create_collection(data: CollectionCreateRequest, user_id = Depends(self.get_user)) -> ApiResponse[CollectionView]:
             collection = self.collection_orchestrator.create_collection(data.name, user_id)
             return ApiResponse(data=collection)
 
-        @self.app.delete("/collections/{col_id}", status_code = 204, tags=["collections"])
+        @self.app.delete("/collections/{col_id}", status_code = 204, tags=["collections"], responses={**AUTH_RESPONSES})
         async def delete_collection(col_id: str, user_id = Depends(self.get_user)):
             self.collection_orchestrator.delete_collection(user_id, col_id)
 
-        @self.app.patch("/collections/{col_id}", tags=["collections"])
+        @self.app.patch("/collections/{col_id}", tags=["collections"], responses={**AUTH_RESPONSES})
         async def update_collection(col_id: str, data: CollectionUpdate, user_id = Depends(self.get_user)) -> ApiResponse[CollectionView]:
             collection = self.collection_orchestrator.update_collection(user_id, col_id, data)
             return ApiResponse(data=collection)
 
         # NODES
         
-        @self.app.get("/collections/{col_id}/nodes", tags=["nodes"])
+        @self.app.get("/collections/{col_id}/nodes", tags=["nodes"], responses={**AUTH_RESPONSES})
         async def list_nodes(col_id: str, user_id = Depends(self.get_user)) -> ApiResponse[list[NodeView]]:
             nodes = self.node_orchestrator.get_nodes_view(user_id, col_id, 10000)
             return ApiResponse(data=nodes)
 
-        @self.app.post("/collections/{col_id}/nodes", tags=["nodes"])
+        @self.app.post("/collections/{col_id}/nodes", tags=["nodes"], responses={**AUTH_RESPONSES})
         async def create_node(col_id: str, data: NodeCreate, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
             node = self.node_orchestrator.create_node_to_detail_view(user_id, col_id, data, data.tz_offset)
             return ApiResponse(data=node)
         
-        @self.app.get("/collections/{col_id}/nodes/priorities", tags=["nodes"])
+        @self.app.get("/collections/{col_id}/nodes/priorities", tags=["nodes"], responses={**AUTH_RESPONSES})
         async def get_priorities(col_id: str, user_id = Depends(self.get_user)) -> ApiResponse[list[NodeSlotPriority]]:
             """
             Priority is a relative value, so adding or modifying a node invalidates other priorities. This route allows the frontend to refresh all priorities in a collection efficiently.
@@ -272,19 +294,19 @@ class Rest(BaseInterface):
                 for k, v in priorities.items()
             ])
 
-        @self.app.get("/collections/{col_id}/nodes/deleted", tags=["nodes"])
+        @self.app.get("/collections/{col_id}/nodes/deleted", tags=["nodes"], responses={**AUTH_RESPONSES})
         async def get_deleted_nodes(col_id: str, user_id = Depends(self.get_user)) -> ApiResponse[list[NodeView]]:
             """
             Returns all soft-deleted nodes in a collection.
             """
             return ApiResponse(data=self.node_orchestrator.get_deleted_nodes_view(user_id, col_id))
         
-        @self.app.get("/collections/{col_id}/nodes/{node_id}", tags=["nodes"])
+        @self.app.get("/collections/{col_id}/nodes/{node_id}", tags=["nodes"], responses={**AUTH_RESPONSES})
         async def get_node(col_id: str, node_id: str, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
             node = self.node_orchestrator.get_node_detail_view(user_id, col_id, node_id)
             return ApiResponse(data=node)
 
-        @self.app.delete("/collections/{col_id}/nodes/{node_id}", tags=["nodes"], status_code=200)
+        @self.app.delete("/collections/{col_id}/nodes/{node_id}", tags=["nodes"], status_code=200, responses={**AUTH_RESPONSES})
         async def delete_node(col_id: str, node_id: str, user_id = Depends(self.get_user)):
             """
             Soft-deletes the node and its entire subtree. Returns all deleted node ids so the client can update its local state without a full refetch.
@@ -292,7 +314,7 @@ class Rest(BaseInterface):
             deleted_ids = self.node_orchestrator.soft_delete_subtree(user_id, col_id, node_id)
             return ApiResponse(data={"deleted_ids": deleted_ids})
 
-        @self.app.patch("/collections/{col_id}/nodes/{node_id}", tags=["nodes"])
+        @self.app.patch("/collections/{col_id}/nodes/{node_id}", tags=["nodes"], responses={**AUTH_RESPONSES})
         async def update_node(col_id: str, node_id: str, data: NodeUpdate, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
             """
             Update Node, not learning units. To update learning units, use dedicated endpoints (reprioritise, reschedule, ...)
@@ -300,7 +322,7 @@ class Rest(BaseInterface):
             updated_node = self.node_orchestrator.update_node_to_detail_view(user_id, col_id, node_id, data)
             return ApiResponse(data=updated_node)
 
-        @self.app.get("/collections/{col_id}/nodes/{node_id}/root", tags=["nodes"])
+        @self.app.get("/collections/{col_id}/nodes/{node_id}/root", tags=["nodes"], responses={**AUTH_RESPONSES})
         async def get_root_node(col_id: str, node_id: str, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
             """
             Get the highest parent node for the given node_id.
@@ -309,14 +331,14 @@ class Rest(BaseInterface):
             """
             return ApiResponse(data=self.node_orchestrator.get_root_node(user_id, col_id, node_id))
 
-        @self.app.get("/collections/{col_id}/nodes/{node_id}/outline", tags=["nodes"])
+        @self.app.get("/collections/{col_id}/nodes/{node_id}/outline", tags=["nodes"], responses={**AUTH_RESPONSES})
         async def get_outline_node(col_id: str, node_id: str, user_id = Depends(self.get_user)) -> ApiResponse[Outline]:
             return ApiResponse(data=self.node_orchestrator.get_outline_for_node(user_id, col_id, node_id))
         
         class ReprioritiseNodeRequest(BaseModel):
             priority: float
             slot: int = 0
-        @self.app.patch("/collections/{col_id}/nodes/{node_id}/reprioritise", tags=["nodes"])
+        @self.app.patch("/collections/{col_id}/nodes/{node_id}/reprioritise", tags=["nodes"], responses={**AUTH_RESPONSES})
         async def reprioritise_node(col_id: str, node_id: str, data: ReprioritiseNodeRequest, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
             return ApiResponse(data=self.node_orchestrator.reprioritise_node_to_detail_view(user_id, col_id, node_id, data.slot, data.priority))
     
@@ -324,7 +346,7 @@ class Rest(BaseInterface):
             date: str       # "2026-05-20"
             slot: int = 0
             tz_offset: int  # minutes
-        @self.app.post("/collections/{col_id}/nodes/{node_id}/reschedule", tags=["nodes"])
+        @self.app.post("/collections/{col_id}/nodes/{node_id}/reschedule", tags=["nodes"], responses={**AUTH_RESPONSES})
         async def reschedule_node(col_id: str, node_id: str, data: RescheduleNodeRequest, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
             """
             Reschedule a node to a specific date.
@@ -334,7 +356,7 @@ class Rest(BaseInterface):
         class RestoreNodeRequest(BaseModel):
             restore_ancestors: bool = False
             restore_descendants: bool = False
-        @self.app.post("/collections/{col_id}/nodes/{node_id}/restore", tags=["nodes"])
+        @self.app.post("/collections/{col_id}/nodes/{node_id}/restore", tags=["nodes"], responses={**AUTH_RESPONSES})
         async def restore_nodes(col_id: str, node_id: str, body: RestoreNodeRequest, user_id = Depends(self.get_user)) -> ApiResponse[list[NodeView]]:
             """Restore a node, optionally including its parents and/or children."""
             return ApiResponse(data=self.node_orchestrator.restore_nodes_to_views(
@@ -350,7 +372,7 @@ class Rest(BaseInterface):
             field: str = "content" # Default for fragments
             start_index: int
             end_index: int
-        @self.app.post("/collections/{col_id}/nodes/{node_id}/remove-links", tags=["nodes"])
+        @self.app.post("/collections/{col_id}/nodes/{node_id}/remove-links", tags=["nodes"], responses={**AUTH_RESPONSES})
         async def remove_links(col_id: str, node_id: str, data: SelectionData, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
             return ApiResponse(data=self.node_orchestrator.remove_links_to_detail_view(
                 user_id, col_id, node_id, data.text, data.field, data.start_index, data.end_index
@@ -359,7 +381,7 @@ class Rest(BaseInterface):
         class NodeExtractRequest(SelectionData):
             extract_type: NodeType
             tz_offset: int = 0
-        @self.app.post("/collections/{col_id}/nodes/{node_id}/extracts", tags=["nodes"])
+        @self.app.post("/collections/{col_id}/nodes/{node_id}/extracts", tags=["nodes"], responses={**AUTH_RESPONSES})
         async def create_node_extract(col_id: str, node_id: str, data: NodeExtractRequest, user_id = Depends(self.get_user)) -> ApiResponse[ExtractResult]:
             """
             Note: non-idempotent: see Mycel documentation.
@@ -372,7 +394,7 @@ class Rest(BaseInterface):
             level: int
             field: str = "content"
             tz_offset: int = 0
-        @self.app.post("/collections/{col_id}/nodes/{node_id}/split", tags=["nodes"])
+        @self.app.post("/collections/{col_id}/nodes/{node_id}/split", tags=["nodes"], responses={**AUTH_RESPONSES})
         async def split_node(col_id: str, node_id: str, data: SplitNodeRequest, user_id = Depends(self.get_user)) -> ApiResponse[list[NodeDetailView]]:
             """
             Split node by heading level.
@@ -382,11 +404,11 @@ class Rest(BaseInterface):
 
         # REVIEWS
 
-        @self.app.get("/collections/{col_id}/reviews/next", tags=["reviews"])
+        @self.app.get("/collections/{col_id}/reviews/next", tags=["reviews"], responses={**AUTH_RESPONSES})
         async def get_next_review(col_id: str, tz_offset: int = 0, user_id = Depends(self.get_user)) -> ApiResponse[ReviewTarget | None]:
             return ApiResponse(data=self.review_orchestrator.get_next_review(user_id, col_id, tz_offset))
 
-        @self.app.post("/collections/{col_id}/reviews/undo", tags=["reviews"])
+        @self.app.post("/collections/{col_id}/reviews/undo", tags=["reviews"], responses={**AUTH_RESPONSES})
         async def undo_review(col_id: str, user_id = Depends(self.get_user)) -> ApiResponse[ReviewTarget]:
             """
             Undo the last review. Returns the node from the undone review so the client can navigate back to it.
@@ -394,7 +416,7 @@ class Rest(BaseInterface):
             """
             return ApiResponse(data=self.review_orchestrator.undo_review(user_id, col_id))
 
-        @self.app.get("/collections/{col_id}/reviews/calendar", tags=["reviews"])
+        @self.app.get("/collections/{col_id}/reviews/calendar", tags=["reviews"], responses={**AUTH_RESPONSES})
         async def get_calendar(col_id: str, tz_offset: int = 0, user_id = Depends(self.get_user)) -> ApiResponse[list[DayReviewOverview]]:
             return ApiResponse(data=self.review_orchestrator.get_calendar(
                 user_id,
@@ -408,7 +430,7 @@ class Rest(BaseInterface):
             type_review_data: TypeReviewData # data specific to node type
             tz_offset: int = 0
             slot: int = 0
-        @self.app.post("/collections/{col_id}/nodes/{node_id}/review", tags=["reviews"])
+        @self.app.post("/collections/{col_id}/nodes/{node_id}/review", tags=["reviews"], responses={**AUTH_RESPONSES})
         async def review_node(col_id: str, node_id: str, data: ReviewRequest, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
             return ApiResponse(data=self.review_orchestrator.review_to_detail_view(user_id, 
                                                                                    col_id, node_id, data.slot, data.duration, data.type_review_data, tz_offset_min=data.tz_offset
