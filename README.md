@@ -1,5 +1,15 @@
 # Mycel
 
+Mycel is an open-source long-term learning framework.
+
+It implements tools to gather, decompose and learn from diverse ressources, ensuring long-term recall through spaced-repetition.
+
+Mycel is designed to be embedded into applications, trying to break the fragmentation of learning tools currently spread between many apps and plugins. 
+
+By providing a standardized API, nomenclature and workflow, the goal is to gather individual effort into a common, shared ground.
+
+For more informations, check [Mycel Project's Website](https://mycel-project.com/mycel).
+
 ## Setup
 
 - Ensure **Python** and **git** are installed on your system.
