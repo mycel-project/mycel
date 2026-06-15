@@ -151,7 +151,7 @@ See the implementation guide for details.
         async def not_found_handler(request: Request, exc: HTTPException):
             return JSONResponse(
                 status_code=404,
-                content={"detail": {"type": "domain", "code": "not_found", "message": str(exc.detail)}},
+                content={"detail": {"type": "domain", "code": "route_not_found", "message": str(exc.detail)}},
             )
 
         @self.app.exception_handler(405)
