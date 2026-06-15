@@ -8,7 +8,13 @@ Mycel is designed to be embedded into applications, trying to break the fragment
 
 By providing a standardized API, nomenclature and workflow, the goal is to gather individual effort into a common, shared ground.
 
-For more informations, check [Mycel Project's Website](https://mycel-project.com/mycel).
+This project is built around the following principles:
+- **Open-source** - anyone can contribute to Mycel's development or its ecosystem
+- **Local-first** - when self-hosting, data is stored in a local SQLite database on your device
+- **Ubiquity** - flexible and standardized to work across as many environments as possible
+- **Longevity** - designed to grow and adapt alongside its ecosystem
+
+For more informations, check [Mycel Project's Website](https://mycel-project.com/index.html).
 
 ## Setup
 
