@@ -147,6 +147,20 @@ See the implementation guide for details.
                 content={"detail": {"type": "domain", "code": exc.code, "message": exc.message}},
             )
 
+        @self.app.exception_handler(404)
+        async def not_found_handler(request: Request, exc: HTTPException):
+            return JSONResponse(
+                status_code=404,
+                content={"detail": {"type": "domain", "code": "not_found", "message": str(exc.detail)}},
+            )
+
+        @self.app.exception_handler(405)
+        async def method_not_allowed_handler(request: Request, exc: HTTPException):
+            return JSONResponse(
+                status_code=405,
+                content={"detail": {"type": "domain", "code": "method_not_allowed", "message": str(exc.detail)}},
+            )
+
         @self.app.exception_handler(HTTPException)
         async def http_exception_handler(request: Request, exc: HTTPException):
             if isinstance(exc.detail, dict):
