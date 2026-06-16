@@ -343,7 +343,7 @@ See the implementation guide for details.
             return ApiResponse(data=node)
 
         @self.app.delete("/collections/{col_id}/nodes/{node_id}", tags=["nodes"], status_code=200, responses={**AUTH_RESPONSES})
-        async def delete_node(col_id: str, node_id: str, user_id = Depends(self.get_user)):
+        async def delete_node(col_id: str, node_id: str, user_id = Depends(self.get_user)) -> ApiResponse[dict[str, list[str]]]:
             """
             Soft-deletes the node and its entire subtree. Returns all deleted node ids so the client can update its local state without a full refetch.
             """
