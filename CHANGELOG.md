@@ -1,12 +1,34 @@
 ## Unreleased
+
+## v0.2.0-alpha
+
+This update introduces a major refactor of Mycel's database structure, identifiers, security, testing, and more. It is quite substantial as it addresses former architectural issues.
+To see more details, check the commit history.
+
 ### Added
+
 - Re-enabled minimum cloze field validation on spore save. Invalid spore states are now rejected and the last valid state is preserved. (see Mycel v0.0.5)
-- Split node endpoint: decompose a node into fragments by heading level. The operation may be rejected if the selected level does not produce enough fragments to be worth splitting. The due date of created fragments is set to the next day.
-- Add a base class for auth_service and behavior based on deployment_mode set in the config. AuthService can be passed when starting Mycel to allow an external concrete implementation.
+- Split node endpoint: decompose a node into fragments by heading level. The operation may be rejected if the selected level does not produce enough fragments to justify splitting. The due date of created fragments is set to the next day.
+- Add a base class for AuthService with behavior driven by deployment_mode set in the config. AuthService can be passed when starting Mycel to allow an external concrete implementation.
+- Add optional idempotency protection on all REST endpoints
+- Integration tests for all REST endpoints and all repositories
+- Standardize API responses, always wrapping data in a data field
+- Scope all actions by user ID
+- Add Scalar API reference (mycel_address/scalar)
+- Add foundations for a templating system
+- Abstract node model from spore/fragment to allow multiple spores to be based on the same node (preparing ground for multi-question nodes), introducing the new LearningUnit table. This comes with changes to NodeView DTOs
+- Invert prioritization logic (100% is now the highest priority)
+- Add max page protection and protect against SSRF
+- Normalize error responses
 
 ### Refactor
-- Use mycel config model rather than using a dict
-- Start to refactor/clean rest API
+
+- Use MycelConfig model rather than a raw dict
+- Start refactoring and cleaning the REST API
+- Use SQLAlchemy instead of raw SQLite to support PostgreSQL
+- Replace most former dataclass models with Pydantic ones
+- Use UUIDs for all identifiers instead of integers
+- Store pending reviews in the database rather than in runtime cache
 
 ## v0.1.1
 ### Added
