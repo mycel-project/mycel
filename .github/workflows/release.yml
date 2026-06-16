@@ -83,3 +83,54 @@ jobs:
           name: ${{ github.ref_name }}
           body: ${{ steps.changelog.outputs.notes }}
           token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate openapi.json
+        run: |
+          pip install -r requirements.txt
+          python -c "
+          import json
+          from src.interfaces.rest.rest import Rest
+          from src.core.app_infos import AppInfos
+          app_infos=AppInfos()
+          rest = Rest(app_infos=app_infos)
+          with open('openapi.json', 'w') as f:
+            json.dump(rest.app.openapi(), f, indent=2)
+          "
+          
+      - name: Push to mycel-openapi repo
+        uses: dmnemec/copy_file_to_another_repo_action@main
+        env:
+          API_TOKEN_GITHUB: ${{ secrets.DOCS_DEPLOY_TOKEN }}
+        with:
+          source_file: 'openapi.json'
+          destination_repo: 'mycel-project/mycel-openapi'
+          destination_folder: '.'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+          user_name: 'github-actions[bot]'
+          commit_message: 'contract: update to ${{ github.ref_name }}'
+          
+      - name: Tag mycel-openapi repo
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.DOCS_DEPLOY_TOKEN }}
+          script: |
+            await new Promise(r => setTimeout(r, 2000));
+            const ref = await github.rest.git.getRef({
+              owner: 'mycel-project',
+              repo: 'mycel-openapi',
+              ref: 'heads/main'
+            });
+            try {
+              await github.rest.git.createRef({
+                owner: 'mycel-project',
+                repo: 'mycel-openapi',
+                ref: 'refs/tags/${{ github.ref_name }}',
+                sha: ref.data.object.sha
+              });
+            } catch (error) {
+              if (error.status === 422) {
+                console.log("Tag already exists on remote repo.");
+              } else {
+                throw error;
+              }
+            }
