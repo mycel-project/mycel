@@ -11,7 +11,9 @@ from src.repositories.node_repository import NodeRepository
 from src.schemas.node_view import NodeView
 from src.schemas.node_update import NodeUpdate
 from src.types.count_by_type_and_day import CountByTypeAndDay
+from src.utils.models import deep_update_dict
 from src.utils.time import overdue_ms, now_ms
+
 
 class NodeService:
     """
@@ -260,20 +262,21 @@ class NodeService:
     def update_position(self, learning_unit_id: str, position: str) -> None:
         self._lu_repo.update_position(learning_unit_id, position)
 
-    def update(self, node_id: str, updates: NodeUpdate, include_deleted = False) -> Node:
+    def update(self, node_id: str, updates: NodeUpdate, include_deleted=False) -> Node:
         node = self.get_node(node_id, include_deleted)
-        print("before_update: ", node)
-        print("update: ", updates)
-        
-        # Fields explicitly provided in updates (even if set to None) will overwrite existing values (due to model_fiels_set).
-        # To prevent setting a field to None, do not include it in the update payload.
-        for field in updates.model_fields_set: 
-            value = getattr(updates, field)
-            setattr(node, field, value)
 
-        self._node_repo.update(node)
-        self._hydrate_nodes([node])
-        return node
+        # Fields explicitly provided in updates (even if set to None) will overwrite existing values 
+        # due to 'model_fields_set', and this behavior applies recursively to nested models.
+        # To prevent setting a field to None, do not include it in the update payload.
+        changes = updates.model_dump(exclude_unset=True)
+
+        merged_data = deep_update_dict(node.model_dump(), changes)
+
+        updated_node = Node.model_validate(merged_data)
+
+        self._node_repo.update(updated_node)
+        self._hydrate_nodes([updated_node])
+        return updated_node
         
     # def get_due_nodes(self, collection_id: str) -> list[Node]: # unused?
     #     return self._keep_alive(self._repo.get_dues(collection_id))

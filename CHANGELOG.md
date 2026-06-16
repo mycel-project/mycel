@@ -1,5 +1,8 @@
 ## Unreleased
 
+### Added
+- Supports partial recursive updates of models, allowing implementations to pass partial dictionaries and update only the specified fields.
+
 ## v0.2.0-alpha
 
 This update introduces a major refactor of Mycel's database structure, identifiers, security, testing, and more. It is quite substantial as it addresses former architectural issues.

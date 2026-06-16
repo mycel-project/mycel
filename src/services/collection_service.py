@@ -7,6 +7,7 @@ from src.schemas.collection_update import CollectionUpdate
 from src.schemas.collection_view import CollectionView
 from src.models.collection_conf import CollectionConf
 from src.models.algo_conf import AlgoConf
+from src.services.node_service import deep_update_dict
 
 
 class CollectionService:
@@ -68,12 +69,10 @@ class CollectionService:
 
     def update(self, user_id: str, collection_id: str, updates: CollectionUpdate) -> Collection:
         collection = self.get_collection(user_id, collection_id)
-        
-        # Fields explicitly provided in updates (even if set to None) will overwrite existing values (due to model_fiels_set).
-        # To prevent setting a field to None, do not include it in the update payload.
-        for field in updates.model_fields_set: 
-            value = getattr(updates, field)
-            setattr(collection, field, value)
 
-        self._repo.update(user_id, collection)
-        return collection
+        changes = updates.model_dump(exclude_unset=True)
+        merged_data = deep_update_dict(collection.model_dump(), changes)
+        updated_collection = Collection.model_validate(merged_data)
+
+        self._repo.update(user_id, updated_collection)
+        return updated_collection

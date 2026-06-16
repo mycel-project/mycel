@@ -1,6 +1,9 @@
 from datetime import datetime, timezone
+from unittest.mock import MagicMock
 
 from src.models.node import NodeType
+from src.models.node_data import NodeData
+from src.schemas.node_update import NodeUpdate
 from src.types.count_by_type_and_day import CountByTypeAndDay
 
 class TestNodeService:
@@ -70,3 +73,17 @@ class TestNodeService:
             result = node_service.get_due_count_by_type_and_day(1)
 
             assert result == []
+
+    class TestNodeUpdate:
+        def test_title_update(self, node_service, default_fragment):
+            node_service.get_node = MagicMock(return_value=default_fragment)
+            assert default_fragment.data.title == "title"
+            assert default_fragment.collection_id == "test"
+            assert default_fragment.data.source.url == "https://mycel-project.com"
+            node_service._node_repo = MagicMock()
+            node_service._hydrate_nodes = MagicMock()
+            updates = NodeUpdate(data=NodeData(title="New Title"))
+            result = node_service.update(default_fragment.id, updates)
+            assert result.data.title == "New Title"
+            assert result.collection_id == "test"
+            assert result.data.source.url == "https://mycel-project.com"

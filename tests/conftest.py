@@ -13,7 +13,7 @@ from uuid import uuid4
 from src.models import learning_unit
 from src.models.fragment import Fragment
 from src.models.node import Node, NodeFields, NodeType
-from src.models.node_data import NodeData
+from src.models.node_data import NodeData, NodeSource
 from src.models.spore import Spore
 from src.models.template import DefaultTemplate
 from src.repositories.collection_repository import CollectionRepository
@@ -57,14 +57,26 @@ def default_collection(db_fixture, default_user, generate_id):
     return col_id
 
 @pytest.fixture
-def default_node(db_fixture, default_collection, generate_id):
-    node_id = generate_id()
-    node_type = list(NodeType)[0]
-    db_fixture.execute(
-        "INSERT INTO nodes (id, collection_id, base_for, created_at, updated_at, due) VALUES (:id, :col_id, :type, 0, 0, 0)",
-        {"id": node_id, "col_id": default_collection, "type": node_type.value}
+def default_fragment() -> Node:
+    return Node(
+        collection_id="test",
+        template_id="42",
+        base_for=NodeType.FRAGMENT,
+        fields=NodeFields({"content": "test"}),
+        data=NodeData(
+            title="title",
+            source=NodeSource(url="https://mycel-project.com"),
+        ),
+        learning_units=[
+            Fragment(
+                due=0,
+                type="fragment",
+                dismiss=False,
+                ref=None,
+            )
+        ],
     )
-    return node_id, node_type
+
 
 # default repos
 @pytest.fixture

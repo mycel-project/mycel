@@ -7,6 +7,7 @@ from src.models.user_conf import UserConf
 from src.schemas.user_update import UserUpdate
 from src.repositories.user_repository import UserRepository
 from src.schemas.user_view import UserView
+from src.services.node_service import deep_update_dict
 
 
 class UserService:
@@ -71,12 +72,12 @@ class UserService:
     def update(self, user_id: str, updates: UserUpdate) -> User:
         user = self.get_user(user_id)
 
-        for field in updates.model_fields_set: 
-            value = getattr(updates, field)
-            setattr(user, field, value)
-            
-        self._repo.update(user)
-        return user
+        changes = updates.model_dump(exclude_unset=True)
+        merged_data = deep_update_dict(user.model_dump(), changes)
+        updated_user = User.model_validate(merged_data)
+
+        self._repo.update(updated_user)
+        return updated_user
 
     def get_pending_review(self, user_id: str) -> str | None:
         return self._repo.get_pending_review_id(user_id)
