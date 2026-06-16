@@ -5,7 +5,7 @@ from src.models.base_learning_unit import BaseLearningUnit
 class EbookRef(BaseModel):
     type: Literal["ebook"] = "ebook" 
     anchor_start: str
-    anchor_end: str | None = None
+    anchor_end: str 
     margin_before: int = 0
     margin_after: int = 0
 

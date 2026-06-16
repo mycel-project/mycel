@@ -15,6 +15,7 @@ class NodeUpdate(BaseModel):
     Fields not included in the update will remain unchanged.
     """
     parent_id: Optional[str] = None
+    template_id: Optional[int] = None
     fields: Optional[NodeFields] = None
     data: Optional[NodeData] = None
     status: Optional[NodeStatus] = None
