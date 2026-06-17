@@ -19,10 +19,15 @@ class NodeViewBuilder:
 
     def to_detail_view(self, node: Node) -> NodeDetailView:
         view = self.to_view(node)
+        learning_units_data = []
+        for unit in node.learning_units:
+            unit_dict = unit.model_dump()
+            unit_dict["priority"] = self._priority_service.position_to_priority(node.collection_id, unit.position)
+            learning_units_data.append(unit_dict)
         return NodeDetailView(
             **view.model_dump(),
             fields=node.fields,
-            learning_units=node.learning_units,
+            learning_units=learning_units_data,
             data=node.data,
         )
 

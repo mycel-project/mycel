@@ -1,5 +1,8 @@
 ## Unreleased
 
+### Fixed
+- In NodeDetailview pass priority for learning units rather than position.
+
 ## v0.2.0-alpha.2
 ### Added
 - Supports partial recursive updates of models, allowing implementations to pass partial dictionaries and update only the specified fields.
