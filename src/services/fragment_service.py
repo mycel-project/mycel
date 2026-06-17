@@ -58,6 +58,12 @@ class FragmentService:
             NodeUpdate(fields=node.fields)
         )
 
-    def dismiss(self, node_id: str, slot: int = 0) -> Node:
-        return self._node_service.update_learning_unit(node_id, slot, FragmentUpdate(dismiss=True))
-        
+    def dismiss(self, node_id: str, slot: int = 0, value: bool | None = None) -> Node:
+        """
+        Just first slot at the moment
+        """
+        node = self._node_service.get_node(node_id)
+        fragment = node.get_fragment()
+        if value is None:
+            value = not fragment.dismiss
+        return self._node_service.update_learning_unit(node_id, fragment.slot, FragmentUpdate(dismiss=value))

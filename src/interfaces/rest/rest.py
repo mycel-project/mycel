@@ -1,4 +1,4 @@
-from typing import cast
+from typing import Optional, cast
 import json
 from scalar_fastapi import get_scalar_api_reference
 
@@ -478,7 +478,17 @@ See the implementation guide for details.
             Reschedule a learning unit to a specific date.
             """
             return ApiResponse(data=self.node_orchestrator.reschedule_to_detail_view(user_id, col_id, node_id, slot, data.date, data.tz_offset))
-        
+
+        class DismissRequest(BaseModel):
+            value: Optional[bool] = None 
+        @self.app.patch("/collections/{col_id}/nodes/{node_id}/slot/{slot}/dismiss", tags=["learning units"], responses={**AUTH_RESPONSES})
+        async def dismiss_learning_unit(col_id: str, node_id: str, slot: int, data: DismissRequest, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
+            """
+            Toggle or explicitly set the dismiss state of a fragment.
+            If no value is provided, the current state is toggled.
+            """
+            return ApiResponse(data=self.node_orchestrator.dismiss_to_detail_view(user_id, col_id, node_id, slot, data.value))
+
         # REVIEWS
 
         @self.app.get("/collections/{col_id}/reviews/next", tags=["reviews"], responses={**AUTH_RESPONSES})

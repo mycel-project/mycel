@@ -208,7 +208,7 @@ class NodeOrchestrator:
             raise EmptyField(node_id, field)
         children = self._split_node.execute(user_id, col_id, node_id, tz_offset_min, level)
         self._fragment_service.emphasize_region(node_id, NodeType.FRAGMENT, field, 0, len(content))
-        source_node = self._fragment_service.dismiss(node_id)
+        source_node = self._fragment_service.dismiss(node_id, 0, True)
         nodes = children + [source_node]
         return self._node_view_builder.to_detail_views(nodes)
 
@@ -216,3 +216,7 @@ class NodeOrchestrator:
         self._ensure_col(user_id, collection_id)
         nodes = self._node_service.get_nodes(user_id, collection_id, include_alive=False, include_deleted=True)
         return self._node_view_builder.to_views(nodes)
+
+    def dismiss_to_detail_view(self, user_id: str, collection_id: str, node_id: str, slot: int, dismiss_state: bool | None = None) -> NodeDetailView:
+        self._ensure_col(user_id, collection_id)
+        return self._node_view_builder.to_detail_view(self._fragment_service.dismiss(node_id, slot, dismiss_state))
