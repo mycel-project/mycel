@@ -87,6 +87,8 @@ tags_metadata = [
 
 For common actions (such as reprioritisation), you can use dedicated endpoints. For more advanced control and precise updates, you should use the Update Learning Unit endpoint.
 
+Endpoint names reflect the target learning unit type when the action is type-specific (e.g. dismiss_fragment rather than dismiss_learning_unit).
+
 *If you don't want to support mutliple-learning-unit nodes, always pass 0 as the slot number.*
                 """
             },

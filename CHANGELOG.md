@@ -2,6 +2,11 @@
 
 ### Added
 - Supports partial recursive updates of models, allowing implementations to pass partial dictionaries and update only the specified fields.
+- Add flexible learning unit update endpoint (supports any field update, including nested models), add dismiss toggle endpoint, and standardize learning unit endpoints by moving slot targeting from body to URL path and adding docstrings.
+
+### Fixed
+- Fixed an issue where the Spore due date update was no longer taken into account.
+- Reschedule endpoint is now a patch
 
 ## v0.2.0-alpha
 

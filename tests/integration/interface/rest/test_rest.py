@@ -254,6 +254,34 @@ class TestLearningUnit:
         assert response.status_code == 200
         assert response.json()["data"]["learning_units"][0]["dismiss"] == False
 
+    def test_update_spore_learning_data_partial(self, api, create_user, create_col, create_node):
+        user, token = create_user()
+        col = create_col(user_id=user.id)
+        node = create_node(col_id=col.id, user_id=user.id, content="content", type=NodeType.SPORE)
+
+        initial = api.get(f"/collections/{col.id}/nodes/{node.id}", token).json()["data"]
+        initial_lu = initial["learning_units"][0]
+        initial_difficulty = initial_lu["learning_data"]["difficulty"]
+        initial_due = initial_lu["due"]
+
+        response = api.patch(
+            f"/collections/{col.id}/nodes/{node.id}/slot/0",
+            token,
+            body={
+                "type": "spore",
+                "learning_data": {
+                    "type": "fsrs",
+                    "stability": 5.0
+                }
+            }
+        )
+        assert response.status_code == 200
+        lu = response.json()["data"]["learning_units"][0]
+
+        assert lu["learning_data"]["stability"] == 5.0
+        assert lu["learning_data"]["difficulty"] == initial_difficulty
+        assert lu["due"] == initial_due
+        
 class TestReview:
     def test_get_next_review(self, api, create_user, create_col, create_node):
         user, token = create_user()
