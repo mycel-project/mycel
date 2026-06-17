@@ -154,7 +154,7 @@ class TestNode:
         col = create_col(user_id=user.id)
         node = create_node(col_id=col.id, user_id=user.id)
         response = api.post(
-            f"/collections/{col.id}/nodes/{node.id}/reschedule",
+            f"/collections/{col.id}/nodes/{node.id}/slot/0/reschedule/",
             token,
             body={"date": "2099-05-20", "tz_offset": 120}
         )
@@ -174,7 +174,7 @@ class TestNode:
         user, token = create_user()
         col = create_col(user_id=user.id)
         node = create_node(col_id=col.id, user_id=user.id)
-        response = api.patch(f"/collections/{col.id}/nodes/{node.id}/reprioritise", token, body={"priority": 0.5})
+        response = api.patch(f"/collections/{col.id}/nodes/{node.id}/slot/0/reprioritise", token, body={"priority": 0.5})
         assert response.status_code == 200
         assert response.json()["data"]["id"] == node.id
 
@@ -269,13 +269,13 @@ class TestIdempotency:
         key = str(uuid4())
 
         r1 = api.post(
-            f"/collections/{col.id}/nodes/{node.id}/reschedule",
+            f"/collections/{col.id}/nodes/{node.id}/slot/0/reschedule",
             token,
             body={"date": "2099-05-20", "tz_offset": 0},
             headers={"Idempotency-Key": key}
         )
         r2 = api.post(
-            f"/collections/{col.id}/nodes/{node.id}/reschedule",
+            f"/collections/{col.id}/nodes/{node.id}/slot/0/reschedule",
             token,
             body={"date": "2020-05-20", "tz_offset": 0},
             headers={"Idempotency-Key": key}

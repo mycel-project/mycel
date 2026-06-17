@@ -370,24 +370,6 @@ See the implementation guide for details.
         @self.app.get("/collections/{col_id}/nodes/{node_id}/outline", tags=["nodes"], responses={**AUTH_RESPONSES})
         async def get_outline_node(col_id: str, node_id: str, user_id = Depends(self.get_user)) -> ApiResponse[Outline]:
             return ApiResponse(data=self.node_orchestrator.get_outline_for_node(user_id, col_id, node_id))
-        
-        class ReprioritiseNodeRequest(BaseModel):
-            priority: float
-            slot: int = 0
-        @self.app.patch("/collections/{col_id}/nodes/{node_id}/reprioritise", tags=["nodes"], responses={**AUTH_RESPONSES})
-        async def reprioritise_node(col_id: str, node_id: str, data: ReprioritiseNodeRequest, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
-            return ApiResponse(data=self.node_orchestrator.reprioritise_node_to_detail_view(user_id, col_id, node_id, data.slot, data.priority))
-    
-        class RescheduleNodeRequest(BaseModel):
-            date: str       # "2026-05-20"
-            slot: int = 0
-            tz_offset: int  # minutes
-        @self.app.post("/collections/{col_id}/nodes/{node_id}/reschedule", tags=["nodes"], responses={**AUTH_RESPONSES})
-        async def reschedule_node(col_id: str, node_id: str, data: RescheduleNodeRequest, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
-            """
-            Reschedule a node to a specific date.
-            """
-            return ApiResponse(data=self.node_orchestrator.reschedule_to_detail_view(user_id, col_id, node_id, data.slot, data.date, data.tz_offset))
 
         class RestoreNodeRequest(BaseModel):
             restore_ancestors: bool = False
@@ -438,6 +420,25 @@ See the implementation guide for details.
             """
             return ApiResponse(data=self.node_orchestrator.split_node_to_detail_views(user_id, col_id, node_id, data.field, data.tz_offset, data.level))
 
+        
+        class ReprioritiseRequest(BaseModel):
+            priority: float
+        @self.app.patch("/collections/{col_id}/nodes/{node_id}/slot/{slot}/reprioritise", tags=["learning units"], responses={**AUTH_RESPONSES})
+        async def reprioritise_learning_unit(col_id: str, node_id: str, slot: int, data: ReprioritiseRequest, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
+            """
+            Reprioritise a learning unit.
+            """
+            return ApiResponse(data=self.node_orchestrator.reprioritise_to_detail_view(user_id, col_id, node_id, slot, data.priority))
+    
+        class RescheduleRequest(BaseModel):
+            date: str       # "2026-05-20"
+            tz_offset: int  # minutes
+        @self.app.post("/collections/{col_id}/nodes/{node_id}/slot/{slot}/reschedule", tags=["learning units"], responses={**AUTH_RESPONSES})
+        async def reschedule_learning_unit(col_id: str, node_id: str, slot: int, data: RescheduleRequest, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
+            """
+            Reschedule a learning unit to a specific date.
+            """
+            return ApiResponse(data=self.node_orchestrator.reschedule_to_detail_view(user_id, col_id, node_id, slot, data.date, data.tz_offset))
         # REVIEWS
 
         @self.app.get("/collections/{col_id}/reviews/next", tags=["reviews"], responses={**AUTH_RESPONSES})

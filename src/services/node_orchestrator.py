@@ -99,7 +99,7 @@ class NodeOrchestrator:
     def update_node_to_detail_view(self, user_id: str, col_id: str, node_id: str, data: NodeUpdate) -> NodeDetailView:
         return self._node_view_builder.to_detail_view(self.update_node(user_id, col_id, node_id, data))
 
-    def reprioritise_node_to_detail_view(self, user_id: str, collection_id: str, node_id: str, slot: int, target_node_priority: float) -> NodeDetailView:
+    def reprioritise_to_detail_view(self, user_id: str, collection_id: str, node_id: str, slot: int, target_node_priority: float) -> NodeDetailView:
         self._node_service.get_node_for_user(user_id, collection_id, node_id)
         node = self._reprioritise_usecase.execute(collection_id, node_id, slot, target_node_priority)
         return self._node_view_builder.to_detail_view(node)
