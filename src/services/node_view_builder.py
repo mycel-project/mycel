@@ -12,7 +12,7 @@ class NodeViewBuilder:
         self._priority_service = priority_service
 
     def to_view(self, node: Node) -> NodeView:
-        preview = node.data.title or node.fields.get_preview() or "No preview available"
+        preview = node.fields.get_preview() or "No preview available"
         learning_unit_views = []
         for unit in node.learning_units:
             unit_dict = unit.model_dump()
@@ -26,7 +26,6 @@ class NodeViewBuilder:
         return NodeDetailView(
             **view.model_dump(),
             fields=node.fields,
-            data=node.data,
         )
 
     def to_detail_views(self, nodes: list[Node]) -> list[NodeDetailView]:

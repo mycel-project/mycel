@@ -208,6 +208,7 @@ class NodeService:
             deleted_at=node.deleted_at,
             content_preview=preview,
             learning_units=learning_unit_views,
+            data=node.data,
         )
 
     def get_depth(self, node_id: str) -> int:
