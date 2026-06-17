@@ -149,18 +149,6 @@ class TestNode:
         assert response.status_code == 200
         assert response.json()["data"]["id"] == root.id
 
-    def test_reschedule_node(self, api, create_user, create_col, create_node):
-        user, token = create_user()
-        col = create_col(user_id=user.id)
-        node = create_node(col_id=col.id, user_id=user.id)
-        response = api.post(
-            f"/collections/{col.id}/nodes/{node.id}/slot/0/reschedule/",
-            token,
-            body={"date": "2099-05-20", "tz_offset": 120}
-        )
-        assert response.status_code == 200
-        assert response.json()["data"]["id"] == node.id
-
     def test_restore_node(self, api, create_user, create_col, create_node):
         user, token = create_user()
         col = create_col(user_id=user.id)
@@ -169,14 +157,6 @@ class TestNode:
         response = api.post(f"/collections/{col.id}/nodes/{node.id}/restore", token, body={})
         assert response.status_code == 200
         assert any(n["id"] == node.id for n in response.json()["data"])
-
-    def test_reprioritise_node(self, api, create_user, create_col, create_node):
-        user, token = create_user()
-        col = create_col(user_id=user.id)
-        node = create_node(col_id=col.id, user_id=user.id)
-        response = api.patch(f"/collections/{col.id}/nodes/{node.id}/slot/0/reprioritise", token, body={"priority": 0.5})
-        assert response.status_code == 200
-        assert response.json()["data"]["id"] == node.id
 
     def test_get_outline(self, api, create_user, create_col, create_node):
         user, token = create_user()
@@ -227,6 +207,52 @@ class TestNode:
         data = response.json()["data"]
         assert isinstance(data, list)
         assert len(data) >= 1
+        
+class TestLearningUnit:
+    def test_reprioritise_learning_unit(self, api, create_user, create_col, create_node):
+        user, token = create_user()
+        col = create_col(user_id=user.id)
+        node = create_node(col_id=col.id, user_id=user.id)
+        response = api.patch(f"/collections/{col.id}/nodes/{node.id}/slot/0/reprioritise", token, body={"priority": 0.5})
+        assert response.status_code == 200
+        assert response.json()["data"]["id"] == node.id
+
+    def test_reschedule_learning_unit(self, api, create_user, create_col, create_node):
+        user, token = create_user()
+        col = create_col(user_id=user.id)
+        node = create_node(col_id=col.id, user_id=user.id)
+        response = api.patch(
+            f"/collections/{col.id}/nodes/{node.id}/slot/0/reschedule/",
+            token,
+            body={"date": "2099-05-20", "tz_offset": 120}
+        )
+        assert response.status_code == 200
+        assert response.json()["data"]["id"] == node.id
+
+    def test_dismiss_fragment(self, api, create_user, create_col, create_node):
+        user, token = create_user()
+        col = create_col(user_id=user.id)
+        node = create_node(col_id=col.id, user_id=user.id, content="Hello world")
+        response = api.patch(
+            f"/collections/{col.id}/nodes/{node.id}/slot/0/dismiss",
+            token,
+        )
+        assert response.status_code == 200
+        data = response.json()["data"]
+        assert data["id"] == node.id
+        assert data["learning_units"][0]["dismiss"] == True
+
+    def test_dismiss_fragment_with_value(self, api, create_user, create_col, create_node):
+        user, token = create_user()
+        col = create_col(user_id=user.id)
+        node = create_node(col_id=col.id, user_id=user.id, content="Hello world")
+        response = api.patch(
+            f"/collections/{col.id}/nodes/{node.id}/slot/0/dismiss",
+            token,
+            body={"value": False}
+        )
+        assert response.status_code == 200
+        assert response.json()["data"]["learning_units"][0]["dismiss"] == False
 
 class TestReview:
     def test_get_next_review(self, api, create_user, create_col, create_node):
@@ -268,13 +294,13 @@ class TestIdempotency:
         node = create_node(user_id= user.id, col_id=col.id)
         key = str(uuid4())
 
-        r1 = api.post(
+        r1 = api.patch(
             f"/collections/{col.id}/nodes/{node.id}/slot/0/reschedule",
             token,
             body={"date": "2099-05-20", "tz_offset": 0},
             headers={"Idempotency-Key": key}
         )
-        r2 = api.post(
+        r2 = api.patch(
             f"/collections/{col.id}/nodes/{node.id}/slot/0/reschedule",
             token,
             body={"date": "2020-05-20", "tz_offset": 0},

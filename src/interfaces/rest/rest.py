@@ -472,7 +472,7 @@ See the implementation guide for details.
         class RescheduleRequest(BaseModel):
             date: str       # "2026-05-20"
             tz_offset: int  # minutes
-        @self.app.post("/collections/{col_id}/nodes/{node_id}/slot/{slot}/reschedule", tags=["learning units"], responses={**AUTH_RESPONSES})
+        @self.app.patch("/collections/{col_id}/nodes/{node_id}/slot/{slot}/reschedule", tags=["learning units"], responses={**AUTH_RESPONSES})
         async def reschedule_learning_unit(col_id: str, node_id: str, slot: int, data: RescheduleRequest, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
             """
             Reschedule a learning unit to a specific date.
@@ -482,10 +482,11 @@ See the implementation guide for details.
         class DismissRequest(BaseModel):
             value: Optional[bool] = None 
         @self.app.patch("/collections/{col_id}/nodes/{node_id}/slot/{slot}/dismiss", tags=["learning units"], responses={**AUTH_RESPONSES})
-        async def dismiss_learning_unit(col_id: str, node_id: str, slot: int, data: DismissRequest, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
+        async def dismiss_fragment(col_id: str, node_id: str, slot: int, data: DismissRequest = DismissRequest(), user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
             """
             Toggle or explicitly set the dismiss state of a fragment.
             If no value is provided, the current state is toggled.
+            Only fragments are dismissable.
             """
             return ApiResponse(data=self.node_orchestrator.dismiss_to_detail_view(user_id, col_id, node_id, slot, data.value))
 
