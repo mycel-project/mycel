@@ -375,14 +375,16 @@ While you can ignore the returned slot value and only update the "priorities" fi
         async def get_node(col_id: str, node_id: str, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
             node = self.node_orchestrator.get_node_detail_view(user_id, col_id, node_id)
             return ApiResponse(data=node)
-
+        
+        class DeleteNodeResponse(BaseModel):
+            deleted_ids: list[str]
         @self.app.delete("/collections/{col_id}/nodes/{node_id}", tags=["nodes"], status_code=200, responses={**AUTH_RESPONSES})
-        async def delete_node(col_id: str, node_id: str, user_id = Depends(self.get_user)) -> ApiResponse[dict[str, list[str]]]:
+        async def delete_node(col_id: str, node_id: str, user_id = Depends(self.get_user)) -> ApiResponse[DeleteNodeResponse]:
             """
             Soft-deletes the node and its entire subtree. Returns all deleted node ids so the client can update its local state without a full refetch.
             """
             deleted_ids = self.node_orchestrator.soft_delete_subtree(user_id, col_id, node_id)
-            return ApiResponse(data={"deleted_ids": deleted_ids})
+            return ApiResponse(data=DeleteNodeResponse(deleted_ids=deleted_ids))
 
         @self.app.patch("/collections/{col_id}/nodes/{node_id}", tags=["nodes"], responses={**AUTH_RESPONSES})
         async def update_node(col_id: str, node_id: str, data: NodeUpdate, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
