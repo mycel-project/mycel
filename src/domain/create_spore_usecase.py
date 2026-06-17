@@ -38,7 +38,7 @@ class CreateSporeUseCase:
             user_id=user_id,
             collection_id=collection_id,
             template_id=template_id,
-            type=NodeType.FRAGMENT,
+            type=NodeType.SPORE,
             learning_unit=spore_unit,
             fields=fields,
             data=data,
