@@ -1,7 +1,9 @@
 ## Unreleased
 
+## v0.2.0-alpha.3
 ### Fixed
 - In NodeDetailview pass priority for learning units rather than position.
+- Add typing for "delete node" endpoint + rename "get outline node" endpoint to "get outline"
 
 ## v0.2.0-alpha.2
 ### Added
