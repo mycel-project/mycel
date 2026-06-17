@@ -66,12 +66,41 @@ AUTH_RESPONSES = {
     503: {"description": "Service unavailable - see Mycel implementation guide."},
 }
 
+tags_metadata = [
+            {
+                "name": "system",
+            },
+            {
+                "name": "users",
+            },
+            {
+                "name": "collections",
+            },
+            {
+                "name": "nodes",
+                "description": """Endpoints relative to nodes. To act on learning unit-specific data, see the dedicated section. Node endpoints here only affect global node attributes, even when the node has a single learning unit (as is the case with fragments)."""
+            },
+            {
+                "name": "learning units",
+                "description": """Endpoints relative to a learning unit within a node, targeted using its slot number. Returns the fully updated node.
+
+For common actions (such as reprioritisation), you can use dedicated endpoints. For more advanced control and precise updates, you should use the Update Learning Unit endpoint.
+
+*If you don't want to support mutliple-learning-unit nodes, always pass 0 as the slot number.*
+                """
+            },
+            {
+                "name": "reviews",
+            },
+        ]
+
 class Rest(BaseInterface):
     def __init__(self, app_infos):
         self.app_infos: AppInfos = app_infos
         self.app = FastAPI(
             title="Mycel API",
             version=self.app_infos.version,
+            openapi_tags=tags_metadata,  
             description="""
 ## Version compatibility
 
@@ -353,7 +382,7 @@ See the implementation guide for details.
         @self.app.patch("/collections/{col_id}/nodes/{node_id}", tags=["nodes"], responses={**AUTH_RESPONSES})
         async def update_node(col_id: str, node_id: str, data: NodeUpdate, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
             """
-            Update Node, not learning units. To update learning units, use dedicated endpoints (reprioritise, reschedule, ...)
+            Update Node. To update spore/fragment data, use dedicated endpoints (reprioritise, reschedule, ...) or update_slot endpoint.
             """
             updated_node = self.node_orchestrator.update_node_to_detail_view(user_id, col_id, node_id, data)
             return ApiResponse(data=updated_node)
@@ -420,6 +449,15 @@ See the implementation guide for details.
             """
             return ApiResponse(data=self.node_orchestrator.split_node_to_detail_views(user_id, col_id, node_id, data.field, data.tz_offset, data.level))
 
+        ## LEARNING UNITS
+        
+        @self.app.patch("/collections/{col_id}/nodes/{node_id}/slot/{slot}", tags=["learning units"], responses={**AUTH_RESPONSES})
+        async def update_learning_unit(col_id: str, node_id: str, slot: int, data: NodeUpdate, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
+            """
+            Updates learning unit data (spores or fragments) without modifying global Node attributes.
+            """
+            updated_node = self.node_orchestrator.update_node_to_detail_view(user_id, col_id, node_id, data)
+            return ApiResponse(data=updated_node)
         
         class ReprioritiseRequest(BaseModel):
             priority: float
@@ -439,6 +477,7 @@ See the implementation guide for details.
             Reschedule a learning unit to a specific date.
             """
             return ApiResponse(data=self.node_orchestrator.reschedule_to_detail_view(user_id, col_id, node_id, slot, data.date, data.tz_offset))
+        
         # REVIEWS
 
         @self.app.get("/collections/{col_id}/reviews/next", tags=["reviews"], responses={**AUTH_RESPONSES})
