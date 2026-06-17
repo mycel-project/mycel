@@ -21,7 +21,8 @@ class NodeFields(RootModel[dict[str, str]]):
         if not self.root:
             return None
         first_value = next(iter(self.root.values()))
-        return first_value[:length]
+        cleaned_value = first_value.strip()
+        return cleaned_value[:length].strip()
 
     @classmethod
     def from_dict(cls, data: dict[str, str]) -> "NodeFields":
