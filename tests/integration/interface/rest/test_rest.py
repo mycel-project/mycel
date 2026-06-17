@@ -115,20 +115,6 @@ class TestNode:
         response = api.delete(f"/collections/{col.id}/nodes/{node.id}", token)
         assert response.status_code == 200
         assert node.id in response.json()["data"]["deleted_ids"]
-        
-    def test_get_priorities(self, api, create_user, create_col, create_node):
-        user, token = create_user()
-        col = create_col(user_id=user.id)
-        node1 = create_node(col_id=col.id, user_id=user.id)
-        time.sleep(0.01)
-        node2 = create_node(col_id=col.id, user_id=user.id)
-        response = api.get(f"/collections/{col.id}/nodes/priorities", token)
-        assert response.status_code == 200
-        data = response.json()["data"]
-        assert isinstance(data, list)
-        node_ids = [item["node_id"] for item in data]
-        assert str(node1.id) in node_ids
-        assert str(node2.id) in node_ids
 
     def test_get_deleted_nodes(self, api, create_user, create_col, create_node):
         user, token = create_user()
@@ -209,6 +195,20 @@ class TestNode:
         assert len(data) >= 1
         
 class TestLearningUnit:
+    def test_get_priorities(self, api, create_user, create_col, create_node):
+        user, token = create_user()
+        col = create_col(user_id=user.id)
+        node1 = create_node(col_id=col.id, user_id=user.id)
+        time.sleep(0.01)
+        node2 = create_node(col_id=col.id, user_id=user.id)
+        response = api.get(f"/collections/{col.id}/nodes/priorities", token)
+        assert response.status_code == 200
+        data = response.json()["data"]
+        assert isinstance(data, list)
+        node_ids = [item["node_id"] for item in data]
+        assert str(node1.id) in node_ids
+        assert str(node2.id) in node_ids
+        
     def test_reprioritise_learning_unit(self, api, create_user, create_col, create_node):
         user, token = create_user()
         col = create_col(user_id=user.id)

@@ -349,7 +349,7 @@ See the implementation guide for details.
             node = self.node_orchestrator.create_node_to_detail_view(user_id, col_id, data, data.tz_offset)
             return ApiResponse(data=node)
         
-        @self.app.get("/collections/{col_id}/nodes/priorities", tags=["nodes"], responses={**AUTH_RESPONSES})
+        @self.app.get("/collections/{col_id}/nodes/priorities", tags=["learning units"], responses={**AUTH_RESPONSES})
         async def get_priorities(col_id: str, user_id = Depends(self.get_user)) -> ApiResponse[list[NodeSlotPriority]]:
             """
             Priority is a relative value, so adding or modifying a node invalidates other priorities. This route allows the frontend to refresh all priorities in a collection efficiently.
