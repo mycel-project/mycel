@@ -33,6 +33,7 @@ from src.models.node_slot_key import NodeSlotKey
 from src.models.outline import Outline
 from src.models.type_review_data import TypeReviewData
 from src.models.user_conf import UserConf
+from src.schemas.learning_unit_update import LearningUnitUpdate
 from src.schemas.node_detail_view import NodeDetailView
 from src.schemas.node_view import NodeView
 from src.schemas.user_update import UserUpdate
@@ -452,11 +453,11 @@ See the implementation guide for details.
         ## LEARNING UNITS
         
         @self.app.patch("/collections/{col_id}/nodes/{node_id}/slot/{slot}", tags=["learning units"], responses={**AUTH_RESPONSES})
-        async def update_learning_unit(col_id: str, node_id: str, slot: int, data: NodeUpdate, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
+        async def update_learning_unit(col_id: str, node_id: str, slot: int, data: LearningUnitUpdate, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
             """
-            Updates learning unit data (spores or fragments) without modifying global Node attributes.
+            Updates learning unit data without modifying global Node attributes.
             """
-            updated_node = self.node_orchestrator.update_node_to_detail_view(user_id, col_id, node_id, data)
+            updated_node = self.node_orchestrator.update_learning_unit_to_detail_view(user_id, col_id, node_id, slot, data)
             return ApiResponse(data=updated_node)
         
         class ReprioritiseRequest(BaseModel):

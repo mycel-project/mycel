@@ -15,6 +15,7 @@ from src.services.node_service import NodeService
 from src.services.node_view_builder import NodeViewBuilder
 from src.services.review_service import ReviewService
 from src.services.user_service import UserService
+from src.schemas.learning_unit_update import lu_update_adapter
 
 
 class ReviewOrchestrator:
@@ -44,7 +45,9 @@ class ReviewOrchestrator:
         return self._node_view_builder.to_detail_view(node)
 
     def _restore_from_snapshot(self, review: Review) -> None:
-        self._node_service.update_learning_unit(review.state_before)
+        lu = review.state_before
+        updates = lu_update_adapter.validate_python(lu.model_dump())
+        self._node_service.update_learning_unit(lu.node_id, lu.slot, updates)
 
     def get_next_review(self, user_id: str, col_id: str, tz_offset: int = 0) -> ReviewTarget | None:
         self._ensure_col(user_id, col_id)

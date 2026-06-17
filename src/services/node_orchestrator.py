@@ -11,6 +11,7 @@ from src.models.node import Node, NodeType
 from src.models.node_create import NodeCreate, NodeCreateFromUrl
 from src.models.node_slot_key import NodeSlotKey
 from src.models.outline import Outline
+from src.schemas.learning_unit_update import LearningUnitUpdate
 from src.schemas.node_detail_view import NodeDetailView
 from src.schemas.node_update import NodeUpdate
 from src.schemas.node_view import NodeView
@@ -93,11 +94,18 @@ class NodeOrchestrator:
         else:
             raise NotAKnownType(node_id, node.base_for)
 
+    def update_learning_unit(self, user_id: str, col_id: str, node_id: str, slot: int, data: LearningUnitUpdate) -> Node:
+        self._node_service.get_node_for_user(user_id, col_id, node_id)
+        return self._node_service.update_learning_unit(node_id, slot, data)
+
     def create_node_to_detail_view(self, user_id: str, collection_id: str, data: NodeCreate, tz_offset_min: int) -> NodeDetailView:
         return self._node_view_builder.to_detail_view(self.create_node(user_id, collection_id, data, tz_offset_min))
 
     def update_node_to_detail_view(self, user_id: str, col_id: str, node_id: str, data: NodeUpdate) -> NodeDetailView:
         return self._node_view_builder.to_detail_view(self.update_node(user_id, col_id, node_id, data))
+
+    def update_learning_unit_to_detail_view(self, user_id: str, col_id: str, node_id: str, slot: int, data: LearningUnitUpdate) -> NodeDetailView:
+        return self._node_view_builder.to_detail_view(self.update_learning_unit(user_id, col_id, node_id, slot, data))
 
     def reprioritise_to_detail_view(self, user_id: str, collection_id: str, node_id: str, slot: int, target_node_priority: float) -> NodeDetailView:
         self._node_service.get_node_for_user(user_id, collection_id, node_id)

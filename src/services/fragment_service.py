@@ -4,6 +4,7 @@ from src.domain.create_fragment_usecase import CreateFragmentUseCase
 from src.domain.domain_exceptions import NotAFragment, NotAKnownType
 from src.models.node import Node, NodeFields, NodeType
 from src.models.template import DefaultTemplate
+from src.schemas.learning_unit_update import FragmentUpdate
 from src.schemas.node_update import NodeUpdate
 from src.services.node_format_service import NodeFormatService
 from src.services.node_service import NodeService
@@ -57,9 +58,6 @@ class FragmentService:
             NodeUpdate(fields=node.fields)
         )
 
-    def dismiss(self, node_id: str) -> Node:
-        node = self._node_service.get_node(node_id)
-        fragment = node.get_fragment()
-        fragment.dismiss = True
-        self._node_service.update_learning_unit(fragment)
-        return node
+    def dismiss(self, node_id: str, slot: int = 0) -> Node:
+        return self._node_service.update_learning_unit(node_id, slot, FragmentUpdate(dismiss=True))
+        

@@ -5,6 +5,8 @@ from src.services.node_service import NodeService
 from src.services.user_service import UserService
 from src.utils.time import local_date_to_utc_ms
 
+from src.schemas.learning_unit_update import lu_update_adapter
+
 
 class RescheduleUseCase:
     def __init__(
@@ -33,8 +35,11 @@ class RescheduleUseCase:
         if self._user_service.get_pending_review(user_id) == learning_unit.id:
             self._user_service.clear_pending_review(user_id)
 
-        learning_unit.due=timestamp_ms
-        self._node_service.update_learning_unit(learning_unit)
+        updates = lu_update_adapter.validate_python({
+            "type": learning_unit.type,
+            "due": timestamp_ms
+        })
+        self._node_service.update_learning_unit(node.id, slot, updates)
 
         return self._node_service.get_node_from_learning_unit(learning_unit.id)
         

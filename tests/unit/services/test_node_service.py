@@ -3,6 +3,7 @@ from unittest.mock import MagicMock
 
 from src.models.node import NodeType
 from src.models.node_data import NodeData
+from src.schemas.learning_unit_update import FragmentUpdate, LearningUnitUpdate
 from src.schemas.node_update import NodeUpdate
 from src.types.count_by_type_and_day import CountByTypeAndDay
 
@@ -87,3 +88,29 @@ class TestNodeService:
             assert result.data.title == "New Title"
             assert result.collection_id == "test"
             assert result.data.source.url == "https://mycel-project.com"
+
+
+    class TestUpdateLearningUnit:
+        def test_dismiss_update(self, node_service, default_fragment):
+            node_service.get_node = MagicMock(return_value=default_fragment)
+            node_service._lu_repo = MagicMock()
+
+            result = node_service.update_learning_unit(
+                default_fragment.id,
+                0,
+                FragmentUpdate(dismiss=True)
+            )
+
+            fragment = result.get_fragment()
+            assert fragment.dismiss == True
+            
+            result = node_service.update_learning_unit(
+                default_fragment.id,
+                0,
+                FragmentUpdate(dismiss=False)
+            )
+
+            fragment = result.get_fragment()
+            assert fragment.dismiss == False
+            assert fragment.slot == 0
+            assert fragment.ref == default_fragment.get_fragment().ref

@@ -3,11 +3,12 @@ from collections import defaultdict
 
 from src.core.scheduling_context import SchedulingContext
 from src.domain.domain_exceptions import NoLearningUnitFound, NoNodeFound, NodeDeleted
-from src.models.learning_unit import LearningUnit
+from src.models.learning_unit import LearningUnit, lu_adapter
 from src.models.node import Node, NodeFields, NodeStatus, NodeType
 from src.models.node_data import NodeData
 from src.repositories.learning_unit_repository import LearningUnitRepository
 from src.repositories.node_repository import NodeRepository
+from src.schemas.learning_unit_update import LearningUnitUpdate, lu_update_adapter
 from src.schemas.node_view import NodeView
 from src.schemas.node_update import NodeUpdate
 from src.types.count_by_type_and_day import CountByTypeAndDay
@@ -252,12 +253,19 @@ class NodeService:
 
             current_id = node.parent_id
 
-    def update_learning_unit(self, learning_unit: LearningUnit) -> LearningUnit | None:
-        """
-        Full replacement update: no partial update model for now due to Fragment/Spore inheritance complexity.
-        """
+    def update_learning_unit(self, node_id: str, slot: int, updates: LearningUnitUpdate) -> Node:
         # Could add a flag to update node updated_at when updating learning unit?
-        return self._lu_repo.update(learning_unit)
+        node = self.get_node(node_id)
+        learning_unit = node.get_unit_by_slot(slot)
+        changes = updates.model_dump(exclude_unset=True)
+        merged = deep_update_dict(learning_unit.model_dump(), changes)
+        updated_lu = lu_adapter.validate_python(merged)  
+        self._lu_repo.update(updated_lu)
+        node.learning_units = [
+            updated_lu if lu.slot == slot else lu
+            for lu in node.learning_units
+        ]
+        return node
 
     def update_position(self, learning_unit_id: str, position: str) -> None:
         self._lu_repo.update_position(learning_unit_id, position)

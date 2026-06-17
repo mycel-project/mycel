@@ -8,9 +8,10 @@ from src.models.type_review_data.fragment_review_data import FragmentReviewData
 from src.models.type_review_data.spore_review_data import SporeReviewData
 from src.repositories.review_repository import ReviewRepository
 from src.core.scheduling_engine import SchedulingEngine
+from src.schemas.learning_unit_update import FragmentUpdate, SporeUpdate
 from src.services.fsrs_service import FsrsService
 from .node_service import NodeService
-from src.utils.time import MS_PER_DAY, now_ms, now_s, start_of_local_day_ms, start_of_local_today_ms
+from src.utils.time import MS_PER_DAY, datetime_to_ms, now_ms, now_s, start_of_local_day_ms, start_of_local_today_ms
 from src.models.node import Node, NodeType
 
 class ReviewService:
@@ -35,6 +36,7 @@ class ReviewService:
         node = self._node_service.get_node_from_learning_unit(spore_id)
         spore = node.get_spore(spore_id)
         card, _ = self._fsrs_service.review(user_id, col_id, spore_id, data.rating, duration)
+        now = now_ms()
         type_data = FsrsData(
             stability=card.stability,
             difficulty=card.difficulty,
@@ -48,8 +50,7 @@ class ReviewService:
             duration=duration,
             state_before=spore
         )
-        spore.learning_data = type_data
-        self._node_service.update_learning_unit(spore)
+        self._node_service.update_learning_unit(node.id, spore.slot, SporeUpdate(learning_data=type_data, last_review=now, due=datetime_to_ms(card.due)))
         return self._node_service.get_node(node.id)
 
     def review_fragment(
@@ -73,9 +74,8 @@ class ReviewService:
             duration=duration,
             state_before=fragment
         )
-        fragment.due = start_of_local_day_ms(now + next_interval * MS_PER_DAY, tz_offset)
-        fragment.last_review = now
-        self._node_service.update_learning_unit(fragment)
+        due = start_of_local_day_ms(now + next_interval * MS_PER_DAY, tz_offset)
+        self._node_service.update_learning_unit(node.id, fragment.slot, FragmentUpdate(due=due, last_review=now))
         return self._node_service.get_node(node.id)
 
     def get_encounter_count(self, learning_unit_id: str) -> int:
