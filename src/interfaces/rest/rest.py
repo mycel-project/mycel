@@ -354,7 +354,9 @@ See the implementation guide for details.
         @self.app.get("/collections/{col_id}/nodes/priorities", tags=["learning units"], responses={**AUTH_RESPONSES})
         async def get_priorities(col_id: str, user_id = Depends(self.get_user)) -> ApiResponse[list[NodeSlotPriority]]:
             """
-            Priority is a relative value, so adding or modifying a node invalidates other priorities. This route allows the frontend to refresh all priorities in a collection efficiently.
+            Priority is a relative value, meaning that adding or modifying a node invalidates other priorities. This route allows the frontend to efficiently refresh all priorities within a collection.
+
+While you can ignore the returned slot value and only update the "priorities" field in NodeViews, updating them also directly inside the learning units of node views prevents data desynchronization inside your model. But if your implementation always refetches the full NodeDetailView upon user interaction, ignoring the slot field may be a simpler, viable approach.
             """
             priorities = self.node_orchestrator.get_priorities(user_id, col_id)
             return ApiResponse(data=[
@@ -400,7 +402,7 @@ See the implementation guide for details.
             return ApiResponse(data=self.node_orchestrator.get_root_node(user_id, col_id, node_id))
 
         @self.app.get("/collections/{col_id}/nodes/{node_id}/outline", tags=["nodes"], responses={**AUTH_RESPONSES})
-        async def get_outline_node(col_id: str, node_id: str, user_id = Depends(self.get_user)) -> ApiResponse[Outline]:
+        async def get_outline(col_id: str, node_id: str, user_id = Depends(self.get_user)) -> ApiResponse[Outline]:
             return ApiResponse(data=self.node_orchestrator.get_outline_for_node(user_id, col_id, node_id))
 
         class RestoreNodeRequest(BaseModel):
