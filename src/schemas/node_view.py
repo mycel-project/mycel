@@ -1,17 +1,14 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional
 
 from src.models.node import NodeStatus, NodeType
+from src.schemas.learning_unit_view import LearningUnitView
 
 
 class NodeView(BaseModel):
     """
     Lightweight DTO for list display. Contains a short content preview with light fields to allow front side filtering.
-    For full content rendering, use NodeDetailView.
-
-    Template Id is passed here and not in DetailView because it's lightweight and the front may want different visualizations based on the template
-
-    There is one due/priority per learning unit attached to this node even if it is not a detailed view. (Could add the same logic for last_reviews)
+    For full field rendering, use NodeDetailView.
     """
     id: str
     collection_id: str
@@ -20,9 +17,8 @@ class NodeView(BaseModel):
     status: NodeStatus
     updated_at: int
     created_at: int
-    content_preview: str 
-    dues: list[int]
-    priorities: list[float]
+    content_preview: str
+    learning_units: list[LearningUnitView] = Field(default_factory=list)  # 1 for fragment but >=1 for spore # If it is too heavy build intermediate models for learningUnits
     parent_id: Optional[str] = None
     deleted_at: Optional[int] = None
 

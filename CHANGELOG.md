@@ -1,5 +1,8 @@
 ## Unreleased
 
+### Fixed
+- Move learning_units to NodeView for faster frontend access to unit states, replacing the obsolete dues and priorities lists.
+
 ## v0.2.0-alpha.3
 ### Fixed
 - In NodeDetailview pass priority for learning units rather than position.

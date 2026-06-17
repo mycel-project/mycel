@@ -9,6 +9,7 @@ from src.models.node_data import NodeData
 from src.repositories.learning_unit_repository import LearningUnitRepository
 from src.repositories.node_repository import NodeRepository
 from src.schemas.learning_unit_update import LearningUnitUpdate, lu_update_adapter
+from src.schemas.learning_unit_view import LearningUnitView
 from src.schemas.node_view import NodeView
 from src.schemas.node_update import NodeUpdate
 from src.types.count_by_type_and_day import CountByTypeAndDay
@@ -194,7 +195,7 @@ class NodeService:
                 for u in n.learning_units
             ]
     
-    def node_to_view(self, node: Node, priorities: list[float], preview: str) -> NodeView:
+    def node_to_view(self, node: Node, preview: str, learning_unit_views: list[LearningUnitView]) -> NodeView:
         return NodeView(
             id=node.id,
             collection_id=node.collection_id,
@@ -206,8 +207,7 @@ class NodeService:
             created_at=node.created_at,
             deleted_at=node.deleted_at,
             content_preview=preview,
-            dues=[u.due for u in node.learning_units if u.due is not None],
-            priorities=priorities,
+            learning_units=learning_unit_views,
         )
 
     def get_depth(self, node_id: str) -> int:

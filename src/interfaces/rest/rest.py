@@ -355,8 +355,6 @@ See the implementation guide for details.
         async def get_priorities(col_id: str, user_id = Depends(self.get_user)) -> ApiResponse[list[NodeSlotPriority]]:
             """
             Priority is a relative value, meaning that adding or modifying a node invalidates other priorities. This route allows the frontend to efficiently refresh all priorities within a collection.
-
-While you can ignore the returned slot value and only update the "priorities" field in NodeViews, updating them also directly inside the learning units of node views prevents data desynchronization inside your model. But if your implementation always refetches the full NodeDetailView upon user interaction, ignoring the slot field may be a simpler, viable approach.
             """
             priorities = self.node_orchestrator.get_priorities(user_id, col_id)
             return ApiResponse(data=[

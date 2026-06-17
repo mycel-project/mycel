@@ -1,5 +1,5 @@
 from typing import Annotated
-from pydantic import Field
+from pydantic import Field, TypeAdapter
 from src.models.fragment import Fragment
 from src.models.spore import Spore
 
@@ -12,3 +12,4 @@ class FragmentView(Fragment):
     position: str = Field(default="", exclude=True) 
 
 LearningUnitView = Annotated[FragmentView | SporeView, Field(discriminator="type")]
+learning_unit_view_adapter = TypeAdapter(LearningUnitView)

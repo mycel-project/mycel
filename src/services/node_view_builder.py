@@ -3,6 +3,7 @@ from src.schemas.node_detail_view import NodeDetailView
 from src.schemas.node_view import NodeView
 from src.services.node_service import NodeService
 from src.services.priority_service import PriorityService
+from src.schemas.learning_unit_view import learning_unit_view_adapter
 
 
 class NodeViewBuilder:
@@ -11,23 +12,20 @@ class NodeViewBuilder:
         self._priority_service = priority_service
 
     def to_view(self, node: Node) -> NodeView:
-        priorities = []
-        for unit in node.learning_units:
-            priorities.append(self._priority_service.position_to_priority(node.collection_id, unit.position))
-        preview = node.fields.get_preview() or "No preview for this node"
-        return self._node_service.node_to_view(node, priorities, preview)
-
-    def to_detail_view(self, node: Node) -> NodeDetailView:
-        view = self.to_view(node)
-        learning_units_data = []
+        preview = node.data.title or node.fields.get_preview() or "No preview available"
+        learning_unit_views = []
         for unit in node.learning_units:
             unit_dict = unit.model_dump()
             unit_dict["priority"] = self._priority_service.position_to_priority(node.collection_id, unit.position)
-            learning_units_data.append(unit_dict)
+            view_instance = learning_unit_view_adapter.validate_python(unit_dict)
+            learning_unit_views.append(view_instance)
+        return self._node_service.node_to_view(node, preview, learning_unit_views)
+
+    def to_detail_view(self, node: Node) -> NodeDetailView:
+        view = self.to_view(node)
         return NodeDetailView(
             **view.model_dump(),
             fields=node.fields,
-            learning_units=learning_units_data,
             data=node.data,
         )
 
