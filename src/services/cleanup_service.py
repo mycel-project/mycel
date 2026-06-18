@@ -32,5 +32,5 @@ class CleanupService():
                     self._node_service.delete_node(node.id)
                 logger.info(f"Cleaned {len(expired)} expired nodes from collection {collection.name}")
         except Exception as e:
-            logger.info(f"Canno't clean nodes: {e}")
+            logger.info(f"Cannot clean nodes: {e}")
 
