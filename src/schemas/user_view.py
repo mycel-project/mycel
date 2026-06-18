@@ -1,5 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 
+from src.models.template import Templates
 from src.models.user_conf import UserConf
 
 
@@ -9,3 +10,4 @@ class UserView(BaseModel):
     name: str
     conf: UserConf
     created_at: int
+    templates: Templates

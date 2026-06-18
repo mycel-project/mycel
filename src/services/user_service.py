@@ -69,6 +69,7 @@ class UserService:
             name=user.name,
             conf=user.conf,
             created_at=user.created_at,
+            templates=user.templates,
         )
 
     def to_views(self, users: list[User]) -> list[UserView]:
