@@ -1,4 +1,5 @@
 import random
+import math
 
 from src.core.lexical_order import LexicalOrder
 from src.models.node_slot_key import NodeSlotKey
@@ -9,6 +10,10 @@ class PriorityService:
     def __init__(self, learning_unit_repository: LearningUnitRepository, lexical_order: LexicalOrder):
         self._repo = learning_unit_repository
         self._lexical_order = lexical_order
+
+    def _round_priority(self, value: float, total: int) -> float:
+        decimals = max(0, math.floor(math.log10(total)))
+        return round(value, decimals)
         
     def get_priority(self, collection_id: str, learning_unit_id: str) -> float:
         position = self._repo.get_position(learning_unit_id)
@@ -23,7 +28,8 @@ class PriorityService:
         if total <= 1:
             return 100
 
-        return 100 - (rank / (total - 1)) * 100
+        priority = 100 - (rank / (total - 1)) * 100
+        return self._round_priority(priority, total)
 
     def priority_to_position(self, collection_id: str, percentage: float) -> str:
         if not 0 <= percentage <= 100:
@@ -61,7 +67,7 @@ class PriorityService:
             return {}
         positions = self._repo.get_all_positions_with_node(collection_id)
         return {
-            p.node_slot_key: 100 - (rank / (total - 1)) * 100
+            p.node_slot_key: self._round_priority(100 - (rank / (total - 1)) * 100, total)
             for rank, p in enumerate(positions)
         }
 
