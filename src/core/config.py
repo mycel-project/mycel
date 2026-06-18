@@ -7,4 +7,5 @@ class MycelConfig(BaseModel):
     db_path: str
     log_level: str
     allow_private_urls_fetch: bool
+    ensure_default_user: bool
 

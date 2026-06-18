@@ -34,12 +34,6 @@ class Db:
         Base.metadata.create_all(self.engine)
         self.session_factory = sessionmaker(bind=self.engine)
 
-        with self.session_factory() as session:
-            existing = session.execute(text("SELECT id FROM users WHERE id = :id"), {"id": DEFAULT_USER_ID}).fetchone()
-            if not existing:
-                session.execute(text("INSERT INTO users (id, name, created_at, conf) VALUES (:id, :name, :now, '{}')"), {"id": DEFAULT_USER_ID, "name": "default", "now": int(time.time() * 1000)})
-                session.commit()
-
     @property
     def is_sqlite(self) -> bool:
         """

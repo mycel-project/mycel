@@ -1,6 +1,6 @@
 from typing import Optional
 
-from src.db import Db
+from src.db import DEFAULT_USER_ID, Db
 from src.domain.domain_exceptions import NoUserFound
 from src.models.user import User
 from src.models.user_conf import UserConf
@@ -11,8 +11,13 @@ from src.services.node_service import deep_update_dict
 
 
 class UserService:
-    def __init__(self, db: Db):
+    def __init__(self, db: Db, ensure_default_user: bool):
         self._repo = UserRepository(db)
+        if ensure_default_user:
+            try:
+                self.get_user(DEFAULT_USER_ID)
+            except NoUserFound:
+                self.create_user("default", DEFAULT_USER_ID)
 
     def get_user(self, user_id: str) -> User:
         user = self._repo.get(user_id)
