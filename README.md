@@ -1,6 +1,6 @@
 # Mycel
 
-Mycel is an open-source long-term learning framework.
+Mycel is an open-source lifelong learning framework.
 
 It implements tools to gather, decompose and learn from diverse ressources, ensuring long-term recall through spaced-repetition.
 
