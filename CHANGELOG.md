@@ -2,6 +2,7 @@
 
 ### Added
 - Priority is now automatically rounded based on the number of learning units in the collection: integer for 0–9 items, one decimal place for 10–99, two for 100–999, and so on. One fewer decimal place could be used to keep displayed values cleaner, but would risk showing identical priorities to the user due to rounding collisions.
+- Toggle in config auto creation of default user
 
 ### Fixed
 - Move learning_units to NodeView for faster frontend access to unit states, replacing the obsolete dues and priorities lists.
