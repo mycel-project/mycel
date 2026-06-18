@@ -21,12 +21,16 @@ class CleanupService():
         self._user_service = user_service
 
     async def clean_deleted_nodes(self):
-        user = self._user_service.get_user(DEFAULT_USER_ID)
-        cutoff_ms = int((datetime.now(timezone.utc) - timedelta(days=user.conf.delete_max_age)).timestamp() * 1000)
+        try:
+            user = self._user_service.get_user(DEFAULT_USER_ID)
+            cutoff_ms = int((datetime.now(timezone.utc) - timedelta(days=user.conf.delete_max_age)).timestamp() * 1000)
 
-        collections = self._collection_service.get_collections(user.id)
-        for collection in collections:
-            expired = self._node_service.get_expired_deleted(collection.id, cutoff_ms)
-            for node in expired:
-                self._node_service.delete_node(node.id)
-            logger.info(f"Cleaned {len(expired)} expired nodes from collection {collection.name}")
+            collections = self._collection_service.get_collections(user.id)
+            for collection in collections:
+                expired = self._node_service.get_expired_deleted(collection.id, cutoff_ms)
+                for node in expired:
+                    self._node_service.delete_node(node.id)
+                logger.info(f"Cleaned {len(expired)} expired nodes from collection {collection.name}")
+        except Exception as e:
+            logger.info(f"Canno't clean nodes: {e}")
+
