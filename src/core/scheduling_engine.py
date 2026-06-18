@@ -104,7 +104,7 @@ class SchedulingEngine:
         return (requested_learning_units or pool)[0].id
     
 
-    def fragment_spore_ratio(self, reviews) -> float:
+    def fragment_spore_ratio(self, reviews: list[ReviewContext]) -> float:
         """
         Compute the ratio between fragment and spore reviews.
 
@@ -114,7 +114,7 @@ class SchedulingEngine:
         """
         logger.debug(f"reviews: {reviews}")
 
-        types = [r.node_type for r in reviews]
+        types = [r.learning_unit_type for r in reviews]
         counts = Counter(types)
 
         fragments = counts.get(NodeType.FRAGMENT, 0)
