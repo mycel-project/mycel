@@ -73,9 +73,10 @@ class ReviewOrchestrator:
         except NoNodeFound as e:
             raise ReviewUndoLearningUnitInaccessible(last_review.learning_unit_id, last_review.id) from e
         self._restore_from_snapshot(last_review)
-        self._user_service.set_pending_review(user_id, node_from_undone_review.id)
-        node = self._node_service.get_node(node_from_undone_review.id)
+        print(node_from_undone_review)
         learning_unit = self._node_service.get_learning_unit(last_review.learning_unit_id)
+        self._user_service.set_pending_review(user_id, learning_unit.id)
+        node = self._node_service.get_node(node_from_undone_review.id)
         return ReviewTarget(
             node=self._node_view_builder.to_detail_view(node),
             slot=getattr(learning_unit, 'slot', 0)
