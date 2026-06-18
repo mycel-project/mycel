@@ -183,7 +183,7 @@ class NodeService:
 
             return [
                 SchedulingContext(
-                    id=n.id,  
+                    id=u.id,  
                     type=n.base_for,
                     position=u.position, 
                     parent_id=n.parent_id,
