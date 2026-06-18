@@ -7,6 +7,7 @@
 - Move learning_units to NodeView for faster frontend access to unit states, replacing the obsolete dues and priorities lists.
 - For the same reason, NodeData has been moved to NodeView. The primary advantage of NodeDetailView is now dedicated specifically to handling the full textual content via NodeFields.
 - Strip node preview
+- The default user is now correctly created; previously, conf and templates were not being instantiated
 
 ## v0.2.0-alpha.3
 ### Fixed

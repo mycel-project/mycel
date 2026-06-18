@@ -3,5 +3,6 @@
     "network_user_agent": "Mycel/0.1",
     "db_path": "mycel.db",
     "log_level": "info",
-    "allow_private_urls_fetch": true
+    "allow_private_urls_fetch": true,
+    "ensure_default_user": true
 }

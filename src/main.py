@@ -73,7 +73,7 @@ class Application():
         priority_service = PriorityService(learning_unit_repository, lexical_order)
         node_service = NodeService(node_repository, learning_unit_repository)
 
-        user_service = UserService(self.db)
+        user_service = UserService(self.db, self.config.ensure_default_user)
         user_orchestrator = UserOrchestrator(user_service)
 
         scheduling_engine = SchedulingEngine(user_service)

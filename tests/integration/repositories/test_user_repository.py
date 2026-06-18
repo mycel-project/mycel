@@ -13,12 +13,14 @@ def test_user_create_and_get(db_fixture):
     assert created.id is not None
     assert created.name == "Alice"
     assert created.conf is not None
+    assert created.templates.root != {}
 
     fetched = repo.get(created.id)
     
     assert fetched is not None
     assert fetched.id == created.id
     assert fetched.name == "Alice"
+    assert fetched.templates.root != {}    
 
 
 def test_user_update(db_fixture):
