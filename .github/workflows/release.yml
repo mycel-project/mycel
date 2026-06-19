@@ -55,6 +55,8 @@ jobs:
           git checkout $BRANCH
           git pull origin $BRANCH
 
+          echo "${{ github.ref_name }}" | sed 's/^v//' > VERSION
+
           git add VERSION
           git commit -m "chore: bump VERSION to ${{ github.ref_name }}"
 
