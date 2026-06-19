@@ -1,37 +1,10 @@
 ## Unreleased
 
-### Added
-- Priority is now automatically rounded based on the number of learning units in the collection: integer for 0–9 items, one decimal place for 10–99, two for 100–999, and so on. One fewer decimal place could be used to keep displayed values cleaner, but would risk showing identical priorities to the user due to rounding collisions.
-- Toggle in config auto creation of default user
-
-### Fixed
-- Move learning_units to NodeView for faster frontend access to unit states, replacing the obsolete dues and priorities lists.
-- For the same reason, NodeData has been moved to NodeView. The primary advantage of NodeDetailView is now dedicated specifically to handling the full textual content via NodeFields.
-- Strip node preview
-- The default user is now correctly created; previously, conf and templates were not being instantiated
-
-## v0.2.0-alpha.3
-### Fixed
-- In NodeDetailview pass priority for learning units rather than position.
-- Add typing for "delete node" endpoint + rename "get outline node" endpoint to "get outline"
-
-## v0.2.0-alpha.2
-### Added
-- Supports partial recursive updates of models, allowing implementations to pass partial dictionaries and update only the specified fields.
-- Add flexible learning unit update endpoint (supports any field update, including nested models), add dismiss toggle endpoint, and standardize learning unit endpoints by moving slot targeting from body to URL path and adding docstrings.
-
-### Fixed
-- Fixed an issue where the Spore due date update was no longer taken into account.
-- Reschedule endpoint is now a patch
-- Fixed typing issues
-
-## v0.2.0-alpha
-
 This update introduces a major refactor of Mycel's database structure, identifiers, security, testing, and more. It is quite substantial as it addresses former architectural issues.
 To see more details, check the commit history.
 
+## v0.2.0
 ### Added
-
 - Re-enabled minimum cloze field validation on spore save. Invalid spore states are now rejected and the last valid state is preserved. (see Mycel v0.0.5)
 - Split node endpoint: decompose a node into fragments by heading level. The operation may be rejected if the selected level does not produce enough fragments to justify splitting. The due date of created fragments is set to the next day.
 - Add a base class for AuthService with behavior driven by deployment_mode set in the config. AuthService can be passed when starting Mycel to allow an external concrete implementation.
@@ -45,15 +18,27 @@ To see more details, check the commit history.
 - Invert prioritization logic (100% is now the highest priority)
 - Add max page protection and protect against SSRF
 - Normalize error responses
+- Supports partial recursive updates of models, allowing implementations to pass partial dictionaries and update only the specified fields.
+- Add flexible learning unit update endpoint (supports any field update, including nested models), add dismiss toggle endpoint, and standardize learning unit endpoints by moving slot targeting from body to URL path and adding docstrings.
+- Priority is now automatically rounded based on the number of learning units in the collection: integer for 0–9 items, one decimal place for 10–99, two for 100–999, and so on. One fewer decimal place could be used to keep displayed values cleaner, but would risk showing identical priorities to the user due to rounding collisions.
+- Toggle in config auto creation of default user
 
-### Refactor
-
+### Fixed
 - Use MycelConfig model rather than a raw dict
 - Start refactoring and cleaning the REST API
 - Use SQLAlchemy instead of raw SQLite to support PostgreSQL
 - Replace most former dataclass models with Pydantic ones
 - Use UUIDs for all identifiers instead of integers
 - Store pending reviews in the database rather than in runtime cache
+- Fixed an issue where the Spore due date update was no longer taken into account.
+- Reschedule endpoint is now a patch
+- Fixed typing issues
+- In NodeDetailview pass priority for learning units rather than position.
+- Add typing for "delete node" endpoint + rename "get outline node" endpoint to "get outline"
+- Move learning_units to NodeView for faster frontend access to unit states, replacing the obsolete dues and priorities lists.
+- For the same reason, NodeData has been moved to NodeView. The primary advantage of NodeDetailView is now dedicated specifically to handling the full textual content via NodeFields.
+- Strip node preview
+- The default user is now correctly created; previously, conf and templates were not being instantiated
 
 ## v0.1.1
 ### Added
