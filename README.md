@@ -18,7 +18,7 @@ For more informations, check [Mycel Project's Website](https://mycel-project.com
 
 ## Setup
 
-- Ensure **Python** and **git** are installed on your system.
+- Ensure **Python** version>3.10 and **git** are installed on your system.
 - Clone this repo : `git clone https://github.com/mycel-project/mycel`
 - Depending on your OS, run setup.bat (windows, can be named just "setup") or setup.sh (linux/macOS). Don't forget to make the script executable if needed.
    
