@@ -15,7 +15,16 @@ class UvicornServer:
         self.server = uvicorn.Server(config)
         self.active = True
         local_ip = self.get_local_ip()
-        print(f"Network: {local_ip}:{self.port}")
+        print("")
+        print("\033[38;2;128;255;234m" + "━"*40 + "\033[0m")
+        print(f"\033[38;2;128;255;234mNetwork: {local_ip}:{self.port}\033[0m")
+        print(f"  → To connect from this device, use http://localhost:{self.port}")
+        print(f"  → To connect from another device on the same network, use http://{local_ip}:{self.port}")
+        print("See more information at https://mycel-project.com/mycel#self-hosting")
+        print("\033[38;2;128;255;234m" + "━"*40 + "\033[0m")
+        print("")
+        print("Mycel logs :")
+        
         await self.server.serve()
         self.active = False
         self.server = None
