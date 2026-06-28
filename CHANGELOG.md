@@ -1,5 +1,6 @@
 ## Unreleased
 ### Added
+- Automatically create a 'Default' collection when a new user is created
 - Add `run_migrations_on_startup` config flag (default: true) to automatically run Alembic migrations on app startup
 - Add Alembic for automated database schema and data migrations
 - add API response logging (log level on debug)

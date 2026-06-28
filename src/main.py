@@ -81,8 +81,12 @@ class Application():
         priority_service = PriorityService(learning_unit_repository, lexical_order)
         node_service = NodeService(node_repository, learning_unit_repository)
 
-        user_service = UserService(self.db, self.config.ensure_default_user)
-        user_orchestrator = UserOrchestrator(user_service)
+        collection_repository = CollectionRepository(self.db)
+        
+        collection_service = CollectionService(collection_repository)
+        
+        user_service = UserService(self.db)
+        user_orchestrator = UserOrchestrator(user_service, collection_service, self.config.ensure_default_user)
 
         scheduling_engine = SchedulingEngine(user_service)
 
@@ -93,9 +97,6 @@ class Application():
         fragment_service = FragmentService(node_service, node_format_service, self.create_fragment_usecase)
         spore_service = SporeService(user_service, node_service, node_format_service, self.create_spore_usecase)
 
-        collection_repository = CollectionRepository(self.db)
-        
-        collection_service = CollectionService(collection_repository)
         fsrs_service = FsrsService(collection_service, node_service)
 
         node_view_builder = NodeViewBuilder(node_service, priority_service)

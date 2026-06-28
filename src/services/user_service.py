@@ -11,13 +11,8 @@ from src.services.node_service import deep_update_dict
 
 
 class UserService:
-    def __init__(self, db: Db, ensure_default_user: bool):
+    def __init__(self, db: Db):
         self._repo = UserRepository(db)
-        if ensure_default_user:
-            try:
-                self.get_user(DEFAULT_USER_ID)
-            except NoUserFound:
-                self.create_user("default", DEFAULT_USER_ID)
 
     def get_user(self, user_id: str) -> User:
         user = self._repo.get(user_id)
