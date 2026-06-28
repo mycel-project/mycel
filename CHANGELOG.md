@@ -1,6 +1,10 @@
 ## Unreleased
-## Added
+### Added
+- Add Alembic for automated database schema and data migrations
 - add API response logging (log level on debug)
+
+### Refactored
+- Centralize database URL construction logic in the config module
 
 ## v0.2.0
 This update introduces a major refactor of Mycel's database structure, identifiers, security, testing, and more. It is quite substantial as it addresses former architectural issues.
