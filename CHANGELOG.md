@@ -1,4 +1,6 @@
 ## Unreleased
+## Added
+- add API response logging (log level on debug)
 
 ## v0.2.0
 This update introduces a major refactor of Mycel's database structure, identifiers, security, testing, and more. It is quite substantial as it addresses former architectural issues.

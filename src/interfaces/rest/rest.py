@@ -223,6 +223,30 @@ See the implementation guide for details.
             return await call_next(request)
 
         @self.app.middleware("http")
+        async def logging_middleware(request: Request, call_next):
+            # if not self.config.log_responses:  
+            #     return await call_next(request)
+
+            response = await call_next(request)
+
+            body = b""
+            async for chunk in response.body_iterator:
+                body += chunk
+
+            logger.debug(
+                f"{request.method} {request.url.path} "
+                f"→ {response.status_code} "
+                f"{body.decode('utf-8')[:1000]}"
+            )
+
+            return Response(
+                content=body,
+                status_code=response.status_code,
+                media_type=response.media_type,
+                headers=dict(response.headers)
+            )
+
+        @self.app.middleware("http")
         async def idempotency_middleware(request: Request, call_next):
             key = request.headers.get("Idempotency-Key")
 
