@@ -28,8 +28,8 @@ class LearningUnitRepository:
 
     def create(self, unit: LearningUnit) -> LearningUnit:                                
         self.db.execute(
-            """INSERT INTO learning_units (id, node_id, unit_type, position, due, last_review, unit_data)
-               VALUES (:id, :node_id, :unit_type, :position, :due, :last_review, :unit_data)""",
+            """INSERT INTO learning_units (id, node_id, unit_type, position, slot, due, last_review, unit_data)
+            VALUES (:id, :node_id, :unit_type, :position, :slot, :due, :last_review, :unit_data)""",
             {
                 "id": unit.id,
                 "node_id": unit.node_id,

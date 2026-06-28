@@ -33,7 +33,7 @@ class CreateSporeUseCase:
 
         due = start_of_local_tomorrow_ms(tz_offset)
 
-        spore_unit = Spore(due=due)
+        spore_unit = Spore(due=due, slot=1)
         return self._create_node.execute(
             user_id=user_id,
             collection_id=collection_id,
