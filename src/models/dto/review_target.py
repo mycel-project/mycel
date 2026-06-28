@@ -5,4 +5,4 @@ from src.schemas.node_detail_view import NodeDetailView
 
 class ReviewTarget(BaseModel):
     node: NodeDetailView
-    slot: int = 0
+    slot: int = 1

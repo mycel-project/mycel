@@ -111,7 +111,7 @@ class ImportExportRepository:
                         "id": lu.id,
                         "node_id": lu.node_id,
                         "unit_type": lu.type,
-                        "slot": getattr(lu, 'slot', 0),
+                        "slot": getattr(lu, 'slot', 1),
                         "position": lu.position,
                         "due": lu.due,
                         "last_review": lu.last_review,

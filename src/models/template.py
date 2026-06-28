@@ -50,7 +50,7 @@ def get_default_templates() -> dict[str, Template]:
             name="Basic",
             fields=["recto", "verso"], 
             render_config={
-                0: {
+                1: {
                     "front": "{{recto}}", 
                     "back": "{{recto}}\n{{verso}}"
                 }
@@ -61,11 +61,11 @@ def get_default_templates() -> dict[str, Template]:
             name="Dual",
             fields=["recto", "verso"], 
             render_config={
-                0: {
+                1: {
                     "front": "{{recto}}", 
                     "back": "{{recto}}\n{{verso}}"
                 },
-                1: {
+                2: {
                     "front": "{{verso}}", 
                     "back": "{{verso}}\n{{recto}}"
                 }
@@ -73,7 +73,7 @@ def get_default_templates() -> dict[str, Template]:
         ),
         DefaultTemplate.SPORE_CLOZE: SporeClozeTemplate(
             id=DefaultTemplate.SPORE_CLOZE,
-            name="Texte à trous",
+            name="Cloze deletion",
             fields=["cloze", "extra"],
             render_config={
                 "front": "{{cloze:content}}",

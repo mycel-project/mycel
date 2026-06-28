@@ -213,7 +213,7 @@ class TestLearningUnit:
         user, token = create_user()
         col = create_col(user_id=user.id)
         node = create_node(col_id=col.id, user_id=user.id)
-        response = api.patch(f"/collections/{col.id}/nodes/{node.id}/slot/0/reprioritise", token, body={"priority": 0.5})
+        response = api.patch(f"/collections/{col.id}/nodes/{node.id}/slot/1/reprioritise", token, body={"priority": 0.5})
         assert response.status_code == 200
         assert response.json()["data"]["id"] == node.id
 
@@ -222,7 +222,7 @@ class TestLearningUnit:
         col = create_col(user_id=user.id)
         node = create_node(col_id=col.id, user_id=user.id)
         response = api.patch(
-            f"/collections/{col.id}/nodes/{node.id}/slot/0/reschedule/",
+            f"/collections/{col.id}/nodes/{node.id}/slot/1/reschedule/",
             token,
             body={"date": "2099-05-20", "tz_offset": 120}
         )
@@ -234,7 +234,7 @@ class TestLearningUnit:
         col = create_col(user_id=user.id)
         node = create_node(col_id=col.id, user_id=user.id, content="Hello world")
         response = api.patch(
-            f"/collections/{col.id}/nodes/{node.id}/slot/0/dismiss",
+            f"/collections/{col.id}/nodes/{node.id}/slot/1/dismiss",
             token,
         )
         assert response.status_code == 200
@@ -247,7 +247,7 @@ class TestLearningUnit:
         col = create_col(user_id=user.id)
         node = create_node(col_id=col.id, user_id=user.id, content="Hello world")
         response = api.patch(
-            f"/collections/{col.id}/nodes/{node.id}/slot/0/dismiss",
+            f"/collections/{col.id}/nodes/{node.id}/slot/1/dismiss",
             token,
             body={"value": False}
         )
@@ -265,7 +265,7 @@ class TestLearningUnit:
         initial_due = initial_lu["due"]
 
         response = api.patch(
-            f"/collections/{col.id}/nodes/{node.id}/slot/0",
+            f"/collections/{col.id}/nodes/{node.id}/slot/1",
             token,
             body={
                 "type": "spore",
@@ -323,13 +323,13 @@ class TestIdempotency:
         key = str(uuid4())
 
         r1 = api.patch(
-            f"/collections/{col.id}/nodes/{node.id}/slot/0/reschedule",
+            f"/collections/{col.id}/nodes/{node.id}/slot/1/reschedule",
             token,
             body={"date": "2099-05-20", "tz_offset": 0},
             headers={"Idempotency-Key": key}
         )
         r2 = api.patch(
-            f"/collections/{col.id}/nodes/{node.id}/slot/0/reschedule",
+            f"/collections/{col.id}/nodes/{node.id}/slot/1/reschedule",
             token,
             body={"date": "2020-05-20", "tz_offset": 0},
             headers={"Idempotency-Key": key}

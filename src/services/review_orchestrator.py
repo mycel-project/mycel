@@ -58,7 +58,7 @@ class ReviewOrchestrator:
         node = self._node_service.get_node_from_learning_unit(learning_unit.id)
         return ReviewTarget(
             node=self._node_view_builder.to_detail_view(node),
-            slot=getattr(learning_unit, 'slot', 0)
+            slot=learning_unit.slot
         )
 
     def undo_review(self, user_id: str, col_id: str) -> ReviewTarget:
@@ -79,7 +79,7 @@ class ReviewOrchestrator:
         node = self._node_service.get_node(node_from_undone_review.id)
         return ReviewTarget(
             node=self._node_view_builder.to_detail_view(node),
-            slot=getattr(learning_unit, 'slot', 0)
+            slot=learning_unit.slot
         )
 
     def get_calendar(

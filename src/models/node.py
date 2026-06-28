@@ -83,8 +83,8 @@ class Node(BaseModel):
             raise RuntimeError(f"Unit {unit_id} not found on node {self.id}")
         return unit
 
-    def get_unit_by_slot(self, slot: int = 0) -> LearningUnit:
-        unit = next((u for u in self.learning_units if getattr(u, 'slot', 0) == slot), None)
+    def get_unit_by_slot(self, slot: int = 1) -> LearningUnit:
+        unit = next((u for u in self.learning_units if getattr(u, 'slot', 1) == slot), None)
         if unit is None:
             raise RuntimeError(f"No unit found for slot {slot} on node {self.id}")
         return unit

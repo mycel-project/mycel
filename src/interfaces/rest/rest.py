@@ -89,7 +89,7 @@ For common actions (such as reprioritisation), you can use dedicated endpoints. 
 
 Endpoint names reflect the target learning unit type when the action is type-specific (e.g. dismiss_fragment rather than dismiss_learning_unit).
 
-*If you don't want to support mutliple-learning-unit nodes, always pass 0 as the slot number.*
+*If you don't want to support mutliple-learning-unit nodes, always pass 1 as the slot number.*
                 """
             },
             {
@@ -545,7 +545,7 @@ See the implementation guide for details.
             duration: int # generic data for all reviews no matter the node type
             type_review_data: TypeReviewData # data specific to node type
             tz_offset: int = 0
-            slot: int = 0
+            slot: int = 1
         @self.app.post("/collections/{col_id}/nodes/{node_id}/review", tags=["reviews"], responses={**AUTH_RESPONSES})
         async def review_node(col_id: str, node_id: str, data: ReviewRequest, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
             return ApiResponse(data=self.review_orchestrator.review_to_detail_view(user_id, 

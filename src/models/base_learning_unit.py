@@ -9,6 +9,6 @@ class BaseLearningUnit(BaseModel):
     node_id: str = ""
     position: str = ""
     due: int  # Need default too due to progressive building as position and node_id ?
-    slot: int = 0 # Would probably stay zero for fragments but it's an important value to expose at root
+    slot: int = 1 
     last_review: Optional[int] = None
 

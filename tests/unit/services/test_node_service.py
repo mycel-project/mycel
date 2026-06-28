@@ -97,7 +97,7 @@ class TestNodeService:
 
             result = node_service.update_learning_unit(
                 default_fragment.id,
-                0,
+                1,
                 FragmentUpdate(dismiss=True)
             )
 
@@ -106,11 +106,11 @@ class TestNodeService:
             
             result = node_service.update_learning_unit(
                 default_fragment.id,
-                0,
+                1,
                 FragmentUpdate(dismiss=False)
             )
 
             fragment = result.get_fragment()
             assert fragment.dismiss == False
-            assert fragment.slot == 0
+            assert fragment.slot == 1
             assert fragment.ref == default_fragment.get_fragment().ref

@@ -58,7 +58,7 @@ class FragmentService:
             NodeUpdate(fields=node.fields)
         )
 
-    def dismiss(self, node_id: str, slot: int = 0, value: bool | None = None) -> Node:
+    def dismiss(self, node_id: str, slot: int = 1, value: bool | None = None) -> Node:
         """
         Just first slot at the moment
         """
