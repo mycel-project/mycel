@@ -32,7 +32,8 @@ def generate_id():
 def db_fixture(tmp_path: Path):
     # for unit tests
     db_path = tmp_path / "test.db"
-    db = Db(str(db_path))
+    from src.core.config import build_db_url
+    db = Db(build_db_url(str(db_path)))
     yield db 
     
     if db_path.exists():

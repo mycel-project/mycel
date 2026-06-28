@@ -5,7 +5,7 @@ from io import TextIOWrapper
 
 from src.converters.html_to_md.registry import HtmlToMdRegistry
 from src.core.app_infos import AppInfos
-from src.core.config import MycelConfig
+from src.core.config import MycelConfig, load_config
 from src.core.lexical_order import LexicalOrder
 from src.db import Db
 from src.domain.create_fragment_usecase import CreateFragmentUseCase
@@ -50,13 +50,14 @@ if isinstance(sys.stdout, TextIOWrapper):
 class Application():
     def __init__(self, auth_service: AuthService | None = None, db_path: str | None = None):
         self.config_file = "config.json"
-        self.config = self.load_config()
+        self.config = load_config(self.config_file)
         setup_logging(self.config.log_level)
         self.bus = EventBus()
-        if db_path: # to overwrite path during tests
-            self.db = Db(db_path)
+        if db_path: # to overwrite path during tests. Use custom db_path or the one provided in config
+            from src.core.config import build_db_url
+            self.db = Db(build_db_url(db_path))
         else:
-            self.db = Db(self.config.db_path)
+            self.db = Db(self.config.sqlalchemy_url)
         self.app_infos = AppInfos()
 
         print(f"Running Mycel {self.app_infos.version}")
@@ -155,13 +156,6 @@ class Application():
                 await cleanup_sevice.clean_deleted_nodes()
             except Exception as e:
                 logger.error(f"Cleanup failed: {e}")
-
-    def load_config(self):
-        with open(self.config_file, "r") as f:
-            config_dict = json.load(f)
-    
-        self.config = MycelConfig(**config_dict)
-        return self.config
 
 def setup_logging(level_str):
     LOG_LEVELS = {

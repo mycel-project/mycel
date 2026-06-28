@@ -22,17 +22,12 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
         cursor.close()
 
 class Db:
-    def __init__(self, db_path: str):
+    def __init__(self, url: str):
         self.testing = is_testing()
-        db_path = os.getenv("DATABASE_URL") or db_path
-        self.db_path = db_path
-        if str(db_path).startswith("postgresql"):
-            url = str(db_path)
-        else:
-            url = f"sqlite:///{db_path}"
         self.engine = create_engine(url)
-        Base.metadata.create_all(self.engine)
         self.session_factory = sessionmaker(bind=self.engine)
+        if self.testing:
+            Base.metadata.create_all(self.engine)
 
     @property
     def is_sqlite(self) -> bool:

@@ -16,7 +16,8 @@ def main():
     if db_path.exists():
         db_path.unlink()
 
-    db = Db(db_path)
+    from src.core.config import build_db_url
+    db = Db(build_db_url(str(db_path)))
 
     collection_service = CollectionService(db)
     repo = NodeRepository(db)
