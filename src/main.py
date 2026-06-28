@@ -60,6 +60,13 @@ class Application():
             self.db = Db(self.config.sqlalchemy_url)
         self.app_infos = AppInfos()
 
+        if self.config.run_migrations_on_startup and not self.db.testing:
+            from alembic import command
+            from alembic.config import Config
+            logger.info("Running database migrations...")
+            alembic_cfg = Config("alembic.ini")
+            command.upgrade(alembic_cfg, "head")
+
         print(f"Running Mycel {self.app_infos.version}")
 
         source_registry = SourceRegistry(self.config.network_user_agent, self.config.allow_private_urls_fetch)

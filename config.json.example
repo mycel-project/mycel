@@ -4,5 +4,6 @@
     "db_path": "mycel.db",
     "log_level": "info",
     "allow_private_urls_fetch": true,
-    "ensure_default_user": true
+    "ensure_default_user": true,
+    "run_migrations_on_startup": true
 }

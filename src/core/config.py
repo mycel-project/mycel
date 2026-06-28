@@ -10,6 +10,7 @@ class MycelConfig(BaseModel):
     log_level: str
     allow_private_urls_fetch: bool
     ensure_default_user: bool
+    run_migrations_on_startup: bool = True
 
     @property
     def sqlalchemy_url(self) -> str:
