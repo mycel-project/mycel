@@ -210,20 +210,9 @@ See the implementation guide for details.
             )
 
         @self.app.middleware("http")
-        async def version_check_middleware(request: Request, call_next):
-            required_min_version = request.headers.get("X-Mycel-Version")
-            if required_min_version:
-                try:
-                    check_version_compatibility(required_min_version, self.app_infos.version)
-                except VersionException as e:
-                    return JSONResponse(
-                        status_code=400,
-                        content={"detail": {"type": "version", "code": e.code, "message": e.message}}
-                    )
-            return await call_next(request)
-
-        @self.app.middleware("http")
         async def logging_middleware(request: Request, call_next):
+            if request.url.path == "/ping":
+                return await call_next(request)
             # if not self.config.log_responses:  
             #     return await call_next(request)
 
@@ -248,6 +237,8 @@ See the implementation guide for details.
 
         @self.app.middleware("http")
         async def idempotency_middleware(request: Request, call_next):
+            if request.url.path == "/ping":
+                return await call_next(request)
             key = request.headers.get("Idempotency-Key")
 
             if not key or request.method not in ("POST", "PATCH"):
@@ -270,16 +261,38 @@ See the implementation guide for details.
 
             return response
 
+        @self.app.middleware("http")
+        async def version_check_middleware(request: Request, call_next):
+            if request.url.path == "/ping":
+                return await call_next(request)
+            required_min_version = request.headers.get("X-Mycel-Version")
+            if required_min_version:
+                try:
+                    check_version_compatibility(required_min_version, self.app_infos.version)
+                except VersionException as e:
+                    return JSONResponse(
+                        status_code=400,
+                        content={"detail": {"type": "version", "code": e.code, "message": e.message}}
+                    )
+            return await call_next(request)
+
         @self.app.get("/scalar", include_in_schema=False)
         async def scalar_html():
             return get_scalar_api_reference(openapi_url="/openapi.json", title="Mon API")
 
         # SYSTEM
-        
-        @self.app.get("/health", tags=["system"])
+
+        @self.app.get("/ping", tags=["system"])
         async def check_reachability():
             """
-            Checks that Mycel is reachable and running.
+            Checks Mycel liveness. 
+            """
+            return {"status": "ok"}
+        
+        @self.app.get("/health", tags=["system"])
+        async def check_health(user_id = Depends(self.get_user)):
+            """
+            Checks that client can use the API: server reachability, version and authentication.
             """
             return {"status": "ok"}
 
