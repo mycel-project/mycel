@@ -17,3 +17,4 @@ class SchedulingContext(BaseModel):
     position: Optional[str] = None
     overdue: Optional[int] = None
     encounter_count: Optional[int] = None
+    dismiss: Optional[bool] = None

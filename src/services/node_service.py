@@ -189,7 +189,8 @@ class NodeService:
                     parent_id=n.parent_id,
                     due=u.due,            
                     last_review=u.last_review, 
-                    overdue=overdue_ms(u.due, now)
+                    overdue=overdue_ms(u.due, now),
+                    dismiss=getattr(n, "dismiss", False),
                 )
                 for n in nodes
                 for u in n.learning_units

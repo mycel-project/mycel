@@ -46,6 +46,13 @@ class SchedulingEngine:
             interval = int(min(interval + step, 365))
         return interval
 
+    def get_due_lu(self, learning_units: list[SchedulingContext]):
+        return [
+            lu for lu in learning_units
+            if lu.due is not None
+            and not (lu.type == NodeType.FRAGMENT and getattr(lu, 'dismiss', False))
+        ]
+
     def get_next_learning_unit_id(
         self,
         user_id: str,
@@ -60,11 +67,7 @@ class SchedulingEngine:
         
         return node id
         """
-        due = [
-            lu for lu in learning_units
-            if lu.due is not None
-            and not (lu.type == NodeType.FRAGMENT and getattr(lu, 'dismiss', False))
-        ]
+        due = self.get_due_lu(learning_units)
 
         if not due:
             return None

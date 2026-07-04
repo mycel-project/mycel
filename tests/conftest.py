@@ -1,6 +1,8 @@
 from unittest.mock import Mock
 from fastapi.testclient import TestClient
 from fractional_indexing import generate_n_keys_between
+from src.core.scheduling_context import SchedulingContext
+from src.core.scheduling_engine import SchedulingEngine
 from src.db import Db
 from pathlib import Path
 import pytest
@@ -129,7 +131,22 @@ def col_service(col_repo):
 def client(app):
     return TestClient(app.interface.interface.app)
 
+# misc
+@pytest.fixture
+def scheduling_engine():
+    user_service = Mock()
+    return SchedulingEngine(user_service)
 
+@pytest.fixture
+def make_scheduling_context(generate_id):
+    def _make_scheduling_context(type=NodeType.FRAGMENT, dismiss: bool = False) -> SchedulingContext:
+        return SchedulingContext(
+            type=type,
+            id=generate_id(),
+            due=9999999999,
+            dismiss=dismiss,
+        )
+    return _make_scheduling_context
 
 @pytest.fixture
 def make_node(generate_id):

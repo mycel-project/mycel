@@ -4,9 +4,13 @@
 - Add `run_migrations_on_startup` config flag (default: true) to automatically run Alembic migrations on app startup
 - Add Alembic for automated database schema and data migrations
 - add API response logging (log level on debug)
+- AI instructions skills for better consistency
 
 ### Refactored
-- Centralize database URL construction logic in the config module
+- Dismissed learning units are no longer considered reviewable.
+
+### Fixed
+- Dismiss node were concered as reviewable.
 
 ## v0.2.0
 This update introduces a major refactor of Mycel's database structure, identifiers, security, testing, and more. It is quite substantial as it addresses former architectural issues.
