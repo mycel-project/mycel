@@ -9,10 +9,10 @@ echo ==> Installing/updating dependencies...
 .\env\Scripts\pip.exe install -r requirements.txt
 if errorlevel 1 goto error
  
+echo ==> Checking config.json for new options...
+.\env\Scripts\python.exe merge_config.py
+ 
 echo ==> Update complete.
-echo If this update introduced new config options, check config.example.json
-echo and update your config.json accordingly.
-echo.
 echo Restart Mycel with: run.bat
 pause
 exit /b 0

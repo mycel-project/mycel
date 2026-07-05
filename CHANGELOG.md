@@ -6,7 +6,7 @@
 - add API response logging (log level on debug)
 - AI instructions skills for better consistency
 - Add introduced version number for each user config field
-- Add update scripts
+- Add update scripts + config auto-merge when updating Mycel
 
 ### Refactored
 - Dismissed learning units are no longer considered reviewable.
