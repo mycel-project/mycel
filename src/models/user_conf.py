@@ -10,7 +10,8 @@ class UserConf(BaseModel):
         json_schema_extra={
             "category": "review",
             "step": 5,
-            "unit": "min"
+            "unit": "min",
+            "version": "0.2.0"
         }
     )
     delete_max_age: int = Field(
@@ -22,7 +23,8 @@ class UserConf(BaseModel):
             "category": "review",
             "step": 1,
             "unit": "d",
-            "warning": "Changing this value will immediately and permanently delete nodes that have been soft-deleted for longer than the new value."
+            "warning": "Changing this value will immediately and permanently delete nodes that have been soft-deleted for longer than the new value.",
+            "version": "0.2.0"
         }
     )
     add_extract_to_nav: bool = Field(
@@ -32,6 +34,7 @@ class UserConf(BaseModel):
         ),
         json_schema_extra={
             "category": "review",
+            "version": "0.2.0",
         }
     )
     wait_for_due_time: bool = Field(
@@ -39,6 +42,7 @@ class UserConf(BaseModel):
         description="If enabled, nodes due later in the day are never surfaced early, only nodes whose due time has already passed are reviewed.",
         json_schema_extra={
             "category": "review",
+            "version": "0.2.0",
         }
     )
     ping_frequency: int = Field(
@@ -49,7 +53,8 @@ class UserConf(BaseModel):
         json_schema_extra={
             "category": "network",
             "step": 1,
-            "unit": "s"
+            "unit": "s",
+            "version": "0.2.0"
         }
     )
     # test_param: str = Field(
