@@ -3,6 +3,7 @@ import json
 from scalar_fastapi import get_scalar_api_reference
 
 import logging
+import asyncio
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -383,9 +384,13 @@ See the implementation guide for details.
             nodes = self.node_orchestrator.get_nodes_view(user_id, col_id, 10000)
             return ApiResponse(data=nodes)
 
+
         @self.app.post("/collections/{col_id}/nodes", tags=["nodes"], responses={**AUTH_RESPONSES})
         async def create_node(col_id: str, data: NodeCreate, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
-            node = self.node_orchestrator.create_node_to_detail_view(user_id, col_id, data, data.tz_offset)
+            node = await asyncio.to_thread(
+                self.node_orchestrator.create_node_to_detail_view,
+                user_id, col_id, data, data.tz_offset
+            )
             return ApiResponse(data=node)
         
         @self.app.get("/collections/{col_id}/nodes/priorities", tags=["learning units"], responses={**AUTH_RESPONSES})

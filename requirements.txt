@@ -34,6 +34,7 @@ markdownify==1.2.2
 MarkupSafe==3.0.3
 mdurl==0.1.2
 msgpack==1.2.0
+nodeenv==1.10.0
 packageurl-python==0.17.6
 packaging==26.1
 pillow==12.2.0

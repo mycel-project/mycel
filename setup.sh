@@ -13,6 +13,9 @@ echo "Installing dependencies..."
 ./env/bin/pip install --upgrade pip
 ./env/bin/pip install -r requirements.txt
 
+echo "==> Setting up Node dependencies..."
+./install_node_deps.sh
+
 if [ ! -f "config.json" ]; then
     echo "Creating configuration file..."
     cp config.json.example config.json

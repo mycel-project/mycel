@@ -8,6 +8,9 @@ git pull
  
 echo "==> Installing/updating dependencies..."
 ./env/bin/pip install -r requirements.txt
+
+echo "==> Setting up Node dependencies..."
+./install_node_deps.sh
  
 echo "==> Checking config.json for new options..."
 ./env/bin/python3 merge_config.py

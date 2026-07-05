@@ -8,6 +8,10 @@ if errorlevel 1 goto error
 echo ==> Installing/updating dependencies...
 .\env\Scripts\pip.exe install -r requirements.txt
 if errorlevel 1 goto error
+
+echo ==> Setting up Node dependencies...
+call install_node_deps.bat
+if errorlevel 1 goto error
  
 echo ==> Checking config.json for new options...
 .\env\Scripts\python.exe merge_config.py

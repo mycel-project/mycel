@@ -14,6 +14,10 @@ if errorlevel 1 exit /b 1
 .\env\Scripts\pip install -r requirements.txt
 if errorlevel 1 exit /b 1
 
+echo ==> Setting up Node dependencies...
+call install_node_deps.bat
+if errorlevel 1 goto error
+
 if not exist config.json (
     echo Creating configuration file...
     copy config.json.example config.json >nul

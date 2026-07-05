@@ -1,5 +1,6 @@
 ## Unreleased
 ### Added
+- Change Makrkdown parsing tool from html_to_markdown to Defuddle (Node.js).
 - Automatically create a 'Default' collection when a new user is created
 - Add `run_migrations_on_startup` config flag (default: true) to automatically run Alembic migrations on app startup
 - Add Alembic for automated database schema and data migrations
