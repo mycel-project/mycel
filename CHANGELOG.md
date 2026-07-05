@@ -6,6 +6,7 @@
 - add API response logging (log level on debug)
 - AI instructions skills for better consistency
 - Add introduced version number for each user config field
+- Add update scripts
 
 ### Refactored
 - Dismissed learning units are no longer considered reviewable.
