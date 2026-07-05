@@ -63,10 +63,29 @@ class Application():
         if self.config.run_migrations_on_startup and not self.db.testing:
             from alembic import command
             from alembic.config import Config
+            from alembic.script import ScriptDirectory
+            from sqlalchemy.exc import OperationalError
+
             logger.info("Running database migrations...")
             alembic_cfg = Config("alembic.ini")
-            command.upgrade(alembic_cfg, "head")
 
+            try:
+                command.upgrade(alembic_cfg, "head")
+            except OperationalError as e:
+                if "already exists" in str(e):
+                    logger.warning(
+                        "Existing schema detected with no Alembic history. "
+                        "Stamping database as baseline and retrying migrations."
+                    )
+                    script = ScriptDirectory.from_config(alembic_cfg)
+                    base_revision = script.get_base()
+                    if base_revision is None:
+                        raise RuntimeError("No Alembic migrations found in alembic/versions/")
+                    command.stamp(alembic_cfg, base_revision)
+                    command.upgrade(alembic_cfg, "head")
+                else:
+                    raise
+                
         print(f"Running Mycel {self.app_infos.version}")
 
         source_registry = SourceRegistry(self.config.network_user_agent, self.config.allow_private_urls_fetch)
