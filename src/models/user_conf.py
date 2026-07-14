@@ -1,75 +1,81 @@
-from pydantic import BaseModel, model_validator, Field
+from typing import Optional
+from pydantic import BaseModel, Field, model_validator
 
+
+class SettingMeta(BaseModel):
+    category: str
+    step: int = 1
+    unit: Optional[str] = None
+    warning: Optional[str] = None
+    version: str = "0.1.0"
+
+    def to_json_schema_extra(self) -> dict:
+        return self.model_dump(exclude_none=True)
+
+    def to_markdown(self) -> str:
+        data = self.model_dump(exclude_none=True)
+        return " · ".join(f"**{k}:** {v}" for k, v in data.items())
+
+def meta_field(default, description: str, meta: SettingMeta, **kwargs):
+    full_description = f"{description}\n\n{meta.to_markdown()}"
+    return Field(
+        default=default,
+        description=full_description,
+        json_schema_extra=meta.to_json_schema_extra(),
+        **kwargs,
+    )
 
 class UserConf(BaseModel):
-    undo_review_max_age: int = Field(
-        default=10,
+    undo_review_max_age: int = meta_field(
+        10,
+        "Maximum time allowed to undo a review.",
+        SettingMeta(category="review", step=5, unit="min", version="0.2.0"),
         ge=0,
         le=60,
-        description="Maximum time allowed to undo a review.",
-        json_schema_extra={
-            "category": "review",
-            "step": 5,
-            "unit": "min",
-            "version": "0.2.0"
-        }
     )
-    delete_max_age: int = Field(
-        default=30,
+    delete_max_age: int = meta_field(
+        30,
+        "Number of days after which deleted nodes are permanently removed.",
+        SettingMeta(
+            category="review",
+            step=1,
+            unit="d",
+            warning=(
+                "Changing this value will immediately and permanently delete "
+                "nodes that have been soft-deleted for longer than the new value."
+            ),
+            version="0.2.0",
+        ),
         ge=0,
         le=90,
-        description="Number of days after which deleted nodes are permanently removed.",
-        json_schema_extra={
-            "category": "review",
-            "step": 1,
-            "unit": "d",
-            "warning": "Changing this value will immediately and permanently delete nodes that have been soft-deleted for longer than the new value.",
-            "version": "0.2.0"
-        }
     )
-    add_extract_to_nav: bool = Field(
-        default=True,
-        description=(
-            "When extracting, insert it into the navigation history for instant access."
-        ),
-        json_schema_extra={
-            "category": "review",
-            "version": "0.2.0",
-        }
+    add_extract_to_nav: bool = meta_field(
+        True,
+        "When extracting, insert it into the navigation history for instant access.",
+        SettingMeta(category="review", version="0.2.0"),
     )
-    wait_for_due_time: bool = Field(
-        default=False,
-        description="If enabled, nodes due later in the day are never surfaced early, only nodes whose due time has already passed are reviewed.",
-        json_schema_extra={
-            "category": "review",
-            "version": "0.2.0",
-        }
+    wait_for_due_time: bool = meta_field(
+        False,
+        "If enabled, nodes due later in the day are never surfaced early, only "
+        "nodes whose due time has already passed are reviewed.",
+        SettingMeta(category="review", version="0.2.0"),
     )
-    ping_frequency: int = Field(
-        default=3,
+    ping_frequency: int = meta_field(
+        3,
+        "When disconnected, application will attempt to reconnect to Mycel at this frequency",
+        SettingMeta(category="network", step=1, unit="s", version="0.2.0"),
         ge=1,
         le=60,
-        description="When disconnected, application will attempt to reconnect to Mycel at this frequency",
-        json_schema_extra={
-            "category": "network",
-            "step": 1,
-            "unit": "s",
-            "version": "0.2.0"
-        }
     )
-    # test_param: str = Field(
-    #     default="default",
-    #     description="This is a placeholder...",
-    #     json_schema_extra={
-    #         "category": "other",
-    #     }
+    # test_param: str = meta_field(
+    #     "default",
+    #     "This is a placeholder...",
+    #     SettingMeta(category="other"),
     # )
-    # test_bool: bool = Field(
-    #     default=True,
-    #     description="Is this a test? yeah!",
-    #     json_schema_extra={
-    #         "category": "other",
-    #     }
+    # test_bool: bool = meta_field(
+    #     True,
+    #     "Is this a test? yeah!",
+    #     SettingMeta(category="other"),
     # )
 
     @model_validator(mode="before")
