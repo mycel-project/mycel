@@ -7,6 +7,7 @@ from uuid import uuid4
 import jwt
 
 from src.domain.create_fragment_usecase import CreateFragmentUseCase
+from src.domain.create_node_from_text_usecase import CreateNodeFromTextUseCase
 from src.domain.create_node_usecase import CreateNodeUseCase
 from src.domain.create_spore_usecase import CreateSporeUseCase
 from src.main import Application
@@ -135,6 +136,10 @@ def create_fragment_use_case(app) -> CreateFragmentUseCase:
 @pytest.fixture()
 def create_spore_use_case(app) -> CreateSporeUseCase:
     return app.create_spore_usecase
+
+@pytest.fixture
+def create_node_from_text_use_case(app) -> CreateNodeFromTextUseCase:
+    return CreateNodeFromTextUseCase(app.create_fragment_usecase)
 
 @pytest.fixture
 def create_node(create_fragment_use_case: CreateFragmentUseCase, create_spore_use_case: CreateSporeUseCase):

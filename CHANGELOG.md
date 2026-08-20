@@ -1,6 +1,6 @@
 ## Unreleased
 ### Added
-- Change Makrkdown parsing tool from html_to_markdown to Defuddle (Node.js).
+- Change Markdown parsing tool from html_to_markdown to Defuddle (Node.js).
 - Automatically create a 'Default' collection when a new user is created
 - Add `run_migrations_on_startup` config flag (default: true) to automatically run Alembic migrations on app startup
 - Add Alembic for automated database schema and data migrations
@@ -8,6 +8,7 @@
 - AI instructions skills for better consistency
 - Add introduced version number for each user config field
 - Add update scripts + config auto-merge when updating Mycel
+- Add functionnality to add resource from text (on the same Create Node endpoint)
 
 ### Refactored
 - Dismissed learning units are no longer considered reviewable.

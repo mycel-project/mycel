@@ -1,5 +1,6 @@
 import logging
 
+from src.domain.create_node_from_text_usecase import CreateNodeFromTextUseCase
 from src.domain.create_node_from_url_usecase import CreateNodeFromUrlUseCase
 from src.domain.domain_exceptions import EmptyField, ExtractError, ExtractMismatchError, InvalidSourceNodeType, NotAKnownType, UnknownRessourceTypeError
 from src.domain.get_outline_usecase import GetOutlineUseCase
@@ -8,7 +9,7 @@ from src.domain.reschedule_usecase import RescheduleUseCase
 from src.domain.split_node_usecase import SplitNodeUseCase
 from src.models.extract_result import ExtractResult
 from src.models.node import Node, NodeType
-from src.models.node_create import NodeCreate, NodeCreateFromUrl
+from src.models.node_create import NodeCreate, NodeCreateFromText, NodeCreateFromUrl
 from src.models.node_slot_key import NodeSlotKey
 from src.models.outline import Outline
 from src.schemas.learning_unit_update import LearningUnitUpdate
@@ -38,6 +39,7 @@ class NodeOrchestrator:
         node_view_builder: NodeViewBuilder,
         node_format_service: NodeFormatService,
         create_node_from_url_usecase: CreateNodeFromUrlUseCase,
+        create_node_from_text_usecase: CreateNodeFromTextUseCase,
         reschedule_usecase: RescheduleUseCase,
         reprioritise_usecase: ReprioritiseUseCase,
         get_outline_usecase: GetOutlineUseCase,
@@ -50,6 +52,7 @@ class NodeOrchestrator:
         self._priority_service = priority_service
         self._ressource_service = ressource_service
         self._create_node_from_url_usecase = create_node_from_url_usecase
+        self._create_node_from_text_usecase = create_node_from_text_usecase
         self._node_view_builder = node_view_builder
         self._node_format_service = node_format_service
         self._reschedule_usecase = reschedule_usecase
@@ -82,6 +85,8 @@ class NodeOrchestrator:
     def create_node(self, user_id: str, collection_id: str, data: NodeCreate, tz_offset_min: int) -> Node:
         if isinstance(data, NodeCreateFromUrl):
             return self._create_node_from_url_usecase.execute(user_id, collection_id, data.url, tz_offset_min)
+        elif isinstance(data, NodeCreateFromText):
+            return self._create_node_from_text_usecase.execute(user_id, collection_id, data, tz_offset_min)
         else:
             raise UnknownRessourceTypeError(type(data).__name__)
 

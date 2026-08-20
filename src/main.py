@@ -9,6 +9,7 @@ from src.core.config import MycelConfig, load_config
 from src.core.lexical_order import LexicalOrder
 from src.db import Db
 from src.domain.create_fragment_usecase import CreateFragmentUseCase
+from src.domain.create_node_from_text_usecase import CreateNodeFromTextUseCase
 from src.domain.create_node_from_url_usecase import CreateNodeFromUrlUseCase
 from src.domain.create_node_usecase import CreateNodeUseCase
 from src.domain.create_spore_usecase import CreateSporeUseCase
@@ -123,6 +124,7 @@ class Application():
         review_service = ReviewService(self.db, scheduling_engine, fsrs_service, node_service)
 
         create_node_from_url_usecase = CreateNodeFromUrlUseCase(self.create_fragment_usecase, ressource_service)
+        create_node_from_text_usecase = CreateNodeFromTextUseCase(self.create_fragment_usecase)
 
         reschedule_usecase = RescheduleUseCase(user_service, node_service)
         reprioritise_usecase = ReprioritiseUseCase(node_service, priority_service)
@@ -132,7 +134,7 @@ class Application():
 
         collection_orchestrator = CollectionOrchestrator(collection_service)
         
-        node_orchestrator = NodeOrchestrator(node_service, fragment_service, spore_service, priority_service, ressource_service, node_view_builder, node_format_service, create_node_from_url_usecase, reschedule_usecase, reprioritise_usecase, get_outline_usecase, split_node_usecase, collection_service)
+        node_orchestrator = NodeOrchestrator(node_service, fragment_service, spore_service, priority_service, ressource_service, node_view_builder, node_format_service, create_node_from_url_usecase, create_node_from_text_usecase, reschedule_usecase, reprioritise_usecase, get_outline_usecase, split_node_usecase, collection_service)
 
         review_orchestrator = ReviewOrchestrator(user_service, node_service, review_service, node_view_builder, collection_service)
 

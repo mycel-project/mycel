@@ -63,7 +63,7 @@ logger = logging.getLogger(__name__)
 bearer_scheme = HTTPBearer(auto_error=False)
 
 AUTH_RESPONSES = {
-    401: {"description": "Unauthorized — see Mycel implementation guide."},
+    401: {"description": "Unauthorized - see Mycel implementation guide."},
     402: {"description": "Unsubscribed - see Mycel implementation guide."},
     503: {"description": "Service unavailable - see Mycel implementation guide."},
 }
@@ -387,6 +387,11 @@ See the implementation guide for details.
 
         @self.app.post("/collections/{col_id}/nodes", tags=["nodes"], responses={**AUTH_RESPONSES})
         async def create_node(col_id: str, data: NodeCreate, user_id = Depends(self.get_user)) -> ApiResponse[NodeDetailView]:
+            """
+            Main endpoint for adding new resources or arbitrary nodes.
+
+            This endpoint handles node creation from a URL or raw text, depending on the "type" discriminator provided. It creates a corresponding Fragment with the metadata provided in the request body.
+            """
             node = await asyncio.to_thread(
                 self.node_orchestrator.create_node_to_detail_view,
                 user_id, col_id, data, data.tz_offset
