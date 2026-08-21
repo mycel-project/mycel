@@ -1,21 +1,11 @@
-from src.core.regex import BLOCKQUOTE_PATTERN, HEADING_PATTERN
+from src.formats.registry import get_format
 from src.models.node import Node
-from src.models.outline import Outline, OutlineEntry
+from src.models.outline import Outline
 
 
 class GetOutlineUseCase:
     def execute(self, node: Node) -> Outline:
         text = node.fields.get_content() or ""
-        entries = []
-        offset = 0
-        for line in text.splitlines(keepends=True):
-            stripped = BLOCKQUOTE_PATTERN.sub('', line).lstrip()
-            match = HEADING_PATTERN.match(stripped)
-            if match:
-                entries.append(OutlineEntry(
-                    level=len(match.group(1)),
-                    title=match.group(2).strip() if match.group(2) else "",
-                    offset=offset,
-                ))
-            offset += len(line)
-        return Outline(entries=entries)
+        content_format = node.data.content_format
+        formatter = get_format(content_format)
+        return formatter.get_outline(text)

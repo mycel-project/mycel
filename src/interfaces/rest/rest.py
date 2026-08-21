@@ -450,6 +450,9 @@ See the implementation guide for details.
 
         @self.app.get("/collections/{col_id}/nodes/{node_id}/outline", tags=["nodes"], responses={**AUTH_RESPONSES})
         async def get_outline(col_id: str, node_id: str, user_id = Depends(self.get_user)) -> ApiResponse[Outline]:
+            """
+            Returns the outline of the node based on his format. To get an outline for formats unknown to Mycel, use your client's functionality if it can generate one.
+            """
             return ApiResponse(data=self.node_orchestrator.get_outline_for_node(user_id, col_id, node_id))
 
         class RestoreNodeRequest(BaseModel):
