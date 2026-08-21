@@ -121,7 +121,7 @@ class NodeOrchestrator:
         self._node_service.get_node_for_user(user_id, col_id, node_id)
         return self._node_service.soft_delete_subtree(node_id)
 
-    def create_extract(self, user_id: str, col_id: str, extract_type: NodeType, source_node_id: str, text: str, field: str, start_index: int, end_index: int, tz_offset_min: int) -> ExtractResult:
+    def create_extract(self, user_id: str, col_id: str, extract_type: NodeType, source_node_id: str, text: str, field: str, start_index: int, end_index: int, auto_format: bool, tz_offset_min: int) -> ExtractResult:
         source_node = self._node_service.get_node_for_user(user_id, col_id, source_node_id)
 
         self._check_text_match(source_node, field, start_index, end_index, text)
@@ -139,14 +139,18 @@ class NodeOrchestrator:
             try:
                 SPORE_CLOZE_FIELD = "cloze" # only support cloze for now and clozes have juste one field named cloze
                 clozed_spore = self._spore_service.cloze_region(spore.id, text, SPORE_CLOZE_FIELD, start_index, end_index)
-                extract = self._spore_service.remove_extract_formatting(clozed_spore.id, SPORE_CLOZE_FIELD)
+                if auto_format:
+                    extract = self._spore_service.remove_extract_formatting(clozed_spore.id, SPORE_CLOZE_FIELD)
+                else:
+                    extract = clozed_spore
             except Exception as e:
                 self._node_service.delete_node(spore.id)
                 raise ExtractError("EXTRACT_FAILED", str(e)) from e
 
         source = source_node
         try:
-            source = self._fragment_service.emphasize_region(source_node_id, extract_type, field, start_index, end_index, text)
+            if auto_format:
+                source = self._fragment_service.emphasize_region(source_node_id, extract_type, field, start_index, end_index, text)
         except Exception as e:
             logger.warning(f"Failed to emphasize region in parent (id {source_node_id}), but extract is valid: {e}")
 
@@ -206,13 +210,14 @@ class NodeOrchestrator:
         node = self._node_service.get_node_for_user(user_id, col_id, node_id)
         return self._get_outline_usecase.execute(node)
 
-    def split_node_to_detail_views(self, user_id: str, col_id: str, node_id: str, field: str, tz_offset_min: int, level: int) -> list[NodeDetailView]:
+    def split_node_to_detail_views(self, user_id: str, col_id: str, node_id: str, field: str, auto_format: bool, tz_offset_min: int, level: int) -> list[NodeDetailView]:
         node = self._node_service.get_node_for_user(user_id, col_id, node_id)
         content = node.fields[field]
         if content is None:
             raise EmptyField(node_id, field)
         children = self._split_node.execute(user_id, col_id, node_id, tz_offset_min, level)
-        self._fragment_service.emphasize_region(node_id, NodeType.FRAGMENT, field, 0, len(content))
+        if auto_format:
+            self._fragment_service.emphasize_region(node_id, NodeType.FRAGMENT, field, 0, len(content))
         source_node = self._fragment_service.dismiss(node_id, 0, True)
         nodes = children + [source_node]
         return self._node_view_builder.to_detail_views(nodes)

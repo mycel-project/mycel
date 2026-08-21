@@ -7,7 +7,7 @@ import asyncio
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -470,7 +470,7 @@ See the implementation guide for details.
             ))
         
         class SelectionData(BaseModel):
-            text: str
+            text: str = Field(description="The selected portion.")
             field: str = "content" # Default for fragments
             start_index: int
             end_index: int
@@ -482,6 +482,7 @@ See the implementation guide for details.
 
         class NodeExtractRequest(SelectionData):
             extract_type: NodeType
+            auto_format: bool = Field(default=True, description="Wether to let Mycel emphasis the extracted region based on the Node content_format. Make it False to override Mycel's formatting manually.")
             tz_offset: int = 0
         @self.app.post("/collections/{col_id}/nodes/{node_id}/extracts", tags=["nodes"], responses={**AUTH_RESPONSES})
         async def create_node_extract(col_id: str, node_id: str, data: NodeExtractRequest, user_id = Depends(self.get_user)) -> ApiResponse[ExtractResult]:
@@ -489,12 +490,13 @@ See the implementation guide for details.
             Note: non-idempotent: see Mycel documentation.
             """
             return ApiResponse(data=self.node_orchestrator.create_extract(
-                user_id, col_id, data.extract_type, node_id, data.text, data.field, data.start_index, data.end_index, data.tz_offset
+                user_id, col_id, data.extract_type, node_id, data.text, data.field, data.start_index, data.end_index, data.auto_format, data.tz_offset
             ))
 
         class SplitNodeRequest(BaseModel):
             level: int
             field: str = "content"
+            auto_format: bool = Field(default=True, description="Wether to let Mycel emphasis the split region based on the Node content_format. Make it False to override Mycel's formatting manually.")
             tz_offset: int = 0
         @self.app.post("/collections/{col_id}/nodes/{node_id}/split", tags=["nodes"], responses={**AUTH_RESPONSES})
         async def split_node(col_id: str, node_id: str, data: SplitNodeRequest, user_id = Depends(self.get_user)) -> ApiResponse[list[NodeDetailView]]:
@@ -502,7 +504,7 @@ See the implementation guide for details.
             Split node by heading level.
             Note: non-idempotent: see Mycel documentation.
             """
-            return ApiResponse(data=self.node_orchestrator.split_node_to_detail_views(user_id, col_id, node_id, data.field, data.tz_offset, data.level))
+            return ApiResponse(data=self.node_orchestrator.split_node_to_detail_views(user_id, col_id, node_id, data.field, data.auto_format, data.tz_offset, data.level))
 
         ## LEARNING UNITS
         

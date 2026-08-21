@@ -10,6 +10,7 @@
 - Add update scripts + config auto-merge when updating Mycel
 - Add functionnality to add resource from text (on the same Create Node endpoint)
 - Abstract node formatting to decouple markdown from the architecture, allowing for new custom formats (add file to src/formats inheriting from BaseFormat)
+- Add auto_format field on some endpoints to specify wether Mycel should format nodes or not
 
 ### Refactored
 - Dismissed learning units are no longer considered reviewable.
