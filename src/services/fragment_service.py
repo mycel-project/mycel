@@ -21,8 +21,8 @@ class FragmentService:
         self._node_format_service = node_format_service
         self._create_fragment = create_fragment_use_case
         self._emphasis_handlers = {
-            NodeType.FRAGMENT: self._node_format_service.blockquote_region,
-            NodeType.SPORE: self._node_format_service.inline_region,
+            NodeType.FRAGMENT: self._node_format_service.apply_fragment_emphasis,
+            NodeType.SPORE: self._node_format_service.apply_spore_emphasis,
         }
         
     def create_fragment(self, user_id: str, col_id: str, content: str, parent_id: Optional[str] = None, tz_offset: int = 0) -> Node:

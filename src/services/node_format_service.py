@@ -1,7 +1,6 @@
-import re
 from typing import Optional
-import re
 
+from src.formats.registry import get_format
 from src.models.node import Node, NodeFields
 from src.types.text_segment import TextSegment
 from src.utils.debug import preview_extract
@@ -9,91 +8,12 @@ from src.utils.format import ensure_double_newline_left, ensure_double_newline_r
 
 class NodeFormatService:
     
+    # --- GENERAL (Mycel Logic) ---
+    
     def build_cloze(self, text: str, index: int = 1) -> str:
         safe_text = text.replace("{{", "((").replace("}}", "))")
         return f"{{{{c{index}::{safe_text}}}}}"
     
-    def inline_region(
-        self,
-        node: Node,
-        field: str,
-        start: int,
-        end: int,
-        expected_text: Optional[str] = None
-    ) -> Node:
-
-        segment = self.get_content_portions(
-            node.fields,
-            field,
-            start,
-            end,
-            expected_text
-        )
-
-        cleaned = segment.target.replace("`", "")
-        inline = f"`{cleaned}`"
-
-        node.fields[field] = (
-            segment.before + inline + segment.after
-        )
-
-        return node
-
-    def cloze_region(
-        self,
-        node: Node,
-        field: str,
-        start: int,
-        end: int,
-        expected_text: Optional[str] = None,
-        cloze_index: int = 1, # just support one at the moment
-    ) -> Node:
-
-        segment = self.get_content_portions(
-            node.fields,
-            field,
-            start,
-            end,
-            expected_text
-        )
-
-        cloze = self.build_cloze(segment.target, cloze_index)
-
-        node.fields[field] = (
-            segment.before + cloze + segment.after
-        )
-
-        return node
-    
-
-    def blockquote_region(
-        self,
-        node: Node,
-        field: str,
-        start: int,
-        end: int,
-        expected_text: Optional[str] = None
-    ) -> Node:
-        segment = self.get_content_portions(
-            node.fields,
-            field,
-            start,
-            end,
-            expected_text
-        )
-
-        quoted = "\n".join(
-            self.blockquote_line(line) for line in segment.target.split("\n")
-        )
-
-        before = ensure_double_newline_left(segment.before.rstrip())
-        after = ensure_double_newline_right(segment.after.lstrip())
-
-        node.fields[field] = before + quoted + after
-
-        return node
-    
-
     def get_content_portions(
         self,
         node_content: NodeFields,
@@ -126,89 +46,105 @@ class NodeFormatService:
             text[end:]
         )
     
-
-    def blockquote_line(self, line: str) -> str:
-        stripped = line.lstrip()
-
-        if stripped.startswith(">"):
-            return stripped
-
-        return "> " + stripped
-    
-
-    def unquote_line(self, line: str, allowed_prefix_pattern: Optional[str] = None) -> str:
-        working_line = line
-
-        if allowed_prefix_pattern:
-            match = re.match(allowed_prefix_pattern, line)
-            if match:
-                working_line = line[match.end():]
-
-        stripped = working_line.lstrip()
-
-        has_removed = False
-        while stripped.startswith(">"):
-            stripped = stripped[1:].lstrip()
-            has_removed = True
-
-        if has_removed:
-            prefix = line[:len(line) - len(working_line)]
-            return prefix + stripped
-
-        return line
-
-
-    def remove_blockquote_formatting(
+    def cloze_region(
         self,
+        node: Node,
+        field: str,
+        start: int,
+        end: int,
+        expected_text: Optional[str] = None,
+        cloze_index: int = 1, # just support one at the moment
+    ) -> Node:
+
+        segment = self.get_content_portions(
+            node.fields,
+            field,
+            start,
+            end,
+            expected_text
+        )
+
+        cloze = self.build_cloze(segment.target, cloze_index)
+
+        node.fields[field] = (
+            segment.before + cloze + segment.after
+        )
+
+        return node
+
+    # --- FORMAT DELEGATION ---
+    
+    def apply_spore_emphasis(
+        self,
+        node: Node,
+        field: str,
+        start: int,
+        end: int,
+        expected_text: Optional[str] = None
+    ) -> Node:
+
+        segment = self.get_content_portions(
+            node.fields,
+            field,
+            start,
+            end,
+            expected_text
+        )
+
+        formatter = get_format(node.data.content_format)
+        inline = formatter.apply_spore_emphasis(segment.target)
+
+        node.fields[field] = (
+            segment.before + inline + segment.after
+        )
+
+        return node
+
+
+    def apply_fragment_emphasis(
+        self,
+        node: Node,
+        field: str,
+        start: int,
+        end: int,
+        expected_text: Optional[str] = None
+    ) -> Node:
+        segment = self.get_content_portions(
+            node.fields,
+            field,
+            start,
+            end,
+            expected_text
+        )
+
+        formatter = get_format(node.data.content_format)
+        quoted = formatter.apply_fragment_emphasis(segment.target)
+
+        before = ensure_double_newline_left(segment.before.rstrip())
+        after = ensure_double_newline_right(segment.after.lstrip())
+
+        node.fields[field] = before + quoted + after
+
+        return node
+
+    def remove_fragment_emphasis(
+        self,
+        node: Node,
         text: str,
         allowed_prefix_pattern: Optional[str] = None
     ) -> str:
-        """
-        If an allowed_prefix_pattern is provided, the function will ignore this prefix
-        when detecting and removing blockquote markers. This allows handling cases where
-        a blockquote appears after a specific leading pattern (e.g. cloze syntax like "{{c1::").
-        """
-        lines = text.split("\n")
-
-        cleaned_lines = [
-            self.unquote_line(line, allowed_prefix_pattern)
-            for line in lines
-        ]
-
-        return "\n".join(cleaned_lines)
-
+        formatter = get_format(node.data.content_format)
+        return formatter.remove_fragment_emphasis(text, allowed_prefix_pattern)
     
-    def remove_inline_code_formatting(self, text: str) -> str:
-        return text.replace("`", "")
+    def remove_spore_emphasis(self, node: Node, text: str) -> str:
+        formatter = get_format(node.data.content_format)
+        return formatter.remove_spore_emphasis(text)
 
     def remove_links(self, node: Node, field: str, start: int, end: int, expected_text: str) -> Node:
-        # Not using regex as it does not handle nested (). Maybe check how markdown-mycel-fork handle this?
         segment = self.get_content_portions(node.fields, field, start, end, expected_text)
-        cleaned = self._strip_links(segment.target)
+        
+        formatter = get_format(node.data.content_format)
+        cleaned = formatter.strip_links(segment.target)
+        
         node.fields[field] = segment.before + cleaned + segment.after
         return node
-
-    def _strip_links(self, text: str) -> str:
-        result = []
-        i = 0
-        while i < len(text):
-            if text[i] == '[':
-                j = text.find('](', i)
-                if j == -1:
-                    result.append(text[i:])
-                    break
-                link_text = text[i+1:j]
-                k = j + 2
-                depth = 1
-                while k < len(text) and depth > 0:
-                    if text[k] == '(':
-                        depth += 1
-                    elif text[k] == ')':
-                        depth -= 1
-                    k += 1
-                result.append(link_text)
-                i = k
-            else:
-                result.append(text[i])
-                i += 1
-        return ''.join(result)

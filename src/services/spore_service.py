@@ -79,8 +79,8 @@ class SporeService:
 
         field_content = node.fields[field]
         
-        text_without_inline = self._node_format_service.remove_inline_code_formatting(field_content)
-        fully_cleaned_text = self._node_format_service.remove_blockquote_formatting(text_without_inline, r"\{\{c\d+::\s*")
+        text_without_emphasis = self._node_format_service.remove_spore_emphasis(node, field_content)
+        fully_cleaned_text = self._node_format_service.remove_fragment_emphasis(node, text_without_emphasis, r"\{\{c\d+::\s*")
 
         node.fields[field] = fully_cleaned_text
         return self._node_service.update(

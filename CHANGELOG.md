@@ -9,6 +9,7 @@
 - Add introduced version number for each user config field
 - Add update scripts + config auto-merge when updating Mycel
 - Add functionnality to add resource from text (on the same Create Node endpoint)
+- Abstract node formatting to decouple markdown from the architecture, allowing for new custom formats (add file to src/formats inheriting from BaseFormat)
 
 ### Refactored
 - Dismissed learning units are no longer considered reviewable.

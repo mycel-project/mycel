@@ -106,8 +106,8 @@ class TestSplitNodeUseCase:
         node = MagicMock()
         node.id = generate_id()
         node.content = None
+        node.data.content_format = "markdown"
         node_service.get_node.return_value = node
-
         from src.domain.get_outline_usecase import GetOutlineUseCase
         create_fragment = MagicMock()
         uc = SplitNodeUseCase(node_service, create_fragment, GetOutlineUseCase())
