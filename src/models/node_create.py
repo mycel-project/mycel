@@ -11,6 +11,7 @@ class NodeCreateFromUrl(BaseModel):
     """
     type: Literal["url"]
     url: str
+    target_format: str = "markdown"
     tz_offset: int = 0
 
 class NodeCreateFromText(BaseModel): 
@@ -21,6 +22,8 @@ class NodeCreateFromText(BaseModel):
     content: str
     title: Optional[str] = None
     source: Optional[NodeSource] = Field(default=None, description="The source of the content, such as a file path or URL.")
+    target_format: str = "markdown"
+    inital_format: Optional[str] = None
     tz_offset: int = 0
 
 NodeCreate = Annotated[
