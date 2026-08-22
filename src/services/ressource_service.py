@@ -12,8 +12,15 @@ class RessourceService:
         self._htm_registry = html_to_md_registry
 
     def defuddle_convert(self, html: str) -> str:
+        import os
+        node_bin = "node"
+        if os.path.exists("./env/bin/node"):
+            node_bin = "./env/bin/node"
+        elif os.path.exists("./env/Scripts/node.exe"):
+            node_bin = "./env/Scripts/node.exe"
+
         result = subprocess.run(
-            ["./env/bin/node", "./node_deps/node_modules/defuddle/dist/cli.js",
+            [node_bin, "./node_deps/node_modules/defuddle/dist/cli.js",
              "parse", "--markdown"],
             input=html,
             capture_output=True,

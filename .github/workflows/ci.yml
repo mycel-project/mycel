@@ -36,6 +36,10 @@ jobs:
         with:
           python-version: '3.12'
           cache: 'pip'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci --prefix node_deps
       - name: Setup config
         run: cp config.json.example config.json
       - run: pip install -r requirements.txt -r requirements-dev.txt
@@ -63,6 +67,10 @@ jobs:
         with:
           python-version: '3.12'
           cache: 'pip'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci --prefix node_deps
       - name: Setup config
         run: cp config.json.example config.json
       - run: pip install -r requirements.txt -r requirements-dev.txt
