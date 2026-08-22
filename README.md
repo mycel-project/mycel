@@ -8,8 +8,9 @@ For more information, visit [Mycel Project's website](https://mycel-project.com)
 
 - Ensure **Python v3.10+** and **git** are installed
 - Clone this repo: `git clone https://github.com/mycel-project/mycel`
-- Run `setup.bat` (Windows) or `setup.sh` (Linux/macOS)
-- Run `run.bat` (Windows) or `run.sh` (Linux/macOS)
+- Setup: `mycel.bat setup` (Windows) or `./mycel.sh setup` (Linux/macOS)
+- Run: `mycel.bat run` (Windows) or `./mycel.sh run` (Linux/macOS)
+- Update: `mycel.bat update` (Windows) or `./mycel.sh update` (Linux/macOS)
 
 For the full setup guide, see [mycel-project.com/mycel#self-hosting](https://mycel-project.com/mycel/index.html#self-hosting).
 
