@@ -1,5 +1,7 @@
 ## Unreleased
 ## v0.2.1-alpha
+This update adds foundations for better development and deployment through Alembic and architectural improvements. Markdown is now almost entirely abstracted (unless importing from a URL), meaning new custom formats can be added to Mycel. It also refactors and cleans up the repository scripts, introducing the mycel.bat and mycel.sh helpers. Some features are not yet plugged, that's why it's not considered as stable.
+
 ### Added
 - Change Markdown parsing tool from html_to_markdown to Defuddle (Node.js).
 - Automatically create a 'Default' collection when a new user is created

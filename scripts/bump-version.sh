@@ -12,7 +12,7 @@ if [ -z "$1" ]; then
 fi
  
 VERSION="$1"
-TAG="v${VERSION}"
+TAG="${VERSION}"
  
 # Refuse to run with a dirty working tree
 if [ -n "$(git status --porcelain)" ]; then
