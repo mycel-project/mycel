@@ -33,37 +33,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Update VERSION file
-        run: echo "${{ github.ref_name }}" | sed 's/^v//' > VERSION
-
-      - name: Update VERSION and re-tag
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          git fetch origin
-
-          COMMIT=$(git rev-list -n 1 ${{ github.ref_name }})
-          BRANCH=$(git branch -r --contains $COMMIT | grep -v 'HEAD' | head -n 1 | sed 's|.*origin/||' | xargs)
-
-          if [ -z "$BRANCH" ]; then
-            BRANCH="main"
-          fi
-
-          echo "Pushing to branch: $BRANCH"
-
-          git checkout $BRANCH
-          git pull origin $BRANCH
-
-          echo "${{ github.ref_name }}" | sed 's/^v//' > VERSION
-
-          git add VERSION
-          git commit -m "chore: bump VERSION to ${{ github.ref_name }}"
-
-          git tag -f ${{ github.ref_name }}
-
-          git push origin $BRANCH
-          git push origin ${{ github.ref_name }} --force
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
 
       - name: Extract changelog
         id: changelog
@@ -86,6 +59,9 @@ jobs:
           body: ${{ steps.changelog.outputs.notes }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Setup config
+        run: cp config.json.example config.json
+
       - name: Generate openapi.json
         run: |
           pip install -r requirements.txt
@@ -99,7 +75,7 @@ jobs:
             json.dump(rest.app.openapi(), f, indent=2)
           "
           
-      - name: Push to mycel-openapi repo
+      - name: Push to mycel-openapi repo # all releases (stable + prerelease)
         uses: dmnemec/copy_file_to_another_repo_action@main
         env:
           API_TOKEN_GITHUB: ${{ secrets.DOCS_DEPLOY_TOKEN }}
@@ -111,7 +87,7 @@ jobs:
           user_name: 'github-actions[bot]'
           commit_message: 'contract: update to ${{ github.ref_name }}'
           
-      - name: Tag mycel-openapi repo
+      - name: Tag mycel-openapi repo 
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.DOCS_DEPLOY_TOKEN }}
@@ -136,3 +112,16 @@ jobs:
                 throw error;
               }
             }
+
+      - name: Push to docs repo # only stable releases
+        if: needs.check-prerelease.outputs.is_prerelease == 'false'
+        uses: dmnemec/copy_file_to_another_repo_action@main
+        env:
+          API_TOKEN_GITHUB: ${{ secrets.DOCS_DEPLOY_TOKEN }}
+        with:
+          source_file: 'openapi.json'
+          destination_repo: 'mycel-project/mycel-project.github.io'
+          destination_folder: 'mycel-docs/docs/reference'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+          user_name: 'github-actions[bot]'
+          commit_message: 'chore: sync openapi.json to docs (${{ github.ref_name }})'

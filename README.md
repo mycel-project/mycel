@@ -13,6 +13,18 @@ For more information, visit [Mycel Project's website](https://mycel-project.com)
 
 For the full setup guide, see [mycel-project.com/mycel#self-hosting](https://mycel-project.com/mycel/index.html#self-hosting).
 
-## Contributing
+## Contributing / Development
 
 See the [contribution guide](https://mycel-project.com/docs/mycel/manual/contribution-guide/).
+
+After running `./mycel.sh setup`, install the additional dev dependencies
+(needed to run the test suite) with:
+```bash
+./env/bin/pip install -r requirements-dev.txt
+```
+
+Then run the tests with:
+
+```bash
+./env/bin/pytest tests/
+```

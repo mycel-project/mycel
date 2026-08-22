@@ -1,0 +1,17 @@
+alembic
+beautifulsoup4
+click
+fastapi
+fractional-indexing
+fsrs
+html-to-markdown
+lxml
+packaging
+psycopg2-binary
+pydantic
+PyJWT
+python-dotenv
+requests
+scalar-fastapi
+SQLAlchemy
+uvicorn

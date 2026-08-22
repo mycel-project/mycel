@@ -1,0 +1,5 @@
+-c requirements.txt
+pytest
+pytest-asyncio
+pytest-dotenv
+pytest-vcr
