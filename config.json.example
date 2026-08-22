@@ -2,7 +2,7 @@
     "interface": "rest",
     "network_user_agent": "Mycel/0.1",
     "db_path": "mycel.db",
-    "log_level": "info",
+    "log_level": "warning",
     "allow_private_urls_fetch": true,
     "ensure_default_user": true,
     "run_migrations_on_startup": true
