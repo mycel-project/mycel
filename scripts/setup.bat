@@ -1,4 +1,5 @@
 @echo off
+cd /d "%~dp0.."
 echo Setting up Mycel...
 
 if not exist "env\" (
@@ -15,8 +16,8 @@ if errorlevel 1 exit /b 1
 if errorlevel 1 exit /b 1
 
 echo ==> Setting up Node dependencies...
-call install_node_deps.bat
-if errorlevel 1 goto error
+call scripts/install_node_deps.bat
+if errorlevel 1 exit /b 1
 
 if not exist config.json (
     echo Creating configuration file...
@@ -26,5 +27,5 @@ if not exist config.json (
     echo config.json already exists. Your settings have been preserved.
 )
 
-echo Setup complete! You can now run the application.
+echo Setup complete! Use mycel.bat run to start the application.
 pause

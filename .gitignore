@@ -56,9 +56,7 @@ config.local.*
 secrets.*
 .claude/
 
-.toml
 /draft/
-file::memory:?cache=shared
 
 config.json
 !config.json.example

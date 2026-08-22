@@ -1,5 +1,5 @@
 @echo off
-cd /d "%~dp0"
+cd /d "%~dp0.."
  
 echo ==> Pulling latest changes...
 git pull
@@ -10,14 +10,14 @@ echo ==> Installing/updating dependencies...
 if errorlevel 1 goto error
 
 echo ==> Setting up Node dependencies...
-call install_node_deps.bat
+call scripts/install_node_deps.bat
 if errorlevel 1 goto error
  
 echo ==> Checking config.json for new options...
-.\env\Scripts\python.exe merge_config.py
+.\env\Scripts\python.exe scripts/merge_config.py
  
 echo ==> Update complete.
-echo Restart Mycel with: run.bat
+echo Restart Mycel with: mycel.bat run
 pause
 exit /b 0
  

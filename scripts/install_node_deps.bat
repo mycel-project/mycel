@@ -1,5 +1,5 @@
 @echo off
-cd /d "%~dp0"
+cd /d "%~dp0.."
  
 echo ==> Checking nodeenv...
 .\env\Scripts\python.exe -c "import nodeenv" 2>nul

@@ -1,4 +1,5 @@
 ## Unreleased
+## v0.2.1-alpha
 ### Added
 - Change Markdown parsing tool from html_to_markdown to Defuddle (Node.js).
 - Automatically create a 'Default' collection when a new user is created
@@ -14,6 +15,7 @@
 
 ### Refactored
 - Dismissed learning units are no longer considered reviewable.
+- Clean root repo
 
 ### Fixed
 - Dismiss node were concered as reviewable.

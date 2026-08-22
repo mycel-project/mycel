@@ -3,7 +3,7 @@
 # (e.g. Defuddle) needed by Mycel. Safe to run multiple times (idempotent).
 set -e
  
-cd "$(dirname "$0")"
+cd "$(dirname "$0")/.."
  
 # Install nodeenv into the Python venv if not already present
 if ! ./env/bin/python -c "import nodeenv" 2>/dev/null; then
