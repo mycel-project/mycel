@@ -4,6 +4,35 @@
 #
 #    pip-compile requirements-dev.in
 #
+anyio==4.13.0
+    # via
+    #   -c requirements.txt
+    #   httpx
+    #   httpx2
+certifi==2026.4.22
+    # via
+    #   -c requirements.txt
+    #   httpcore
+    #   httpx
+h11==0.16.0
+    # via
+    #   -c requirements.txt
+    #   httpcore
+    #   httpcore2
+httpcore==1.0.9
+    # via httpx
+httpcore2==2.12.0
+    # via httpx2
+httpx==0.28.1
+    # via -r requirements-dev.in
+httpx2==2.12.0
+    # via -r requirements-dev.in
+idna==3.18
+    # via
+    #   -c requirements.txt
+    #   anyio
+    #   httpx
+    #   httpx2
 iniconfig==2.3.0
     # via pytest
 packaging==26.1
@@ -32,6 +61,10 @@ python-dotenv==1.2.2
     #   pytest-dotenv
 pyyaml==6.0.3
     # via vcrpy
+truststore==0.10.4
+    # via
+    #   httpcore2
+    #   httpx2
 vcrpy==8.3.0
     # via pytest-vcr
 wrapt==2.3.0

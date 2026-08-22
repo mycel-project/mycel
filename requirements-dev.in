@@ -3,3 +3,5 @@ pytest
 pytest-asyncio
 pytest-dotenv
 pytest-vcr
+httpx
+httpx2
